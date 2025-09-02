@@ -4,8 +4,9 @@ import javax.swing.*;
 import java.awt.*;
 
 public class PanelModeloPrecios extends JPanel {
-    private JTextField txtPrecioPrueba;
-    private JLabel lblDemanda, lblGanancia;
+    private final JTextField txtPrecioPrueba;
+    private final JLabel lblDemanda;
+    private final JLabel lblGanancia;
 
     public PanelModeloPrecios() {
         EstilosUI.aplicarEstiloPanel(this);
@@ -71,7 +72,7 @@ public class PanelModeloPrecios extends JPanel {
 
     // DocumentListener simple para cambios en JTextField
     private static class SimpleDocumentListener implements javax.swing.event.DocumentListener {
-        private Runnable onChange;
+        private final Runnable onChange;
         public SimpleDocumentListener(Runnable onChange) { this.onChange = onChange; }
         public void insertUpdate(javax.swing.event.DocumentEvent e) { onChange.run(); }
         public void removeUpdate(javax.swing.event.DocumentEvent e) { onChange.run(); }

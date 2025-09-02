@@ -47,8 +47,5 @@ public class ControladorParametros {
         elasticidad = v;
     }
 
-    public double getCosteUnitarioEquivalenteLibras() {
-        return costeUnitario / tipoCambio;
-    }
 }
 

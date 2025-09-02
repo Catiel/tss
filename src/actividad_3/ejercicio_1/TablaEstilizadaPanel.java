@@ -32,7 +32,7 @@ public abstract class TablaEstilizadaPanel extends JPanel {
                 } else if (column == 1) {
                     c.setBackground(new Color(235, 245, 255));
                     if (c instanceof JLabel) {
-                        ((JLabel) c).setFont(new Font("Segoe UI", Font.BOLD, 13));
+                        c.setFont(new Font("Segoe UI", Font.BOLD, 13));
                     }
                 } else {
                     c.setBackground(Color.WHITE);

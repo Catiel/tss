@@ -4,9 +4,11 @@ import javax.swing.*;
 import java.awt.*;
 
 public class PanelConfiguracion extends JPanel {
-    private JTextField txtCosteUnitario, txtTipoCambio, txtConstanteDemanda, txtElasticidad;
-    private JLabel lblCosteUnitarioLibras;
-    private JButton btnGuardar;
+    private final JTextField txtCosteUnitario;
+    private final JTextField txtTipoCambio;
+    private final JTextField txtConstanteDemanda;
+    private final JTextField txtElasticidad;
+    private final JLabel lblCosteUnitarioLibras;
 
     public PanelConfiguracion() {
         EstilosUI.aplicarEstiloPanel(this);
@@ -77,7 +79,7 @@ public class PanelConfiguracion extends JPanel {
 
         gbc.gridy++;
         gbc.gridx = 0; gbc.gridwidth = 2;
-        btnGuardar = new JButton("Guardar cambios");
+        JButton btnGuardar = new JButton("Guardar cambios");
         EstilosUI.aplicarEstiloBoton(btnGuardar);
         btnGuardar.setToolTipText("Aplica los cambios a los parámetros del modelo");
         add(btnGuardar, gbc);
@@ -125,7 +127,7 @@ public class PanelConfiguracion extends JPanel {
 
     // DocumentListener simple para cambios en JTextField
     private static class SimpleDocumentListener implements javax.swing.event.DocumentListener {
-        private Runnable onChange;
+        private final Runnable onChange;
         public SimpleDocumentListener(Runnable onChange) { this.onChange = onChange; }
         public void insertUpdate(javax.swing.event.DocumentEvent e) { onChange.run(); }
         public void removeUpdate(javax.swing.event.DocumentEvent e) { onChange.run(); }

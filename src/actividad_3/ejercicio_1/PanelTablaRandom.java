@@ -6,8 +6,9 @@ import java.awt.*;
 import java.util.Random;
 
 public class PanelTablaRandom extends TablaEstilizadaPanel {
-    private JTextField txtMin, txtMax, txtFilas;
-    private JButton btnGenerar;
+    private final JTextField txtMin;
+    private final JTextField txtMax;
+    private final JTextField txtFilas;
 
     public PanelTablaRandom() {
         super(
@@ -24,7 +25,7 @@ public class PanelTablaRandom extends TablaEstilizadaPanel {
         txtMin = panelSup.txtMin;
         txtMax = panelSup.txtMax;
         txtFilas = panelSup.txtFilas;
-        btnGenerar = panelSup.btnGenerar;
+        JButton btnGenerar = panelSup.btnGenerar;
         btnGenerar.addActionListener(e -> generarTabla());
     }
 

@@ -5,7 +5,6 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
 public class PanelTablaManual extends TablaEstilizadaPanel {
-    private boolean actualizandoTabla = false;
 
     public PanelTablaManual() {
         super(
@@ -59,7 +58,6 @@ public class PanelTablaManual extends TablaEstilizadaPanel {
     }
 
     private void calcularGanancias() {
-        actualizandoTabla = true;
         ControladorParametros params = ControladorParametros.getInstancia();
         double mejorGanancia = Double.NEGATIVE_INFINITY;
         double mejorPrecio = 0;
@@ -68,14 +66,12 @@ public class PanelTablaManual extends TablaEstilizadaPanel {
             String val = modeloTabla.getValueAt(i, 0).toString();
             if (val.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Debes ingresar todos los precios antes de calcular.", "Error de entrada", JOptionPane.ERROR_MESSAGE);
-                actualizandoTabla = false;
                 return;
             }
             try {
                 Double.parseDouble(val);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "El valor en la fila " + (i+1) + " no es un número válido.", "Error de entrada", JOptionPane.ERROR_MESSAGE);
-                actualizandoTabla = false;
                 return;
             }
         }
@@ -93,6 +89,5 @@ public class PanelTablaManual extends TablaEstilizadaPanel {
             }
         }
         actualizarOptimo(mejorPrecio, mejorGanancia, filaOptima);
-        actualizandoTabla = false;
     }
 }
