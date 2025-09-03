@@ -48,21 +48,21 @@ public class PanelModeloPrecios extends JPanel {
         // Tabla de resultados
         gbc.gridy++;
         gbc.gridx = 0; gbc.gridwidth = 6;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.fill = GridBagConstraints.BOTH;
         String[] columnas = {"Año", "Demanda", "Inversión inicial", "Costo fijo operación", "Unidades producidas", "Ingresos ventas", "Costo variable producción", "Utilidad"};
         modeloTabla = new DefaultTableModel(columnas, 0);
         JTable tablaResultados = new JTable(modeloTabla);
         EstilosUI.aplicarEstiloTabla(tablaResultados);
-        JScrollPane scroll = new JScrollPane(tablaResultados, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        scroll.setPreferredSize(new Dimension(1100, 280));
-        tablaResultados.setFillsViewportHeight(true);
-        // Ajuste de ancho de columnas
         int[] anchos = {60, 90, 120, 120, 120, 140, 140, 120};
         for (int i = 0; i < anchos.length; i++) {
             tablaResultados.getColumnModel().getColumn(i).setPreferredWidth(anchos[i]);
         }
+        JScrollPane scroll = new JScrollPane(tablaResultados, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        tablaResultados.setFillsViewportHeight(true);
         add(scroll, gbc);
 
-        // Listener para recalcular al cambiar la capacidad
         txtCapacidad.getDocument().addDocumentListener(new SimpleDocumentListener(this::actualizarResultados));
         actualizarResultados();
     }

@@ -45,7 +45,7 @@ public abstract class TablaEstilizadaPanel extends JPanel {
         JScrollPane scroll = new JScrollPane(tabla);
         scroll.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         add(scroll, BorderLayout.CENTER);
-        lblOptimo = new JLabel("Mejor precio: - | Ganancia máxima: -");
+        lblOptimo = new JLabel("Mejor capacidad: - | Ganancia máxima: -");
         EstilosUI.aplicarEstiloLabel(lblOptimo);
         lblOptimo.setFont(new Font("Segoe UI", Font.BOLD, 16));
         if (panelInferior == null) {
@@ -63,7 +63,7 @@ public abstract class TablaEstilizadaPanel extends JPanel {
 
     protected void actualizarOptimo(double mejorPrecio, double mejorGanancia, int filaOptima) {
         this.filaOptima = filaOptima;
-        lblOptimo.setText("Mejor precio: " + (filaOptima >= 0 ? String.format("%.2f", mejorPrecio) : "-") + " | Ganancia máxima: " + (filaOptima >= 0 ? String.format("%.2f", mejorGanancia) : "-"));
+        lblOptimo.setText("Mejor capacidad: " + (filaOptima >= 0 ? String.format("%.2f", mejorPrecio) : "-") + " | Ganancia máxima: " + (filaOptima >= 0 ? String.format("%.2f", mejorGanancia) : "-"));
         tabla.repaint();
     }
 }
