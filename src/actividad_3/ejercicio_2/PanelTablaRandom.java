@@ -13,7 +13,7 @@ public class PanelTablaRandom extends TablaEstilizadaPanel {
     public PanelTablaRandom() {
         super(
             "Tabla aleatoria de beneficio total versus unidades de capacidad",
-            new DefaultTableModel(new String[]{"Capacidad", "Ganancia ($)"}, 0) {
+            new DefaultTableModel(new String[]{"Capacidad", "Ganancia ($)", "VAN ($)"}, 0) {
                 @Override
                 public boolean isCellEditable(int row, int col) { return false; }
             },
@@ -83,6 +83,7 @@ public class PanelTablaRandom extends TablaEstilizadaPanel {
             ControladorParametros params = ControladorParametros.getInstancia();
             double mejorGanancia = Double.NEGATIVE_INFINITY;
             int mejorCapacidad = 0;
+            double tasaDescuento = params.getTasaDescuento();
             Random rand = new Random();
             for (int i = 0; i < filas; i++) {
                 int capacidad = min + rand.nextInt(max - min + 1);
@@ -95,7 +96,17 @@ public class PanelTablaRandom extends TablaEstilizadaPanel {
                     params.getCostoVariableUnitario(),
                     params.getCostoOperativoUnitario()
                 );
-                modeloTabla.addRow(new Object[]{capacidad, String.format("$%,.0f", ganancia)});
+                double van = calcularVAN(
+                    capacidad,
+                    params.getDemandaInicial(),
+                    params.getCrecimientoAnual(),
+                    params.getCostoCapacidadUnitaria(),
+                    params.getPrecioVentaUnitario(),
+                    params.getCostoVariableUnitario(),
+                    params.getCostoOperativoUnitario(),
+                    tasaDescuento
+                );
+                modeloTabla.addRow(new Object[]{capacidad, String.format("$%,.0f", ganancia), String.format("$%,.0f", van)});
                 if (ganancia > mejorGanancia) {
                     mejorGanancia = ganancia;
                     mejorCapacidad = capacidad;
@@ -107,5 +118,14 @@ public class PanelTablaRandom extends TablaEstilizadaPanel {
             modeloTabla.setRowCount(0);
             lblOptimo.setText("Datos inválidos");
         }
+    }
+
+    private double calcularVAN(int capacidad, int demandaInicial, double crecimientoAnual, double costoCapacidadUnitaria, double precioVentaUnitario, double costoVariableUnitario, double costoOperativoUnitario, double tasaDescuento) {
+        double van = 0;
+        ModeloWozacCalculo.ResultadoAnual[] resultados = ModeloWozacCalculo.calcularModelo(capacidad, demandaInicial, crecimientoAnual, costoCapacidadUnitaria, precioVentaUnitario, costoVariableUnitario, costoOperativoUnitario);
+        for (int i = 0; i < resultados.length; i++) {
+            van += resultados[i].utilidad / Math.pow(1.0 + tasaDescuento, i + 1);
+        }
+        return van;
     }
 }

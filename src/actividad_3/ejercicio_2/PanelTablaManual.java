@@ -9,7 +9,7 @@ public class PanelTablaManual extends TablaEstilizadaPanel {
     public PanelTablaManual() {
         super(
             "Tabla manual de beneficio total versus unidades de capacidad",
-            new DefaultTableModel(new String[]{"Capacidad", "Ganancia ($)"}, 0) {
+            new DefaultTableModel(new String[]{"Capacidad", "Ganancia ($)", "VAN ($)"}, 0) {
                 @Override
                 public boolean isCellEditable(int row, int col) { return col == 0; }
             },
@@ -24,7 +24,7 @@ public class PanelTablaManual extends TablaEstilizadaPanel {
             int cantidad = (Integer) spinnerFilas.getValue();
             modeloTabla.setRowCount(0);
             for (int i = 0; i < cantidad; i++) {
-                modeloTabla.addRow(new Object[]{"", "-"});
+                modeloTabla.addRow(new Object[]{"", "-", "-"});
             }
             filaOptima = -1;
             lblOptimo.setText("Mejor capacidad: - | Ganancia máxima: -");
@@ -61,6 +61,7 @@ public class PanelTablaManual extends TablaEstilizadaPanel {
         double mejorGanancia = Double.NEGATIVE_INFINITY;
         int mejorCapacidad = 0;
         filaOptima = -1;
+        double tasaDescuento = params.getTasaDescuento();
         for (int i = 0; i < modeloTabla.getRowCount(); i++) {
             try {
                 int capacidad = Integer.parseInt(modeloTabla.getValueAt(i, 0).toString());
@@ -73,7 +74,18 @@ public class PanelTablaManual extends TablaEstilizadaPanel {
                     params.getCostoVariableUnitario(),
                     params.getCostoOperativoUnitario()
                 );
+                double van = calcularVAN(
+                    capacidad,
+                    params.getDemandaInicial(),
+                    params.getCrecimientoAnual(),
+                    params.getCostoCapacidadUnitaria(),
+                    params.getPrecioVentaUnitario(),
+                    params.getCostoVariableUnitario(),
+                    params.getCostoOperativoUnitario(),
+                    tasaDescuento
+                );
                 modeloTabla.setValueAt(String.format("$%,.0f", ganancia), i, 1);
+                modeloTabla.setValueAt(String.format("$%,.0f", van), i, 2);
                 if (ganancia > mejorGanancia) {
                     mejorGanancia = ganancia;
                     mejorCapacidad = capacidad;
@@ -81,8 +93,18 @@ public class PanelTablaManual extends TablaEstilizadaPanel {
                 }
             } catch (Exception ex) {
                 modeloTabla.setValueAt("-", i, 1);
+                modeloTabla.setValueAt("-", i, 2);
             }
         }
         actualizarOptimo(mejorCapacidad, mejorGanancia, filaOptima);
+    }
+
+    private double calcularVAN(int capacidad, int demandaInicial, double crecimientoAnual, double costoCapacidadUnitaria, double precioVentaUnitario, double costoVariableUnitario, double costoOperativoUnitario, double tasaDescuento) {
+        double van = 0;
+        ModeloWozacCalculo.ResultadoAnual[] resultados = ModeloWozacCalculo.calcularModelo(capacidad, demandaInicial, crecimientoAnual, costoCapacidadUnitaria, precioVentaUnitario, costoVariableUnitario, costoOperativoUnitario);
+        for (int i = 0; i < resultados.length; i++) {
+            van += resultados[i].utilidad / Math.pow(1.0 + tasaDescuento, i + 1);
+        }
+        return van;
     }
 }

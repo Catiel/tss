@@ -10,6 +10,7 @@ public class ControladorParametros {
     private double precioVentaUnitario = 3.0;
     private double costoVariableUnitario = 0.20;
     private double costoOperativoUnitario = 0.40;
+    private double tasaDescuento = 0.10; // Por defecto 10%
 
     private ControladorParametros() {
     }
@@ -65,5 +66,13 @@ public class ControladorParametros {
 
     public void setCostoOperativoUnitario(double v) {
         costoOperativoUnitario = v;
+    }
+
+    public double getTasaDescuento() {
+        return tasaDescuento;
+    }
+
+    public void setTasaDescuento(double v) {
+        tasaDescuento = v;
     }
 }

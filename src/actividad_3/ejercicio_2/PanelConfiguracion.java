@@ -10,6 +10,7 @@ public class PanelConfiguracion extends JPanel {
     private final JTextField txtPrecioVentaUnitario;
     private final JTextField txtCostoVariableUnitario;
     private final JTextField txtCostoOperativoUnitario;
+    private final JTextField txtTasaDescuento;
 
     public PanelConfiguracion() {
         EstilosUI.aplicarEstiloPanel(this);
@@ -93,6 +94,17 @@ public class PanelConfiguracion extends JPanel {
         add(txtCostoOperativoUnitario, gbc);
 
         gbc.gridy++;
+        gbc.gridx = 0;
+        JLabel lblTasaDescuento = new JLabel("Tasa de descuento para VAN (%):");
+        EstilosUI.aplicarEstiloLabel(lblTasaDescuento);
+        add(lblTasaDescuento, gbc);
+        gbc.gridx = 1;
+        txtTasaDescuento = new JTextField(String.valueOf(params.getTasaDescuento() * 100), 8);
+        txtTasaDescuento.setToolTipText("Tasa de descuento anual para el cálculo de VAN");
+        txtTasaDescuento.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        add(txtTasaDescuento, gbc);
+
+        gbc.gridy++;
         gbc.gridx = 0; gbc.gridwidth = 2;
         JButton btnGuardar = new JButton("Guardar cambios");
         EstilosUI.aplicarEstiloBoton(btnGuardar);
@@ -111,12 +123,14 @@ public class PanelConfiguracion extends JPanel {
             double precioVenta = Double.parseDouble(txtPrecioVentaUnitario.getText());
             double costoVariable = Double.parseDouble(txtCostoVariableUnitario.getText());
             double costoOperativo = Double.parseDouble(txtCostoOperativoUnitario.getText());
+            double tasaDescuento = Double.parseDouble(txtTasaDescuento.getText()) / 100.0;
             params.setDemandaInicial(demanda);
             params.setCrecimientoAnual(crecimiento);
             params.setCostoCapacidadUnitaria(costoCapacidad);
             params.setPrecioVentaUnitario(precioVenta);
             params.setCostoVariableUnitario(costoVariable);
             params.setCostoOperativoUnitario(costoOperativo);
+            params.setTasaDescuento(tasaDescuento);
             JOptionPane.showMessageDialog(this, "Parámetros guardados correctamente.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error en los datos ingresados. Verifique los valores.", "Error", JOptionPane.ERROR_MESSAGE);
