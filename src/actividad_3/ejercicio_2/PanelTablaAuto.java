@@ -19,9 +19,13 @@ public class PanelTablaAuto extends TablaEstilizadaPanel {
     private void generarTabla() {
         modeloTabla.setRowCount(0);
         filaOptima = -1;
+        filaOptimaVan = -1;
         ControladorParametros params = ControladorParametros.getInstancia();
         double mejorGanancia = Double.NEGATIVE_INFINITY;
         int mejorCapacidad = 0;
+        int mejorCapacidadVan = 0;
+        double mejorVan = Double.NEGATIVE_INFINITY;
+        int filaVan = -1;
         double tasaDescuento = ControladorParametros.getInstancia().getTasaDescuento();
         // Capacidades típicas: 40000 a 80000 en pasos de 5000
         for (int capacidad = 40000; capacidad <= 80000; capacidad += 5000) {
@@ -45,13 +49,19 @@ public class PanelTablaAuto extends TablaEstilizadaPanel {
                 tasaDescuento
             );
             modeloTabla.addRow(new Object[]{capacidad, String.format("$%,.0f", ganancia), String.format("$%,.0f", van)});
+            int filaActual = modeloTabla.getRowCount() - 1;
             if (ganancia > mejorGanancia) {
                 mejorGanancia = ganancia;
                 mejorCapacidad = capacidad;
-                filaOptima = modeloTabla.getRowCount() - 1;
+                filaOptima = filaActual;
+            }
+            if (van > mejorVan) {
+                mejorVan = van;
+                mejorCapacidadVan = capacidad;
+                filaVan = filaActual;
             }
         }
-        actualizarOptimo(mejorCapacidad, mejorGanancia, filaOptima);
+        actualizarOptimo(mejorCapacidad, mejorGanancia, filaOptima, mejorCapacidadVan, mejorVan, filaVan);
     }
 
     private double calcularVAN(int capacidad, int demandaInicial, double crecimientoAnual, double costoCapacidadUnitaria, double precioVentaUnitario, double costoVariableUnitario, double costoOperativoUnitario, double tasaDescuento) {

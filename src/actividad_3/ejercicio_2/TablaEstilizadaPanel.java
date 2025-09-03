@@ -9,6 +9,9 @@ public abstract class TablaEstilizadaPanel extends JPanel {
     protected DefaultTableModel modeloTabla;
     protected JLabel lblOptimo;
     protected int filaOptima = -1;
+    protected int filaOptimaVan = -1;
+    protected double mejorCapacidadVan = -1;
+    protected double mejorVan = Double.NEGATIVE_INFINITY;
 
     public TablaEstilizadaPanel(String titulo, DefaultTableModel modeloTabla, JPanel panelSuperior, JPanel panelInferior) {
         EstilosUI.aplicarEstiloPanel(this);
@@ -25,8 +28,10 @@ public abstract class TablaEstilizadaPanel extends JPanel {
             @Override
             public Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column) {
                 Component c = super.prepareRenderer(renderer, row, column);
-                if (row == filaOptima) {
-                    c.setBackground(new Color(180, 255, 180));
+                if (row == filaOptima && filaOptima >= 0) {
+                    c.setBackground(new Color(180, 255, 180)); // verde para ganancia
+                } else if (row == filaOptimaVan && filaOptimaVan >= 0) {
+                    c.setBackground(new Color(180, 220, 255)); // azul claro para VAN
                 } else if (column == 0) {
                     c.setBackground(new Color(255, 255, 230));
                 } else if (column == 1) {
@@ -45,7 +50,7 @@ public abstract class TablaEstilizadaPanel extends JPanel {
         JScrollPane scroll = new JScrollPane(tabla);
         scroll.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         add(scroll, BorderLayout.CENTER);
-        lblOptimo = new JLabel("Mejor capacidad: - | Ganancia máxima: -");
+        lblOptimo = new JLabel("Mejor capacidad: - | Ganancia máxima: - | Mejor VAN: - | Capacidad VAN: -");
         EstilosUI.aplicarEstiloLabel(lblOptimo);
         lblOptimo.setFont(new Font("Segoe UI", Font.BOLD, 16));
         if (panelInferior == null) {
@@ -61,10 +66,17 @@ public abstract class TablaEstilizadaPanel extends JPanel {
         }
     }
 
-    protected void actualizarOptimo(double mejorPrecio, double mejorGanancia, int filaOptima) {
+    public void actualizarOptimo(double mejorCapacidad, double mejorGanancia, int filaOptima, double mejorCapacidadVan, double mejorVan, int filaOptimaVan) {
         this.filaOptima = filaOptima;
-        lblOptimo.setText("Mejor capacidad: " + (filaOptima >= 0 ? String.format("%.2f", mejorPrecio) : "-") + " | Ganancia máxima: " + (filaOptima >= 0 ? String.format("%.2f", mejorGanancia) : "-"));
+        this.filaOptimaVan = filaOptimaVan;
+        this.mejorCapacidadVan = mejorCapacidadVan;
+        this.mejorVan = mejorVan;
+        lblOptimo.setText(
+            "Mejor capacidad: " + (filaOptima >= 0 ? String.format("%.2f", mejorCapacidad) : "-") +
+            " | Ganancia máxima: " + (filaOptima >= 0 ? String.format("$%,.0f", mejorGanancia) : "-") +
+            " | Mejor VAN: " + (filaOptimaVan >= 0 ? String.format("$%,.0f", mejorVan) : "-") +
+            " | Capacidad VAN: " + (filaOptimaVan >= 0 ? String.format("%.2f", mejorCapacidadVan) : "-")
+        );
         tabla.repaint();
     }
 }
-

@@ -80,9 +80,13 @@ public class PanelTablaRandom extends TablaEstilizadaPanel {
             if (min > max || filas < 1) throw new Exception();
             modeloTabla.setRowCount(0);
             filaOptima = -1;
+            filaOptimaVan = -1;
             ControladorParametros params = ControladorParametros.getInstancia();
             double mejorGanancia = Double.NEGATIVE_INFINITY;
             int mejorCapacidad = 0;
+            double mejorVan = Double.NEGATIVE_INFINITY;
+            int mejorCapacidadVan = 0;
+            int filaVan = -1;
             double tasaDescuento = params.getTasaDescuento();
             Random rand = new Random();
             for (int i = 0; i < filas; i++) {
@@ -112,8 +116,13 @@ public class PanelTablaRandom extends TablaEstilizadaPanel {
                     mejorCapacidad = capacidad;
                     filaOptima = i;
                 }
+                if (van > mejorVan) {
+                    mejorVan = van;
+                    mejorCapacidadVan = capacidad;
+                    filaVan = i;
+                }
             }
-            actualizarOptimo(mejorCapacidad, mejorGanancia, filaOptima);
+            actualizarOptimo(mejorCapacidad, mejorGanancia, filaOptima, mejorCapacidadVan, mejorVan, filaVan);
         } catch (Exception ex) {
             modeloTabla.setRowCount(0);
             lblOptimo.setText("Datos inválidos");

@@ -61,6 +61,9 @@ public class PanelTablaManual extends TablaEstilizadaPanel {
         double mejorGanancia = Double.NEGATIVE_INFINITY;
         int mejorCapacidad = 0;
         filaOptima = -1;
+        double mejorVan = Double.NEGATIVE_INFINITY;
+        int mejorCapacidadVan = 0;
+        int filaVan = -1;
         double tasaDescuento = params.getTasaDescuento();
         for (int i = 0; i < modeloTabla.getRowCount(); i++) {
             try {
@@ -91,12 +94,17 @@ public class PanelTablaManual extends TablaEstilizadaPanel {
                     mejorCapacidad = capacidad;
                     filaOptima = i;
                 }
+                if (van > mejorVan) {
+                    mejorVan = van;
+                    mejorCapacidadVan = capacidad;
+                    filaVan = i;
+                }
             } catch (Exception ex) {
                 modeloTabla.setValueAt("-", i, 1);
                 modeloTabla.setValueAt("-", i, 2);
             }
         }
-        actualizarOptimo(mejorCapacidad, mejorGanancia, filaOptima);
+        actualizarOptimo(mejorCapacidad, mejorGanancia, filaOptima, mejorCapacidadVan, mejorVan, filaVan);
     }
 
     private double calcularVAN(int capacidad, int demandaInicial, double crecimientoAnual, double costoCapacidadUnitaria, double precioVentaUnitario, double costoVariableUnitario, double costoOperativoUnitario, double tasaDescuento) {
