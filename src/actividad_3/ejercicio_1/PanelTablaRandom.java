@@ -10,6 +10,11 @@ public class PanelTablaRandom extends TablaEstilizadaPanel {
     private final JTextField txtMax;
     private final JTextField txtFilas;
 
+    /**
+     * Constructor del panel aleatorio de precios y ganancias.
+     * Inicializa la interfaz y los controles para generar una tabla de precios aleatorios.
+     * Permite al usuario definir el rango y la cantidad de precios a analizar.
+     */
     public PanelTablaRandom() {
         super(
             "Tabla aleatoria de precios y ganancias",
@@ -29,6 +34,9 @@ public class PanelTablaRandom extends TablaEstilizadaPanel {
         btnGenerar.addActionListener(e -> generarTabla());
     }
 
+    /**
+     * Clase interna que agrupa los controles del panel superior para ingresar parámetros aleatorios.
+     */
     private static class PanelSuperiorRandom {
         JPanel panel;
         JTextField txtMin, txtMax, txtFilas;
@@ -42,6 +50,10 @@ public class PanelTablaRandom extends TablaEstilizadaPanel {
         }
     }
 
+    /**
+     * Crea el panel superior con controles para definir el rango y la cantidad de precios aleatorios.
+     * @return PanelSuperiorRandom con los campos y botón para generar la tabla.
+     */
     private static PanelSuperiorRandom crearPanelSuperior() {
         JPanel panelTop = new JPanel(new FlowLayout(FlowLayout.LEFT, 18, 12));
         EstilosUI.aplicarEstiloPanel(panelTop);
@@ -68,6 +80,12 @@ public class PanelTablaRandom extends TablaEstilizadaPanel {
         return new PanelSuperiorRandom(panelTop, txtMin, txtMax, txtFilas, btnGenerar);
     }
 
+    /**
+     * Genera la tabla de resultados con precios aleatorios dentro del rango definido.
+     * Calcula la ganancia para cada precio y determina la fila óptima.
+     * Actualiza la tabla y los indicadores óptimos en la interfaz.
+     * Si los datos ingresados son inválidos, muestra un mensaje de error y limpia la tabla.
+     */
     private void generarTabla() {
         modeloTabla.setRowCount(0);
         filaOptima = -1;

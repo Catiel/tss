@@ -6,6 +6,11 @@ import java.awt.*;
 
 public class PanelTablaManual extends TablaEstilizadaPanel {
 
+    /**
+     * Constructor del panel manual.
+     * Permite al usuario definir manualmente las capacidades a analizar y calcular los resultados.
+     * Configura los componentes visuales y los listeners para crear la tabla y calcular los resultados.
+     */
     public PanelTablaManual() {
         super(
             "Tabla manual de beneficio total versus unidades de capacidad",
@@ -38,6 +43,11 @@ public class PanelTablaManual extends TablaEstilizadaPanel {
         btnCalcular.addActionListener(e -> calcularGanancias());
     }
 
+    /**
+     * Crea el panel superior con controles para definir la cantidad de filas de la tabla.
+     * Permite al usuario especificar cuántas capacidades analizar.
+     * @return JPanel con los controles de cantidad de filas y botón para crear la tabla.
+     */
     private static JPanel crearPanelSuperior() {
         JPanel panelSuperior = new JPanel(new FlowLayout(FlowLayout.LEFT));
         EstilosUI.aplicarEstiloPanel(panelSuperior);
@@ -56,6 +66,11 @@ public class PanelTablaManual extends TablaEstilizadaPanel {
         return panelSuperior;
     }
 
+    /**
+     * Calcula la ganancia total y el VAN para cada capacidad ingresada en la tabla.
+     * Actualiza la tabla con los resultados y determina las filas óptimas de ganancia y VAN.
+     * Si hay errores en los datos, muestra '-' en las celdas correspondientes.
+     */
     private void calcularGanancias() {
         ControladorParametros params = ControladorParametros.getInstancia();
         double mejorGanancia = Double.NEGATIVE_INFINITY;
@@ -107,6 +122,18 @@ public class PanelTablaManual extends TablaEstilizadaPanel {
         actualizarOptimo(mejorCapacidad, mejorGanancia, filaOptima, mejorCapacidadVan, mejorVan, filaVan);
     }
 
+    /**
+     * Calcula el Valor Actual Neto (VAN) para una capacidad dada usando los resultados anuales.
+     * @param capacidad Capacidad instalada de producción.
+     * @param demandaInicial Demanda inicial.
+     * @param crecimientoAnual Crecimiento anual de la demanda.
+     * @param costoCapacidadUnitaria Costo de inversión por unidad de capacidad.
+     * @param precioVentaUnitario Precio de venta por unidad producida.
+     * @param costoVariableUnitario Costo variable por unidad producida.
+     * @param costoOperativoUnitario Costo fijo anual por unidad de capacidad instalada.
+     * @param tasaDescuento Tasa de descuento anual para el cálculo de VAN.
+     * @return VAN calculado para los 10 años.
+     */
     private double calcularVAN(int capacidad, int demandaInicial, double crecimientoAnual, double costoCapacidadUnitaria, double precioVentaUnitario, double costoVariableUnitario, double costoOperativoUnitario, double tasaDescuento) {
         double van = 0;
         ModeloWozacCalculo.ResultadoAnual[] resultados = ModeloWozacCalculo.calcularModelo(capacidad, demandaInicial, crecimientoAnual, costoCapacidadUnitaria, precioVentaUnitario, costoVariableUnitario, costoOperativoUnitario);

@@ -10,6 +10,15 @@ public abstract class TablaEstilizadaPanel extends JPanel {
     protected JLabel lblOptimo;
     protected int filaOptima = -1;
 
+    /**
+     * Constructor del panel de tabla estilizada para Ejercicio 1.
+     * Configura la interfaz, el estilo y los componentes para mostrar la tabla de resultados.
+     * Permite agregar paneles superiores/inferiores personalizados.
+     * @param titulo Título del panel.
+     * @param modeloTabla Modelo de datos de la tabla.
+     * @param panelSuperior Panel adicional en la parte superior (puede ser null).
+     * @param panelInferior Panel adicional en la parte inferior (puede ser null).
+     */
     public TablaEstilizadaPanel(String titulo, DefaultTableModel modeloTabla, JPanel panelSuperior, JPanel panelInferior) {
         EstilosUI.aplicarEstiloPanel(this);
         setLayout(new BorderLayout(10, 10));
@@ -61,10 +70,16 @@ public abstract class TablaEstilizadaPanel extends JPanel {
         }
     }
 
+    /**
+     * Actualiza los indicadores óptimos y el resaltado de la fila en la tabla.
+     * Muestra el mejor precio y la ganancia máxima en la parte inferior del panel.
+     * @param mejorPrecio Precio óptimo encontrado.
+     * @param mejorGanancia Ganancia máxima encontrada.
+     * @param filaOptima Índice de la fila óptima.
+     */
     protected void actualizarOptimo(double mejorPrecio, double mejorGanancia, int filaOptima) {
         this.filaOptima = filaOptima;
         lblOptimo.setText("Mejor precio: " + (filaOptima >= 0 ? String.format("%.2f", mejorPrecio) : "-") + " | Ganancia máxima: " + (filaOptima >= 0 ? String.format("%.2f", mejorGanancia) : "-"));
         tabla.repaint();
     }
 }
-

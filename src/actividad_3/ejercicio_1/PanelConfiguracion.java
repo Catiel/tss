@@ -10,6 +10,11 @@ public class PanelConfiguracion extends JPanel {
     private final JTextField txtElasticidad;
     private final JLabel lblCosteUnitarioLibras;
 
+    /**
+     * Constructor del panel de configuración de parámetros del modelo de precios.
+     * Inicializa la interfaz gráfica y los controles para modificar los parámetros del modelo.
+     * Permite al usuario ingresar valores y ver el costo unitario equivalente en libras.
+     */
     public PanelConfiguracion() {
         EstilosUI.aplicarEstiloPanel(this);
         setLayout(new GridBagLayout());
@@ -91,6 +96,10 @@ public class PanelConfiguracion extends JPanel {
         actualizarCosteLibras();
     }
 
+    /**
+     * Calcula y actualiza el costo unitario equivalente en libras según los valores ingresados.
+     * Si los datos no son válidos, muestra '-'.
+     */
     private void actualizarCosteLibras() {
         try {
             double costeUnitario = Double.parseDouble(txtCosteUnitario.getText());
@@ -102,6 +111,11 @@ public class PanelConfiguracion extends JPanel {
         }
     }
 
+    /**
+     * Guarda los cambios realizados en los campos de parámetros.
+     * Valida y actualiza los valores en el controlador de parámetros.
+     * Si los datos son válidos, muestra un mensaje de éxito; si hay error, muestra un mensaje de advertencia.
+     */
     private void guardarCambios() {
         try {
             double costeUnitario = Double.parseDouble(txtCosteUnitario.getText());
@@ -125,6 +139,9 @@ public class PanelConfiguracion extends JPanel {
         }
     }
 
+    /**
+     * Listener simple para detectar cambios en los campos y actualizar el costo en libras.
+     */
     private static class SimpleDocumentListener implements javax.swing.event.DocumentListener {
         private final Runnable onChange;
         public SimpleDocumentListener(Runnable onChange) { this.onChange = onChange; }

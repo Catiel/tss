@@ -5,6 +5,10 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
 public class PanelTablaAuto extends TablaEstilizadaPanel {
+    /**
+     * Constructor del panel automático de precios y ganancias.
+     * Inicializa la tabla y genera los resultados automáticamente para precios entre 44 y 100 (paso 1).
+     */
     public PanelTablaAuto() {
         super(
             "Tabla automática de precios y ganancias (44 a 100, paso 1)",
@@ -18,6 +22,11 @@ public class PanelTablaAuto extends TablaEstilizadaPanel {
         generarTabla();
     }
 
+    /**
+     * Genera la tabla de resultados para precios entre 44 y 100 (paso 1).
+     * Calcula la ganancia para cada precio y determina la fila óptima.
+     * Actualiza la tabla y los indicadores óptimos en la interfaz.
+     */
     public void generarTabla() {
         modeloTabla.setRowCount(0);
         filaOptima = -1;

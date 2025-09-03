@@ -3,6 +3,10 @@ package actividad_3.ejercicio_2;
 import javax.swing.table.DefaultTableModel;
 
 public class PanelTablaAuto extends TablaEstilizadaPanel {
+    /**
+     * Constructor del panel automático.
+     * Inicializa la tabla y genera los resultados automáticamente para capacidades típicas.
+     */
     public PanelTablaAuto() {
         super(
             "Tabla automática de beneficio total versus unidades de capacidad",
@@ -16,6 +20,11 @@ public class PanelTablaAuto extends TablaEstilizadaPanel {
         generarTabla();
     }
 
+    /**
+     * Genera la tabla de resultados para capacidades típicas (de 40000 a 80000 en pasos de 5000).
+     * Calcula la ganancia total y el VAN para cada capacidad, y determina las filas óptimas.
+     * Actualiza la tabla y los indicadores óptimos en la interfaz.
+     */
     private void generarTabla() {
         modeloTabla.setRowCount(0);
         filaOptima = -1;
@@ -64,6 +73,18 @@ public class PanelTablaAuto extends TablaEstilizadaPanel {
         actualizarOptimo(mejorCapacidad, mejorGanancia, filaOptima, mejorCapacidadVan, mejorVan, filaVan);
     }
 
+    /**
+     * Calcula el Valor Actual Neto (VAN) para una capacidad dada usando los resultados anuales.
+     * @param capacidad Capacidad instalada de producción.
+     * @param demandaInicial Demanda inicial.
+     * @param crecimientoAnual Crecimiento anual de la demanda.
+     * @param costoCapacidadUnitaria Costo de inversión por unidad de capacidad.
+     * @param precioVentaUnitario Precio de venta por unidad producida.
+     * @param costoVariableUnitario Costo variable por unidad producida.
+     * @param costoOperativoUnitario Costo fijo anual por unidad de capacidad instalada.
+     * @param tasaDescuento Tasa de descuento anual para el cálculo de VAN.
+     * @return VAN calculado para los 10 años.
+     */
     private double calcularVAN(int capacidad, int demandaInicial, double crecimientoAnual, double costoCapacidadUnitaria, double precioVentaUnitario, double costoVariableUnitario, double costoOperativoUnitario, double tasaDescuento) {
         double van = 0;
         ModeloWozacCalculo.ResultadoAnual[] resultados = ModeloWozacCalculo.calcularModelo(capacidad, demandaInicial, crecimientoAnual, costoCapacidadUnitaria, precioVentaUnitario, costoVariableUnitario, costoOperativoUnitario);

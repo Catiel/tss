@@ -4,7 +4,20 @@ import com.formdev.flatlaf.FlatLightLaf;
 
 import javax.swing.*;
 
+/**
+ * Ventana principal de la aplicación del Ejercicio 2.
+ * Permite analizar el modelo de Wozac con diferentes paneles interactivos:
+ * - Modelo de precios y utilidades
+ * - Tabla automática
+ * - Tabla manual
+ * - Tabla aleatoria
+ * - Configuración de parámetros
+ */
 public class Ejercicio2App extends JFrame {
+    /**
+     * Constructor. Inicializa la ventana principal, los paneles y la interfaz gráfica.
+     * Aplica el Look & Feel FlatLaf y configura las pestañas de la aplicación.
+     */
     public Ejercicio2App() {
         try {
             UIManager.setLookAndFeel(new FlatLightLaf());
@@ -25,6 +38,9 @@ public class Ejercicio2App extends JFrame {
         add(pestanas);
     }
 
+    /**
+     * Método principal. Lanza la aplicación Swing en el hilo de eventos.
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             Ejercicio2App app = new Ejercicio2App();

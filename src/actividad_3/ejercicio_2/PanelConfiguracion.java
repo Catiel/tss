@@ -12,6 +12,11 @@ public class PanelConfiguracion extends JPanel {
     private final JTextField txtCostoOperativoUnitario;
     private final JTextField txtTasaDescuento;
 
+    /**
+     * Constructor del panel de configuración de parámetros del modelo Wozac.
+     * Inicializa la interfaz gráfica y carga los valores actuales de los parámetros.
+     * Permite al usuario modificar los parámetros y guardarlos.
+     */
     public PanelConfiguracion() {
         EstilosUI.aplicarEstiloPanel(this);
         setLayout(new GridBagLayout());
@@ -114,6 +119,11 @@ public class PanelConfiguracion extends JPanel {
         btnGuardar.addActionListener(e -> guardarCambios());
     }
 
+    /**
+     * Guarda los cambios realizados en los campos de parámetros.
+     * Valida y actualiza los valores en el controlador de parámetros.
+     * Si los datos son válidos, muestra un mensaje de éxito; si hay error, muestra un mensaje de advertencia.
+     */
     private void guardarCambios() {
         ControladorParametros params = ControladorParametros.getInstancia();
         try {

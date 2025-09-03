@@ -9,6 +9,10 @@ public class PanelModeloPrecios extends JPanel {
     private final JLabel lblGananciaTotal;
     private final DefaultTableModel modeloTabla;
 
+    /**
+     * Constructor. Inicializa la interfaz del panel para el modelo de decisión de capacidad y utilidades esperadas.
+     * Configura los componentes visuales y los listeners para actualizar los resultados automáticamente.
+     */
     public PanelModeloPrecios() {
         EstilosUI.aplicarEstiloPanel(this);
         setLayout(new GridBagLayout());
@@ -67,6 +71,11 @@ public class PanelModeloPrecios extends JPanel {
         actualizarResultados();
     }
 
+    /**
+     * Actualiza la tabla de resultados y la ganancia total en función de la capacidad ingresada.
+     * Obtiene los parámetros del modelo, ejecuta el cálculo y muestra los resultados en la tabla.
+     * Si hay un error en los datos, limpia la tabla y muestra '-'.
+     */
     private void actualizarResultados() {
         try {
             int capacidad = Integer.parseInt(txtCapacidad.getText());
@@ -102,6 +111,9 @@ public class PanelModeloPrecios extends JPanel {
         }
     }
 
+    /**
+     * Listener simple para detectar cambios en el campo de capacidad y actualizar los resultados.
+     */
     private static class SimpleDocumentListener implements javax.swing.event.DocumentListener {
         private final Runnable onChange;
         public SimpleDocumentListener(Runnable onChange) { this.onChange = onChange; }

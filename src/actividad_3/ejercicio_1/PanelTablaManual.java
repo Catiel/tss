@@ -6,6 +6,11 @@ import java.awt.*;
 
 public class PanelTablaManual extends TablaEstilizadaPanel {
 
+    /**
+     * Constructor del panel manual de precios y ganancias.
+     * Permite al usuario definir manualmente los precios a analizar y calcular las ganancias.
+     * Configura los componentes visuales y los listeners para crear la tabla y calcular los resultados.
+     */
     public PanelTablaManual() {
         super(
             "Tabla manual de precios y ganancias",
@@ -38,6 +43,11 @@ public class PanelTablaManual extends TablaEstilizadaPanel {
         btnCalcular.addActionListener(e -> calcularGanancias());
     }
 
+    /**
+     * Crea el panel superior con controles para definir la cantidad de filas de la tabla.
+     * Permite al usuario especificar cuántos precios analizar.
+     * @return JPanel con los controles de cantidad de filas y botón para crear la tabla.
+     */
     private static JPanel crearPanelSuperior() {
         JPanel panelSuperior = new JPanel(new FlowLayout(FlowLayout.LEFT));
         EstilosUI.aplicarEstiloPanel(panelSuperior);
@@ -57,6 +67,11 @@ public class PanelTablaManual extends TablaEstilizadaPanel {
         return panelSuperior;
     }
 
+    /**
+     * Calcula la ganancia para cada precio ingresado en la tabla.
+     * Actualiza la tabla con los resultados y determina la fila óptima de ganancia.
+     * Si hay errores en los datos, muestra un mensaje de advertencia y detiene el cálculo.
+     */
     private void calcularGanancias() {
         ControladorParametros params = ControladorParametros.getInstancia();
         double mejorGanancia = Double.NEGATIVE_INFINITY;

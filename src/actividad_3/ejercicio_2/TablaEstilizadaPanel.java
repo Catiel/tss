@@ -13,6 +13,15 @@ public abstract class TablaEstilizadaPanel extends JPanel {
     protected double mejorCapacidadVan = -1;
     protected double mejorVan = Double.NEGATIVE_INFINITY;
 
+    /**
+     * Constructor del panel de tabla estilizada.
+     * Configura la interfaz, el estilo y los componentes para mostrar la tabla de resultados.
+     * Permite agregar paneles superiores/inferiores personalizados.
+     * @param titulo Título del panel.
+     * @param modeloTabla Modelo de datos de la tabla.
+     * @param panelSuperior Panel adicional en la parte superior (puede ser null).
+     * @param panelInferior Panel adicional en la parte inferior (puede ser null).
+     */
     public TablaEstilizadaPanel(String titulo, DefaultTableModel modeloTabla, JPanel panelSuperior, JPanel panelInferior) {
         EstilosUI.aplicarEstiloPanel(this);
         setLayout(new BorderLayout(10, 10));
@@ -66,6 +75,16 @@ public abstract class TablaEstilizadaPanel extends JPanel {
         }
     }
 
+    /**
+     * Actualiza los indicadores óptimos y el resaltado de filas en la tabla.
+     * Muestra la mejor capacidad y ganancia máxima, así como el mejor VAN y su capacidad.
+     * @param mejorCapacidad Capacidad con mayor ganancia.
+     * @param mejorGanancia Valor de la ganancia máxima.
+     * @param filaOptima Índice de la fila óptima de ganancia.
+     * @param mejorCapacidadVan Capacidad con mayor VAN.
+     * @param mejorVan Valor máximo de VAN.
+     * @param filaOptimaVan Índice de la fila óptima de VAN.
+     */
     public void actualizarOptimo(double mejorCapacidad, double mejorGanancia, int filaOptima, double mejorCapacidadVan, double mejorVan, int filaOptimaVan) {
         this.filaOptima = filaOptima;
         this.filaOptimaVan = filaOptimaVan;

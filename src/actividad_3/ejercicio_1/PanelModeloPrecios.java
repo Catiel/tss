@@ -8,6 +8,11 @@ public class PanelModeloPrecios extends JPanel {
     private final JLabel lblDemanda;
     private final JLabel lblGanancia;
 
+    /**
+     * Constructor del panel de modelo de precios.
+     * Inicializa la interfaz gráfica y los controles para probar precios y ver demanda y ganancia.
+     * Permite al usuario ingresar un precio de prueba y ver los resultados en tiempo real.
+     */
     public PanelModeloPrecios() {
         EstilosUI.aplicarEstiloPanel(this);
         setLayout(new GridBagLayout());
@@ -54,6 +59,11 @@ public class PanelModeloPrecios extends JPanel {
         actualizarResultados();
     }
 
+    /**
+     * Calcula y actualiza la demanda y la ganancia según el precio ingresado.
+     * Utiliza los parámetros del modelo para realizar el cálculo.
+     * Si el dato ingresado no es válido, muestra '-'.
+     */
     private void actualizarResultados() {
         try {
             double precio = Double.parseDouble(txtPrecioPrueba.getText());
@@ -70,6 +80,9 @@ public class PanelModeloPrecios extends JPanel {
         }
     }
 
+    /**
+     * Listener simple para detectar cambios en el campo de precio y actualizar los resultados.
+     */
     private static class SimpleDocumentListener implements javax.swing.event.DocumentListener {
         private final Runnable onChange;
         public SimpleDocumentListener(Runnable onChange) { this.onChange = onChange; }

@@ -10,6 +10,11 @@ public class PanelTablaRandom extends TablaEstilizadaPanel {
     private final JTextField txtMax;
     private final JTextField txtFilas;
 
+    /**
+     * Constructor del panel aleatorio.
+     * Inicializa la interfaz y los controles para generar una tabla de capacidades aleatorias.
+     * Permite al usuario definir el rango y la cantidad de capacidades a analizar.
+     */
     public PanelTablaRandom() {
         super(
             "Tabla aleatoria de beneficio total versus unidades de capacidad",
@@ -29,6 +34,9 @@ public class PanelTablaRandom extends TablaEstilizadaPanel {
         btnGenerar.addActionListener(e -> generarTabla());
     }
 
+    /**
+     * Clase interna que agrupa los controles del panel superior para ingresar parámetros aleatorios.
+     */
     private static class PanelSuperiorRandom {
         JPanel panel;
         JTextField txtMin, txtMax, txtFilas;
@@ -42,6 +50,10 @@ public class PanelTablaRandom extends TablaEstilizadaPanel {
         }
     }
 
+    /**
+     * Crea el panel superior con controles para definir el rango y la cantidad de capacidades aleatorias.
+     * @return PanelSuperiorRandom con los campos y botón para generar la tabla.
+     */
     private static PanelSuperiorRandom crearPanelSuperior() {
         JPanel panelTop = new JPanel(new FlowLayout(FlowLayout.LEFT, 18, 12));
         EstilosUI.aplicarEstiloPanel(panelTop);
@@ -72,6 +84,12 @@ public class PanelTablaRandom extends TablaEstilizadaPanel {
         return new PanelSuperiorRandom(panelTop, txtMin, txtMax, txtFilas, btnGenerar);
     }
 
+    /**
+     * Genera la tabla de resultados con capacidades aleatorias dentro del rango definido.
+     * Calcula la ganancia total y el VAN para cada capacidad, y determina las filas óptimas.
+     * Actualiza la tabla y los indicadores óptimos en la interfaz.
+     * Si los datos ingresados son inválidos, muestra un mensaje de error y limpia la tabla.
+     */
     private void generarTabla() {
         try {
             int min = Integer.parseInt(txtMin.getText());
@@ -129,6 +147,18 @@ public class PanelTablaRandom extends TablaEstilizadaPanel {
         }
     }
 
+    /**
+     * Calcula el Valor Actual Neto (VAN) para una capacidad dada usando los resultados anuales.
+     * @param capacidad Capacidad instalada de producción.
+     * @param demandaInicial Demanda inicial.
+     * @param crecimientoAnual Crecimiento anual de la demanda.
+     * @param costoCapacidadUnitaria Costo de inversión por unidad de capacidad.
+     * @param precioVentaUnitario Precio de venta por unidad producida.
+     * @param costoVariableUnitario Costo variable por unidad producida.
+     * @param costoOperativoUnitario Costo fijo anual por unidad de capacidad instalada.
+     * @param tasaDescuento Tasa de descuento anual para el cálculo de VAN.
+     * @return VAN calculado para los 10 años.
+     */
     private double calcularVAN(int capacidad, int demandaInicial, double crecimientoAnual, double costoCapacidadUnitaria, double precioVentaUnitario, double costoVariableUnitario, double costoOperativoUnitario, double tasaDescuento) {
         double van = 0;
         ModeloWozacCalculo.ResultadoAnual[] resultados = ModeloWozacCalculo.calcularModelo(capacidad, demandaInicial, crecimientoAnual, costoCapacidadUnitaria, precioVentaUnitario, costoVariableUnitario, costoOperativoUnitario);

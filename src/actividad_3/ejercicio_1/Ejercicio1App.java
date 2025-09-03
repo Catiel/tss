@@ -5,7 +5,22 @@ import com.formdev.flatlaf.FlatLightLaf;
 import javax.swing.*;
 import java.awt.*;
 
+/**
+ * Ventana principal de la aplicación del Ejercicio 1.
+ * Permite analizar el modelo de ganancias con diferentes paneles interactivos:
+ * - Modelo de precios
+ * - Tabla automática
+ * - Tabla manual
+ * - Tabla aleatoria
+ * - Sensibilidad al tipo de cambio
+ * - Configuración de parámetros
+ * Incluye un listener para actualizar la tabla automática al cambiar de pestaña.
+ */
 public class Ejercicio1App extends JFrame {
+    /**
+     * Constructor. Inicializa la ventana principal, los paneles y la interfaz gráfica.
+     * Aplica el Look & Feel FlatLaf y configura las pestañas de la aplicación.
+     */
     public Ejercicio1App() {
         try {
             UIManager.setLookAndFeel(new FlatLightLaf());
@@ -43,6 +58,9 @@ public class Ejercicio1App extends JFrame {
         });
     }
 
+    /**
+     * Método principal. Lanza la aplicación Swing en el hilo de eventos.
+     */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             Ejercicio1App app = new Ejercicio1App();

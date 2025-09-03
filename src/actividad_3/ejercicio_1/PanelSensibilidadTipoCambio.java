@@ -13,6 +13,11 @@ public class PanelSensibilidadTipoCambio extends JPanel {
     private final JTable tabla;
     private int filaOptima = -1;
 
+    /**
+     * Constructor del panel de análisis de sensibilidad para el tipo de cambio.
+     * Inicializa la interfaz gráfica, los controles y la tabla de resultados.
+     * Permite al usuario definir el rango y el paso del tipo de cambio a analizar.
+     */
     public PanelSensibilidadTipoCambio() {
         EstilosUI.aplicarEstiloPanel(this);
         setLayout(new BorderLayout(10, 10));
@@ -64,6 +69,12 @@ public class PanelSensibilidadTipoCambio extends JPanel {
         btnAnalizar.addActionListener(e -> analizarSensibilidad());
     }
 
+    /**
+     * Realiza el análisis de sensibilidad variando el tipo de cambio en el rango definido.
+     * Para cada tipo de cambio, calcula el precio óptimo y la ganancia máxima.
+     * Resalta la fila con la mayor ganancia en la tabla.
+     * Si los datos ingresados son inválidos, muestra un mensaje de error.
+     */
     private void analizarSensibilidad() {
         modeloTabla.setRowCount(0);
         filaOptima = -1;
