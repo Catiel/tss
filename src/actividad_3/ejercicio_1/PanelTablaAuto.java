@@ -18,7 +18,7 @@ public class PanelTablaAuto extends TablaEstilizadaPanel {
         generarTabla();
     }
 
-    private void generarTabla() {
+    public void generarTabla() {
         modeloTabla.setRowCount(0);
         filaOptima = -1;
         ControladorParametros params = ControladorParametros.getInstancia();
