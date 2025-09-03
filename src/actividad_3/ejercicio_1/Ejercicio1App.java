@@ -22,12 +22,14 @@ public class Ejercicio1App extends JFrame {
         PanelTablaManual panelTablaManual = new PanelTablaManual();
         PanelTablaRandom panelTablaRandom = new PanelTablaRandom();
         PanelConfiguracion panelConfiguracion = new PanelConfiguracion();
+        PanelSensibilidadTipoCambio panelSensibilidadTipoCambio = new PanelSensibilidadTipoCambio();
 
         JTabbedPane pestanas = new JTabbedPane();
         pestanas.addTab("Modelo de Precios", panelModeloPrecios);
         pestanas.addTab("Tabla Automática", panelTablaAuto);
         pestanas.addTab("Tabla Manual", panelTablaManual);
         pestanas.addTab("Tabla Aleatoria", panelTablaRandom);
+        pestanas.addTab("Sensibilidad Tipo de Cambio", panelSensibilidadTipoCambio);
         pestanas.addTab("Configuración", panelConfiguracion);
         add(pestanas);
 
