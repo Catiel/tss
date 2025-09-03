@@ -70,7 +70,6 @@ public class PanelModeloPrecios extends JPanel {
         }
     }
 
-    // DocumentListener simple para cambios en JTextField
     private static class SimpleDocumentListener implements javax.swing.event.DocumentListener {
         private final Runnable onChange;
         public SimpleDocumentListener(Runnable onChange) { this.onChange = onChange; }

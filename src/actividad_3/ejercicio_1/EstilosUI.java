@@ -5,6 +5,10 @@ import java.awt.*;
 
 public class EstilosUI {
     public static void aplicarEstiloBoton(JButton boton) {
+        botonuevo(boton);
+    }
+
+    public static void botonuevo(JButton boton) {
         boton.setBackground(new Color(60, 130, 200));
         boton.setForeground(Color.WHITE);
         boton.setFocusPainted(false);
@@ -18,6 +22,10 @@ public class EstilosUI {
     }
 
     public static void aplicarEstiloTabla(JTable tabla) {
+        tablanueva(tabla);
+    }
+
+    public static void tablanueva(JTable tabla) {
         tabla.getTableHeader().setBackground(new Color(60, 130, 200));
         tabla.getTableHeader().setForeground(Color.WHITE);
         tabla.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
