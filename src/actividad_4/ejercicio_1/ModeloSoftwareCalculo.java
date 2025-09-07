@@ -145,5 +145,77 @@ public class ModeloSoftwareCalculo {
 		}
 		return van;
 	}
-}
 
+	/**
+	 * Calcula los resultados año a año para ambos escenarios (con y sin versión francesa),
+	 * el VAN de cada uno y la diferencia, usando la tasa de descuento indicada.
+	 */
+	public static class ResultadoComparativo {
+        public ResultadoAnual[] resultadosCon;
+        public ResultadoAnual[] resultadosSin;
+        public double vanCon;
+        public double vanSin;
+        public double diferenciaVAN;
+    }
+
+    public static ResultadoComparativo calcularComparativo(ControladorParametros params, int capacidad, double tasaDescuento) {
+        int H = params.getHorizonteAnios();
+        ResultadoAnual[] resCon = new ResultadoAnual[H];
+        ResultadoAnual[] resSin = new ResultadoAnual[H];
+        double demandaInicial = params.getTamanoActualMercado();
+        double g1 = params.getCrecimientoPrimeros5();
+        double g2 = params.getCrecimientoProximos5();
+        double cuotaCon = params.getCuotaMercadoConNuevaVersion();
+        double cuotaSin = params.getCuotaMercadoVersionIngles();
+        double precio = params.getPrecioVentaUnitario();
+        double costeVar = params.getCosteVariableUnitario();
+        double costeFijo = params.getCosteFijoCrearVersion();
+
+        for (int i = 0; i < H; i++) {
+            ResultadoAnual rCon = new ResultadoAnual();
+            ResultadoAnual rSin = new ResultadoAnual();
+            rCon.anio = rSin.anio = i + 1;
+            // Calcular tamaño de mercado compuesto por tramos
+            int n = i + 1;
+            int tramo1 = Math.min(n, 5);
+            int tramo2 = Math.max(0, n - 5);
+            double marketYear = demandaInicial * Math.pow(1.0 + g1, tramo1) * Math.pow(1.0 + g2, tramo2);
+            rCon.demanda = rSin.demanda = (int)Math.round(marketYear);
+
+            // Solo la versión francesa tiene inversión inicial en t=0
+            rCon.inversionInicial = (i == 0) ? costeFijo : 0.0;
+            rSin.inversionInicial = 0.0;
+            rCon.costoFijoOperacion = rSin.costoFijoOperacion = 0.0;
+
+            rCon.unidadesProducidas = Math.round(rCon.demanda * cuotaCon);
+            rSin.unidadesProducidas = Math.round(rSin.demanda * cuotaSin);
+
+            rCon.ingresosVentas = rCon.unidadesProducidas * precio;
+            rSin.ingresosVentas = rSin.unidadesProducidas * precio;
+            rCon.costoVariableProduccion = rCon.unidadesProducidas * costeVar;
+            rSin.costoVariableProduccion = rSin.unidadesProducidas * costeVar;
+            rCon.utilidad = rCon.ingresosVentas - rCon.costoVariableProduccion;
+            rSin.utilidad = rSin.ingresosVentas - rSin.costoVariableProduccion;
+
+            resCon[i] = rCon;
+            resSin[i] = rSin;
+        }
+
+        // Calcular VAN para ambos escenarios
+        double vanCon = 0.0, vanSin = 0.0;
+        for (int i = 0; i < H; i++) {
+            vanCon += resCon[i].utilidad / Math.pow(1.0 + tasaDescuento, i + 1);
+            vanSin += resSin[i].utilidad / Math.pow(1.0 + tasaDescuento, i + 1);
+        }
+        // Restar inversión inicial de la versión francesa
+        if (H > 0) vanCon -= resCon[0].inversionInicial;
+
+        ResultadoComparativo resultado = new ResultadoComparativo();
+        resultado.resultadosCon = resCon;
+        resultado.resultadosSin = resSin;
+        resultado.vanCon = vanCon;
+        resultado.vanSin = vanSin;
+        resultado.diferenciaVAN = vanCon - vanSin;
+        return resultado;
+    }
+}

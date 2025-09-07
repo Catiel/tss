@@ -5,8 +5,9 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
 public class PanelModeloPrecios extends JPanel {
-    private final JTextField txtCapacidad;
-    private final JLabel lblGananciaTotal;
+    private final JLabel lblVANCon;
+    private final JLabel lblVANSin;
+    private final JLabel lblDiferenciaVAN;
     private final DefaultTableModel modeloTabla;
 
     /**
@@ -22,44 +23,57 @@ public class PanelModeloPrecios extends JPanel {
         gbc.gridy = 0;
 
         // Título
-        JLabel titulo = new JLabel("Modelo de decisión de capacidad y utilidades esperadas");
+        JLabel titulo = new JLabel("Comparación de beneficios y VAN - Versión francesa del software");
         EstilosUI.aplicarEstiloTitulo(titulo);
-        gbc.gridx = 0; gbc.gridwidth = 6;
+        gbc.gridx = 0; gbc.gridwidth = 8;
         add(titulo, gbc);
 
-        // Parámetro de capacidad
+        // VAN con versión francesa
         gbc.gridy++;
         gbc.gridwidth = 1;
-        JLabel lblCapacidad = new JLabel("Unidades de capacidad a incorporar en este período:");
-        EstilosUI.aplicarEstiloLabel(lblCapacidad);
-        add(lblCapacidad, gbc);
+        gbc.gridx = 0;
+        JLabel lblVANConTitulo = new JLabel("VAN con versión francesa ($):");
+        EstilosUI.aplicarEstiloLabel(lblVANConTitulo);
+        add(lblVANConTitulo, gbc);
         gbc.gridx = 1;
-        txtCapacidad = new JTextField("55000", 8);
-        txtCapacidad.setToolTipText("Capacidad de la planta a construir");
-        txtCapacidad.setFont(new Font("Segoe UI", Font.PLAIN, 15));
-        add(txtCapacidad, gbc);
+        lblVANCon = new JLabel("-");
+        EstilosUI.aplicarEstiloLabel(lblVANCon);
+        add(lblVANCon, gbc);
 
-        // Ganancia total
+        // VAN sin versión francesa
         gbc.gridx = 2;
-        JLabel lblGananciaTitulo = new JLabel("Ganancia total en 10 años ($):");
-        EstilosUI.aplicarEstiloLabel(lblGananciaTitulo);
-        add(lblGananciaTitulo, gbc);
+        JLabel lblVANSinTitulo = new JLabel("VAN sin versión francesa ($):");
+        EstilosUI.aplicarEstiloLabel(lblVANSinTitulo);
+        add(lblVANSinTitulo, gbc);
         gbc.gridx = 3;
-        lblGananciaTotal = new JLabel("-");
-        EstilosUI.aplicarEstiloLabel(lblGananciaTotal);
-        add(lblGananciaTotal, gbc);
+        lblVANSin = new JLabel("-");
+        EstilosUI.aplicarEstiloLabel(lblVANSin);
+        add(lblVANSin, gbc);
+
+        // Diferencia VAN
+        gbc.gridx = 4;
+        JLabel lblDiferenciaVANTitulo = new JLabel("Diferencia VAN ($):");
+        EstilosUI.aplicarEstiloLabel(lblDiferenciaVANTitulo);
+        add(lblDiferenciaVANTitulo, gbc);
+        gbc.gridx = 5;
+        lblDiferenciaVAN = new JLabel("-");
+        EstilosUI.aplicarEstiloLabel(lblDiferenciaVAN);
+        add(lblDiferenciaVAN, gbc);
 
         // Tabla de resultados
         gbc.gridy++;
-        gbc.gridx = 0; gbc.gridwidth = 6;
+        gbc.gridx = 0; gbc.gridwidth = 8;
         gbc.weightx = 1.0;
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
-        String[] columnas = {"Año", "Demanda", "Inversión inicial", "Costo fijo operación", "Unidades producidas", "Ingresos ventas", "Costo variable producción", "Utilidad"};
-        modeloTabla = new DefaultTableModel(columnas, 0);
+        String[] columnas = {"Año", "Tamaño mercado", "Unidades vendidas SIN", "Utilidad SIN", "Unidades vendidas CON", "Utilidad CON", "Diferencia utilidad"};
+        modeloTabla = new DefaultTableModel(columnas, 0) {
+            @Override
+            public boolean isCellEditable(int row, int col) { return false; }
+        };
         JTable tablaResultados = new JTable(modeloTabla);
         EstilosUI.aplicarEstiloTabla(tablaResultados);
-        int[] anchos = {60, 90, 120, 120, 120, 140, 140, 120};
+        int[] anchos = {60, 120, 120, 120, 120, 120, 120};
         for (int i = 0; i < anchos.length; i++) {
             tablaResultados.getColumnModel().getColumn(i).setPreferredWidth(anchos[i]);
         }
@@ -67,7 +81,6 @@ public class PanelModeloPrecios extends JPanel {
         tablaResultados.setFillsViewportHeight(true);
         add(scroll, gbc);
 
-        txtCapacidad.getDocument().addDocumentListener(new SimpleDocumentListener(this::actualizarResultados));
         actualizarResultados();
     }
 
@@ -78,47 +91,33 @@ public class PanelModeloPrecios extends JPanel {
      */
     private void actualizarResultados() {
         try {
-            int capacidad = Integer.parseInt(txtCapacidad.getText());
             ControladorParametros params = ControladorParametros.getInstancia();
-            ModeloWozacCalculo.ResultadoAnual[] resultados = ModeloWozacCalculo.calcularModelo(
-                capacidad,
-                params.getDemandaInicial(),
-                params.getCrecimientoAnual(),
-                params.getCostoCapacidadUnitaria(),
-                params.getPrecioVentaUnitario(),
-                params.getCostoVariableUnitario(),
-                params.getCostoOperativoUnitario()
-            );
+            double tasaDescuento = params.getTasaDescuento();
+            // La capacidad ya no se usa, se pasa 0 solo por compatibilidad de firma
+            ModeloSoftwareCalculo.ResultadoComparativo resultados = ModeloSoftwareCalculo.calcularComparativo(params, 0, tasaDescuento);
             modeloTabla.setRowCount(0);
-            double total = 0;
-            for (ModeloWozacCalculo.ResultadoAnual r : resultados) {
+            for (int i = 0; i < resultados.resultadosCon.length; i++) {
+                ModeloSoftwareCalculo.ResultadoAnual rCon = resultados.resultadosCon[i];
+                ModeloSoftwareCalculo.ResultadoAnual rSin = resultados.resultadosSin[i];
                 modeloTabla.addRow(new Object[] {
-                    r.anio,
-                    r.demanda,
-                    String.format("$%,.0f", r.inversionInicial),
-                    String.format("$%,.0f", r.costoFijoOperacion),
-                    r.unidadesProducidas,
-                    String.format("$%,.0f", r.ingresosVentas),
-                    String.format("$%,.0f", r.costoVariableProduccion),
-                    String.format("$%,.0f", r.utilidad)
+                    rCon.anio,
+                    rCon.demanda,
+                    (int)rSin.unidadesProducidas,
+                    String.format("$%,.0f", rSin.utilidad),
+                    (int)rCon.unidadesProducidas,
+                    String.format("$%,.0f", rCon.utilidad),
+                    String.format("$%,.0f", rCon.utilidad - rSin.utilidad)
                 });
-                total += r.utilidad;
             }
-            lblGananciaTotal.setText(String.format("$%,.0f", total));
+            lblVANCon.setText(String.format("$%,.0f", resultados.vanCon));
+            lblVANSin.setText(String.format("$%,.0f", resultados.vanSin));
+            lblDiferenciaVAN.setText(String.format("$%,.0f", resultados.diferenciaVAN));
         } catch (Exception ex) {
-            lblGananciaTotal.setText("-");
+            lblVANCon.setText("-");
+            lblVANSin.setText("-");
+            lblDiferenciaVAN.setText("-");
             modeloTabla.setRowCount(0);
         }
     }
 
-    /**
-     * Listener simple para detectar cambios en el campo de capacidad y actualizar los resultados.
-     */
-    private static class SimpleDocumentListener implements javax.swing.event.DocumentListener {
-        private final Runnable onChange;
-        public SimpleDocumentListener(Runnable onChange) { this.onChange = onChange; }
-        public void insertUpdate(javax.swing.event.DocumentEvent e) { onChange.run(); }
-        public void removeUpdate(javax.swing.event.DocumentEvent e) { onChange.run(); }
-        public void changedUpdate(javax.swing.event.DocumentEvent e) { onChange.run(); }
-    }
 }
