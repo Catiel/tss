@@ -1,5 +1,8 @@
 package actividad_4.ejercicio_1;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Controlador de parámetros para el EJERCICIO 1 (versión francesa) — solo variables del enunciado.
  * Contiene los parámetros usados en las hojas Excel e imágenes que proporcionaste.
@@ -20,6 +23,41 @@ public class ControladorParametros {
     private int horizonteAnios = 10;                   // horizonte de planificación (años)
     private double tasaDescuento = 0.10;              // tasa de descuento por defecto (10%)
 
+    // Sistema de observadores para notificar cambios
+    private final List<ParametrosChangeListener> listeners = new ArrayList<>();
+
+    /**
+     * Interfaz para los escuchadores de cambios en parámetros
+     */
+    public interface ParametrosChangeListener {
+        void onParametrosChanged();
+    }
+
+    /**
+     * Añade un escuchador de cambios en parámetros
+     */
+    public void addChangeListener(ParametrosChangeListener listener) {
+        if (!listeners.contains(listener)) {
+            listeners.add(listener);
+        }
+    }
+
+    /**
+     * Elimina un escuchador de cambios en parámetros
+     */
+    public void removeChangeListener(ParametrosChangeListener listener) {
+        listeners.remove(listener);
+    }
+
+    /**
+     * Notifica a todos los escuchadores registrados que hubo cambios
+     */
+    private void notifyListeners() {
+        for (ParametrosChangeListener listener : listeners) {
+            listener.onParametrosChanged();
+        }
+    }
+
     private ControladorParametros() { }
 
     public static ControladorParametros getInstancia() {
@@ -34,6 +72,7 @@ public class ControladorParametros {
 
     public void setTamanoActualMercado(int tamanoActualMercado) {
         this.tamanoActualMercado = tamanoActualMercado;
+        notifyListeners();
     }
 
     public double getCrecimientoPrimeros5() {
@@ -42,6 +81,7 @@ public class ControladorParametros {
 
     public void setCrecimientoPrimeros5(double crecimientoPrimeros5) {
         this.crecimientoPrimeros5 = crecimientoPrimeros5;
+        notifyListeners();
     }
 
     public double getCrecimientoProximos5() {
@@ -50,6 +90,7 @@ public class ControladorParametros {
 
     public void setCrecimientoProximos5(double crecimientoProximos5) {
         this.crecimientoProximos5 = crecimientoProximos5;
+        notifyListeners();
     }
 
     public double getPrecioVentaUnitario() {
@@ -58,6 +99,7 @@ public class ControladorParametros {
 
     public void setPrecioVentaUnitario(double precioVentaUnitario) {
         this.precioVentaUnitario = precioVentaUnitario;
+        notifyListeners();
     }
 
     public double getCosteVariableUnitario() {
@@ -66,6 +108,7 @@ public class ControladorParametros {
 
     public void setCosteVariableUnitario(double costeVariableUnitario) {
         this.costeVariableUnitario = costeVariableUnitario;
+        notifyListeners();
     }
 
     public double getCuotaMercadoVersionIngles() {
@@ -74,6 +117,7 @@ public class ControladorParametros {
 
     public void setCuotaMercadoVersionIngles(double cuotaMercadoVersionIngles) {
         this.cuotaMercadoVersionIngles = cuotaMercadoVersionIngles;
+        notifyListeners();
     }
 
     public double getCuotaMercadoConNuevaVersion() {
@@ -82,6 +126,7 @@ public class ControladorParametros {
 
     public void setCuotaMercadoConNuevaVersion(double cuotaMercadoConNuevaVersion) {
         this.cuotaMercadoConNuevaVersion = cuotaMercadoConNuevaVersion;
+        notifyListeners();
     }
 
     public double getCosteFijoCrearVersion() {
@@ -90,6 +135,7 @@ public class ControladorParametros {
 
     public void setCosteFijoCrearVersion(double costeFijoCrearVersion) {
         this.costeFijoCrearVersion = costeFijoCrearVersion;
+        notifyListeners();
     }
 
     public int getHorizonteAnios() {
@@ -98,6 +144,7 @@ public class ControladorParametros {
 
     public void setHorizonteAnios(int horizonteAnios) {
         this.horizonteAnios = horizonteAnios;
+        notifyListeners();
     }
 
     public double getTasaDescuento() {
@@ -106,5 +153,6 @@ public class ControladorParametros {
 
     public void setTasaDescuento(double tasaDescuento) {
         this.tasaDescuento = tasaDescuento;
+        notifyListeners();
     }
 }

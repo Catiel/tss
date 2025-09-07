@@ -160,54 +160,31 @@ public class ModeloSoftwareCalculo {
         int H = params.getHorizonteAnios();
         ResultadoAnual[] resCon = new ResultadoAnual[H];
         ResultadoAnual[] resSin = new ResultadoAnual[H];
-        double market = params.getTamanoActualMercado();
-        double g2 = params.getCrecimientoProximos5();
         double demandaInicial = params.getTamanoActualMercado();
         double cuotaCon = params.getCuotaMercadoConNuevaVersion();
         double cuotaSin = params.getCuotaMercadoVersionIngles();
         double precio = params.getPrecioVentaUnitario();
         double costeVar = params.getCosteVariableUnitario();
         double costeFijo = params.getCosteFijoCrearVersion();
+        double g1 = params.getCrecimientoPrimeros5();
+        double g2 = params.getCrecimientoProximos5();
 
         for (int i = 0; i < H; i++) {
-            ResultadoAnual rCon = new ResultadoAnual();
-            ResultadoAnual rSin = new ResultadoAnual();
-            rCon.anio = rSin.anio = i + 1;
             // Calcular tamaño de mercado compuesto por tramos
             int n = i + 1;
             int tramo1 = Math.min(n, 5);
             int tramo2 = Math.max(0, n - 5);
-            double g1 = params.getCrecimientoPrimeros5();
             double marketYear = demandaInicial * Math.pow(1.0 + g1, tramo1) * Math.pow(1.0 + g2, tramo2);
-            rCon.demanda = rSin.demanda = (int)Math.round(marketYear);
+            int demanda = (int)Math.round(marketYear);
 
-            // Solo la versión francesa tiene inversión inicial en t=0
-            rCon.inversionInicial = (i == 0) ? costeFijo : 0.0;
-            rSin.inversionInicial = 0.0;
-            rCon.costoFijoOperacion = rSin.costoFijoOperacion = 0.0;
-
-            rCon.unidadesProducidas = (int)Math.round(rCon.demanda * cuotaCon);
-            rSin.unidadesProducidas = (int)Math.round(rSin.demanda * cuotaSin);
-
-            rCon.ingresosVentas = (int)Math.round(rCon.unidadesProducidas * precio);
-            rSin.ingresosVentas = (int)Math.round(rSin.unidadesProducidas * precio);
-            rCon.costoVariableProduccion = (int)Math.round(rCon.unidadesProducidas * costeVar);
-            rSin.costoVariableProduccion = (int)Math.round(rSin.unidadesProducidas * costeVar);
-            rCon.utilidad = rCon.ingresosVentas - rCon.costoVariableProduccion;
-            rSin.utilidad = rSin.ingresosVentas - rSin.costoVariableProduccion;
-
-            resCon[i] = rCon;
-            resSin[i] = rSin;
+            // Crear y configurar resultados anuales
+            resCon[i] = crearResultadoAnual(n, demanda, cuotaCon, precio, costeVar, (i == 0) ? costeFijo : 0.0);
+            resSin[i] = crearResultadoAnual(n, demanda, cuotaSin, precio, costeVar, 0.0);
         }
 
         // Calcular VAN para ambos escenarios
-        double vanCon = 0.0, vanSin = 0.0;
-        for (int i = 0; i < H; i++) {
-            vanCon += resCon[i].utilidad / Math.pow(1.0 + tasaDescuento, i + 1);
-            vanSin += resSin[i].utilidad / Math.pow(1.0 + tasaDescuento, i + 1);
-        }
-        // Restar inversión inicial de la versión francesa
-        if (H > 0) vanCon -= resCon[0].inversionInicial;
+        double vanCon = calcularVAN(resCon, tasaDescuento);
+        double vanSin = calcularVAN(resSin, tasaDescuento);
 
         ResultadoComparativo resultado = new ResultadoComparativo();
         resultado.resultadosCon = resCon;
@@ -216,5 +193,39 @@ public class ModeloSoftwareCalculo {
         resultado.vanSin = vanSin;
         resultado.diferenciaVAN = vanCon - vanSin;
         return resultado;
+    }
+
+    /**
+     * Método auxiliar para crear un resultado anual con los parámetros dados.
+     * Evita duplicación de código en el método calcularComparativo.
+     */
+    private static ResultadoAnual crearResultadoAnual(int anio, int demanda, double cuota,
+                                                     double precio, double costeVar, double inversionInicial) {
+        ResultadoAnual r = new ResultadoAnual();
+        r.anio = anio;
+        r.demanda = demanda;
+        r.inversionInicial = inversionInicial;
+        r.costoFijoOperacion = 0.0;
+
+        r.unidadesProducidas = (int)Math.round(demanda * cuota);
+        r.ingresosVentas = (int)Math.round(r.unidadesProducidas * precio);
+        r.costoVariableProduccion = (int)Math.round(r.unidadesProducidas * costeVar);
+        r.utilidad = r.ingresosVentas - r.costoVariableProduccion;
+
+        return r;
+    }
+
+    /**
+     * Método auxiliar para calcular el VAN a partir de un array de resultados anuales.
+     * Evita duplicación de código en el método calcularComparativo.
+     */
+    private static double calcularVAN(ResultadoAnual[] resultados, double tasaDescuento) {
+        double van = 0.0;
+        for (int i = 0; i < resultados.length; i++) {
+            van += resultados[i].utilidad / Math.pow(1.0 + tasaDescuento, i + 1);
+        }
+        // Restar inversión inicial si existe
+        if (resultados.length > 0) van -= resultados[0].inversionInicial;
+        return van;
     }
 }

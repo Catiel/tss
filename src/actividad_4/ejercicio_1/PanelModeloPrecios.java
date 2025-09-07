@@ -4,10 +4,11 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
-public class PanelModeloPrecios extends JPanel {
+public class PanelModeloPrecios extends JPanel implements ControladorParametros.ParametrosChangeListener {
     private final JLabel lblVANCon;
     private final JLabel lblVANSin;
     private final JLabel lblDiferenciaVAN;
+    private final JLabel lblTasaDescuentoValor; // Para mostrar la tasa de descuento actual
     private final DefaultTableModel modeloTabla;
     private final JTable tablaResultados;
 
@@ -16,6 +17,9 @@ public class PanelModeloPrecios extends JPanel {
      * Configura los componentes visuales y los listeners para actualizar los resultados automáticamente.
      */
     public PanelModeloPrecios() {
+        // Registramos este panel como oyente de cambios en los parámetros
+        ControladorParametros.getInstancia().addChangeListener(this);
+
         EstilosUI.aplicarEstiloPanel(this);
         setLayout(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -160,9 +164,9 @@ public class PanelModeloPrecios extends JPanel {
         gbc.weighty = 0.0;
 
         JPanel panelTasaDescuento = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JLabel lblTasaDescuentoTitulo = new JLabel("Tasa de descuento (valor de prueba): ");
+        JLabel lblTasaDescuentoTitulo = new JLabel("Tasa de descuento: ");
         EstilosUI.aplicarEstiloLabel(lblTasaDescuentoTitulo);
-        JLabel lblTasaDescuentoValor = new JLabel("10%");
+        lblTasaDescuentoValor = new JLabel("10%");
         EstilosUI.aplicarEstiloLabel(lblTasaDescuentoValor);
         panelTasaDescuento.add(lblTasaDescuentoTitulo);
         panelTasaDescuento.add(lblTasaDescuentoValor);
@@ -171,6 +175,37 @@ public class PanelModeloPrecios extends JPanel {
 
         // Actualizamos los resultados
         actualizarResultados();
+    }
+
+    /**
+     * Formatea un valor numérico como moneda (entero con separador de miles y símbolo $).
+     * @param valor El valor a formatear
+     * @return Cadena formateada como moneda
+     */
+    private String formatearMoneda(double valor) {
+        return String.format("$%,.0f", valor);
+    }
+
+    /**
+     * Actualiza las etiquetas de VAN con los valores proporcionados.
+     * @param vanCon Valor del VAN con versión francesa
+     * @param vanSin Valor del VAN sin versión francesa
+     * @param diferenciaVAN Diferencia entre ambos valores
+     */
+    private void actualizarEtiquetasVAN(double vanCon, double vanSin, double diferenciaVAN) {
+        lblVANCon.setText(formatearMoneda(vanCon));
+        lblVANSin.setText(formatearMoneda(vanSin));
+        lblDiferenciaVAN.setText(formatearMoneda(diferenciaVAN));
+    }
+
+    /**
+     * Limpia los resultados en caso de error.
+     */
+    private void limpiarResultados() {
+        lblVANCon.setText("-");
+        lblVANSin.setText("-");
+        lblDiferenciaVAN.setText("-");
+        modeloTabla.setRowCount(0);
     }
 
     /**
@@ -191,32 +226,48 @@ public class PanelModeloPrecios extends JPanel {
                 ModeloSoftwareCalculo.ResultadoAnual rCon = resultados.resultadosCon[i];
                 ModeloSoftwareCalculo.ResultadoAnual rSin = resultados.resultadosSin[i];
 
-                // Los cálculos se hacen con decimales (no se modifica nada internamente)
-                // pero para la visualización formateamos como enteros
+                // Agregamos fila con los datos formateados usando el método formatearMoneda
                 modeloTabla.addRow(new Object[] {
                     rCon.anio,
                     rCon.demanda,
                     rSin.unidadesProducidas,
-                    String.format("$%,.0f", (double) rSin.costoVariableProduccion),
-                    String.format("$%,.0f", (double) rSin.ingresosVentas),
+                    formatearMoneda(rSin.costoVariableProduccion),
+                    formatearMoneda(rSin.ingresosVentas),
                     rCon.unidadesProducidas,
-                    String.format("$%,.0f", (double) rCon.costoVariableProduccion),
-                    String.format("$%,.0f", (double) rCon.ingresosVentas)
+                    formatearMoneda(rCon.costoVariableProduccion),
+                    formatearMoneda(rCon.ingresosVentas)
                 });
             }
 
-            // Actualizamos las etiquetas de VAN (también con formato de números enteros)
-            lblVANCon.setText(String.format("$%,.0f", resultados.vanCon));
-            lblVANSin.setText(String.format("$%,.0f", resultados.vanSin));
-            lblDiferenciaVAN.setText(String.format("$%,.0f", resultados.diferenciaVAN));
+            // Actualizamos las etiquetas de VAN
+            actualizarEtiquetasVAN(resultados.vanCon, resultados.vanSin, resultados.diferenciaVAN);
+
+            // Actualizamos el label de la tasa de descuento
+            lblTasaDescuentoValor.setText(String.format("%.0f%%", tasaDescuento * 100));
         } catch (Exception ex) {
             ex.printStackTrace(); // Para depuración
-
-            // En caso de error, mostramos guiones
-            lblVANCon.setText("-");
-            lblVANSin.setText("-");
-            lblDiferenciaVAN.setText("-");
-            modeloTabla.setRowCount(0);
+            limpiarResultados();
         }
+    }
+
+    /**
+     * Implementación del método requerido por la interfaz ControladorParametros.ParametrosChangeListener.
+     * Este método se llama automáticamente cuando hay cambios en los parámetros.
+     */
+    @Override
+    public void onParametrosChanged() {
+        // Cuando cambian los parámetros, actualizamos los resultados
+        SwingUtilities.invokeLater(this::actualizarResultados);
+    }
+
+    /**
+     * Método que se llama cuando este panel se elimina del contenedor padre.
+     * Nos desregistramos como oyente para evitar memory leaks.
+     */
+    @Override
+    public void removeNotify() {
+        // Nos desregistramos como oyente de cambios
+        ControladorParametros.getInstancia().removeChangeListener(this);
+        super.removeNotify();
     }
 }

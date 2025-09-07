@@ -11,6 +11,10 @@ import javax.swing.*;
  * - Configuración de parámetros
  */
 public class Ejercicio1App extends JFrame {
+    // Mantener referencias a los paneles para evitar que se pierdan los observadores
+    private final PanelModeloPrecios panelModeloPrecios;
+    private final PanelConfiguracion panelConfiguracion;
+
     /**
      * Constructor. Inicializa la ventana principal, los paneles y la interfaz gráfica.
      * Aplica el Look & Feel FlatLaf y configura las pestañas de la aplicación.
@@ -26,9 +30,13 @@ public class Ejercicio1App extends JFrame {
         setSize(1000, 700);
         setLocationRelativeTo(null);
 
+        // Creamos las instancias de los paneles una sola vez
+        panelModeloPrecios = new PanelModeloPrecios();
+        panelConfiguracion = new PanelConfiguracion();
+
         JTabbedPane pestanas = new JTabbedPane();
-        pestanas.addTab("Comparación de Beneficios", new PanelModeloPrecios());
-        pestanas.addTab("Configuración", new PanelConfiguracion());
+        pestanas.addTab("Comparación de Beneficios", panelModeloPrecios);
+        pestanas.addTab("Configuración", panelConfiguracion);
         add(pestanas);
     }
 
