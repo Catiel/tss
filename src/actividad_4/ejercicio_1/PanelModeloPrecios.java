@@ -102,22 +102,22 @@ public class PanelModeloPrecios extends JPanel {
                 modeloTabla.addRow(new Object[] {
                     rCon.anio,
                     rCon.demanda,
-                    (int)rSin.unidadesProducidas,
-                    String.format("$%,.0f", rSin.utilidad),
-                    (int)rCon.unidadesProducidas,
-                    String.format("$%,.0f", rCon.utilidad),
-                    String.format("$%,.0f", rCon.utilidad - rSin.utilidad)
+                    rSin.unidadesProducidas,
+                    String.format("$%,.0f", (double) rSin.utilidad),
+                    rCon.unidadesProducidas,
+                    rCon.unidadesProducidas,
+                    String.format("$%,.0f", (double) (rCon.utilidad - rSin.utilidad))
                 });
             }
             lblVANCon.setText(String.format("$%,.0f", resultados.vanCon));
             lblVANSin.setText(String.format("$%,.0f", resultados.vanSin));
             lblDiferenciaVAN.setText(String.format("$%,.0f", resultados.diferenciaVAN));
         } catch (Exception ex) {
+            ex.printStackTrace(); // Para depuración
             lblVANCon.setText("-");
             lblVANSin.setText("-");
             lblDiferenciaVAN.setText("-");
             modeloTabla.setRowCount(0);
         }
     }
-
 }

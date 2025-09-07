@@ -26,10 +26,10 @@ public class ModeloSoftwareCalculo {
 		public int demanda; // tamaño de mercado anual
 		public double inversionInicial; // inversión ocurrida en este año (sólo año 1)
 		public double costoFijoOperacion; // costo operativo anual asociado a la capacidad
-		public double unidadesProducidas; // unidades vendidas (limitadas por capacidad)
-		public double ingresosVentas;
-		public double costoVariableProduccion;
-		public double utilidad;
+		public int unidadesProducidas; // unidades vendidas (limitadas por capacidad)
+		public int ingresosVentas;
+		public int costoVariableProduccion;
+		public int utilidad;
 	}
 
 	/**
@@ -62,10 +62,10 @@ public class ModeloSoftwareCalculo {
 			// unidades producidas limitadas por capacidad y demanda
 			r.unidadesProducidas = Math.min(capacidad, r.demanda);
 
-			r.ingresosVentas = r.unidadesProducidas * precioVentaUnitario;
-			r.costoVariableProduccion = r.unidadesProducidas * costoVariableUnitario;
+			r.ingresosVentas = (int)Math.round(r.unidadesProducidas * precioVentaUnitario);
+			r.costoVariableProduccion = (int)Math.round(r.unidadesProducidas * costoVariableUnitario);
 			// utilidad = ingresos - coste variable - costo fijo operativo
-			r.utilidad = r.ingresosVentas - r.costoVariableProduccion - r.costoFijoOperacion;
+			r.utilidad = r.ingresosVentas - r.costoVariableProduccion - (int)Math.round(r.costoFijoOperacion);
 
 			res[i] = r;
 
@@ -94,17 +94,15 @@ public class ModeloSoftwareCalculo {
 			r.anio = i + 1;
 			r.demanda = (int)Math.round(market);
 
-			r.inversionInicial = (i == 0) ? 0.0 : 0.0; // inversión gestionada externamente
+			r.inversionInicial = 0.0; // inversión gestionada externamente
 			r.costoFijoOperacion = 0.0; // asumimos 0 para evitar doble contabilidad
 
 			double demandaCon = r.demanda * params.getCuotaMercadoConNuevaVersion();
-			double demandaSin = r.demanda * params.getCuotaMercadoVersionIngles();
+			// double demandaSin = r.demanda * params.getCuotaMercadoVersionIngles(); // no usada
 
-			// unidades producidas limitadas por capacidad
-			r.unidadesProducidas = Math.min(capacidad, demandaCon);
-
-			r.ingresosVentas = r.unidadesProducidas * params.getPrecioVentaUnitario();
-			r.costoVariableProduccion = r.unidadesProducidas * params.getCosteVariableUnitario();
+			r.unidadesProducidas = Math.min(capacidad, (int)Math.round(demandaCon));
+			r.ingresosVentas = (int)Math.round(r.unidadesProducidas * params.getPrecioVentaUnitario());
+			r.costoVariableProduccion = (int)Math.round(r.unidadesProducidas * params.getCosteVariableUnitario());
 			r.utilidad = r.ingresosVentas - r.costoVariableProduccion;
 
 			res[i] = r;
@@ -162,9 +160,9 @@ public class ModeloSoftwareCalculo {
         int H = params.getHorizonteAnios();
         ResultadoAnual[] resCon = new ResultadoAnual[H];
         ResultadoAnual[] resSin = new ResultadoAnual[H];
-        double demandaInicial = params.getTamanoActualMercado();
-        double g1 = params.getCrecimientoPrimeros5();
+        double market = params.getTamanoActualMercado();
         double g2 = params.getCrecimientoProximos5();
+        double demandaInicial = params.getTamanoActualMercado();
         double cuotaCon = params.getCuotaMercadoConNuevaVersion();
         double cuotaSin = params.getCuotaMercadoVersionIngles();
         double precio = params.getPrecioVentaUnitario();
@@ -179,6 +177,7 @@ public class ModeloSoftwareCalculo {
             int n = i + 1;
             int tramo1 = Math.min(n, 5);
             int tramo2 = Math.max(0, n - 5);
+            double g1 = params.getCrecimientoPrimeros5();
             double marketYear = demandaInicial * Math.pow(1.0 + g1, tramo1) * Math.pow(1.0 + g2, tramo2);
             rCon.demanda = rSin.demanda = (int)Math.round(marketYear);
 
@@ -187,13 +186,13 @@ public class ModeloSoftwareCalculo {
             rSin.inversionInicial = 0.0;
             rCon.costoFijoOperacion = rSin.costoFijoOperacion = 0.0;
 
-            rCon.unidadesProducidas = Math.round(rCon.demanda * cuotaCon);
-            rSin.unidadesProducidas = Math.round(rSin.demanda * cuotaSin);
+            rCon.unidadesProducidas = (int)Math.round(rCon.demanda * cuotaCon);
+            rSin.unidadesProducidas = (int)Math.round(rSin.demanda * cuotaSin);
 
-            rCon.ingresosVentas = rCon.unidadesProducidas * precio;
-            rSin.ingresosVentas = rSin.unidadesProducidas * precio;
-            rCon.costoVariableProduccion = rCon.unidadesProducidas * costeVar;
-            rSin.costoVariableProduccion = rSin.unidadesProducidas * costeVar;
+            rCon.ingresosVentas = (int)Math.round(rCon.unidadesProducidas * precio);
+            rSin.ingresosVentas = (int)Math.round(rSin.unidadesProducidas * precio);
+            rCon.costoVariableProduccion = (int)Math.round(rCon.unidadesProducidas * costeVar);
+            rSin.costoVariableProduccion = (int)Math.round(rSin.unidadesProducidas * costeVar);
             rCon.utilidad = rCon.ingresosVentas - rCon.costoVariableProduccion;
             rSin.utilidad = rSin.ingresosVentas - rSin.costoVariableProduccion;
 
