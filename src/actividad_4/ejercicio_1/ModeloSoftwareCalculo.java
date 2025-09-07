@@ -27,9 +27,9 @@ public class ModeloSoftwareCalculo {
 		public double inversionInicial; // inversión ocurrida en este año (sólo año 1)
 		public double costoFijoOperacion; // costo operativo anual asociado a la capacidad
 		public int unidadesProducidas; // unidades vendidas (limitadas por capacidad)
-		public int ingresosVentas;
-		public int costoVariableProduccion;
-		public int utilidad;
+		public double ingresosVentas; // cambiado a double para mantener precisión de dos decimales
+		public double costoVariableProduccion; // cambiado a double para mantener precisión de dos decimales
+		public double utilidad; // cambiado a double para mantener precisión de dos decimales
 	}
 
 	/**
@@ -55,21 +55,21 @@ public class ModeloSoftwareCalculo {
 			r.demanda = (int)Math.round(market);
 
 			// inversión inicial sólo en el año 1
-			r.inversionInicial = (i == 0) ? capacidad * costoCapacidadUnitaria : 0.0;
+			r.inversionInicial = (i == 0) ? UtilidadesFormato.redondearDosDecimales(capacidad * costoCapacidadUnitaria) : 0.0;
 			// costo operativo anual (se aplica cada año)
-			r.costoFijoOperacion = capacidad * costoOperativoUnitario;
+			r.costoFijoOperacion = UtilidadesFormato.redondearDosDecimales(capacidad * costoOperativoUnitario);
 
 			// unidades producidas limitadas por capacidad y demanda
 			r.unidadesProducidas = Math.min(capacidad, r.demanda);
 
-			r.ingresosVentas = (int)Math.round(r.unidadesProducidas * precioVentaUnitario);
-			r.costoVariableProduccion = (int)Math.round(r.unidadesProducidas * costoVariableUnitario);
+			r.ingresosVentas = UtilidadesFormato.redondearDosDecimales(r.unidadesProducidas * precioVentaUnitario);
+			r.costoVariableProduccion = UtilidadesFormato.redondearDosDecimales(r.unidadesProducidas * costoVariableUnitario);
 			// utilidad = ingresos - coste variable - costo fijo operativo
-			r.utilidad = r.ingresosVentas - r.costoVariableProduccion - (int)Math.round(r.costoFijoOperacion);
+			r.utilidad = UtilidadesFormato.redondearDosDecimales(r.ingresosVentas - r.costoVariableProduccion - r.costoFijoOperacion);
 
 			res[i] = r;
 
-			market = market * (1.0 + crecimientoAnual);
+			market = UtilidadesFormato.redondearDosDecimales(market * (1.0 + crecimientoAnual));
 		}
 
 		return res;
@@ -97,17 +97,20 @@ public class ModeloSoftwareCalculo {
 			r.inversionInicial = 0.0; // inversión gestionada externamente
 			r.costoFijoOperacion = 0.0; // asumimos 0 para evitar doble contabilidad
 
-			double demandaCon = r.demanda * params.getCuotaMercadoConNuevaVersion();
+			double demandaCon = UtilidadesFormato.redondearDosDecimales(r.demanda * params.getCuotaMercadoConNuevaVersion());
 			// double demandaSin = r.demanda * params.getCuotaMercadoVersionIngles(); // no usada
 
 			r.unidadesProducidas = Math.min(capacidad, (int)Math.round(demandaCon));
-			r.ingresosVentas = (int)Math.round(r.unidadesProducidas * params.getPrecioVentaUnitario());
-			r.costoVariableProduccion = (int)Math.round(r.unidadesProducidas * params.getCosteVariableUnitario());
-			r.utilidad = r.ingresosVentas - r.costoVariableProduccion;
+			r.ingresosVentas = UtilidadesFormato.redondearDosDecimales(r.unidadesProducidas * params.getPrecioVentaUnitario());
+			r.costoVariableProduccion = UtilidadesFormato.redondearDosDecimales(r.unidadesProducidas * params.getCosteVariableUnitario());
+			r.utilidad = UtilidadesFormato.redondearDosDecimales(r.ingresosVentas - r.costoVariableProduccion);
 
 			res[i] = r;
 
-			if (i < 5) market = market * (1.0 + g1); else market = market * (1.0 + g2);
+			if (i < 5)
+				market = UtilidadesFormato.redondearDosDecimales(market * (1.0 + g1));
+			else
+				market = UtilidadesFormato.redondearDosDecimales(market * (1.0 + g2));
 		}
 
 		return res;
@@ -123,7 +126,7 @@ public class ModeloSoftwareCalculo {
 			costoCapacidadUnitaria, precioVentaUnitario, costoVariableUnitario, costoOperativoUnitario);
 		double suma = 0;
 		for (ResultadoAnual r : res) suma += r.utilidad;
-		return suma;
+		return UtilidadesFormato.redondearDosDecimales(suma);
 	}
 
 	/**
@@ -139,9 +142,9 @@ public class ModeloSoftwareCalculo {
 		// inversión inicial (t=0)
 		if (res.length > 0) van -= res[0].inversionInicial;
 		for (int i = 0; i < res.length; i++) {
-			van += res[i].utilidad / Math.pow(1.0 + tasaDescuento, i + 1);
+			van += UtilidadesFormato.redondearDosDecimales(res[i].utilidad / Math.pow(1.0 + tasaDescuento, i + 1));
 		}
-		return van;
+		return UtilidadesFormato.redondearDosDecimales(van);
 	}
 
 	/**
@@ -174,7 +177,9 @@ public class ModeloSoftwareCalculo {
             int n = i + 1;
             int tramo1 = Math.min(n, 5);
             int tramo2 = Math.max(0, n - 5);
-            double marketYear = demandaInicial * Math.pow(1.0 + g1, tramo1) * Math.pow(1.0 + g2, tramo2);
+            double marketYear = demandaInicial;
+            marketYear = UtilidadesFormato.redondearDosDecimales(marketYear * Math.pow(1.0 + g1, tramo1));
+            marketYear = UtilidadesFormato.redondearDosDecimales(marketYear * Math.pow(1.0 + g2, tramo2));
             int demanda = (int)Math.round(marketYear);
 
             // Crear y configurar resultados anuales
@@ -189,9 +194,9 @@ public class ModeloSoftwareCalculo {
         ResultadoComparativo resultado = new ResultadoComparativo();
         resultado.resultadosCon = resCon;
         resultado.resultadosSin = resSin;
-        resultado.vanCon = vanCon;
-        resultado.vanSin = vanSin;
-        resultado.diferenciaVAN = vanCon - vanSin;
+        resultado.vanCon = UtilidadesFormato.redondearDosDecimales(vanCon);
+        resultado.vanSin = UtilidadesFormato.redondearDosDecimales(vanSin);
+        resultado.diferenciaVAN = UtilidadesFormato.redondearDosDecimales(vanCon - vanSin);
         return resultado;
     }
 
@@ -204,13 +209,13 @@ public class ModeloSoftwareCalculo {
         ResultadoAnual r = new ResultadoAnual();
         r.anio = anio;
         r.demanda = demanda;
-        r.inversionInicial = inversionInicial;
+        r.inversionInicial = UtilidadesFormato.redondearDosDecimales(inversionInicial);
         r.costoFijoOperacion = 0.0;
 
         r.unidadesProducidas = (int)Math.round(demanda * cuota);
-        r.ingresosVentas = (int)Math.round(r.unidadesProducidas * precio);
-        r.costoVariableProduccion = (int)Math.round(r.unidadesProducidas * costeVar);
-        r.utilidad = r.ingresosVentas - r.costoVariableProduccion;
+        r.ingresosVentas = UtilidadesFormato.redondearDosDecimales(r.unidadesProducidas * precio);
+        r.costoVariableProduccion = UtilidadesFormato.redondearDosDecimales(r.unidadesProducidas * costeVar);
+        r.utilidad = UtilidadesFormato.redondearDosDecimales(r.ingresosVentas - r.costoVariableProduccion);
 
         return r;
     }
@@ -222,10 +227,13 @@ public class ModeloSoftwareCalculo {
     private static double calcularVAN(ResultadoAnual[] resultados, double tasaDescuento) {
         double van = 0.0;
         for (int i = 0; i < resultados.length; i++) {
-            van += resultados[i].utilidad / Math.pow(1.0 + tasaDescuento, i + 1);
+            van = UtilidadesFormato.redondearDosDecimales(van +
+                    UtilidadesFormato.redondearDosDecimales(resultados[i].utilidad / Math.pow(1.0 + tasaDescuento, i + 1)));
         }
         // Restar inversión inicial si existe
-        if (resultados.length > 0) van -= resultados[0].inversionInicial;
+        if (resultados.length > 0) {
+            van = UtilidadesFormato.redondearDosDecimales(van - resultados[0].inversionInicial);
+        }
         return van;
     }
 }

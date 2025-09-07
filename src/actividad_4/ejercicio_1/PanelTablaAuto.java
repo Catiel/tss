@@ -84,8 +84,8 @@ public class PanelTablaAuto extends JPanel implements ControladorParametros.Para
                     ModeloSoftwareCalculo.calcularComparativo(params, 0, tasa);
 
                 // Formateamos la tasa como porcentaje y la diferencia como moneda
-                String tasaFormateada = String.format("%.0f%%", tasa * 100);
-                String diferenciaFormateada = formatearMoneda(resultado.diferenciaVAN);
+                String tasaFormateada = UtilidadesFormato.formatearPorcentaje(tasa);
+                String diferenciaFormateada = UtilidadesFormato.formatearMoneda(resultado.diferenciaVAN);
 
                 // Añadimos la fila a la tabla
                 modeloTabla.addRow(new Object[]{tasaFormateada, diferenciaFormateada});
@@ -134,15 +134,6 @@ public class PanelTablaAuto extends JPanel implements ControladorParametros.Para
                 return c;
             }
         });
-    }
-
-    /**
-     * Formatea un valor numérico como moneda (con separador de miles y símbolo $).
-     * @param valor El valor a formatear
-     * @return Cadena formateada como moneda
-     */
-    private String formatearMoneda(double valor) {
-        return String.format("$%,.0f", valor);
     }
 
     /**

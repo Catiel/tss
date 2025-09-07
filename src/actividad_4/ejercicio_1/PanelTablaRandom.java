@@ -241,7 +241,7 @@ public class PanelTablaRandom extends JPanel implements ControladorParametros.Pa
      * @return Cadena formateada como moneda
      */
     private String formatearMoneda(double valor) {
-        return String.format("$%,.0f", valor);
+        return UtilidadesFormato.formatearMoneda(valor);
     }
 
     /**

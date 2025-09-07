@@ -178,12 +178,12 @@ public class PanelModeloPrecios extends JPanel implements ControladorParametros.
     }
 
     /**
-     * Formatea un valor numérico como moneda (entero con separador de miles y símbolo $).
+     * Formatea un valor numérico como moneda (con separador de miles, símbolo $ y dos decimales).
      * @param valor El valor a formatear
      * @return Cadena formateada como moneda
      */
     private String formatearMoneda(double valor) {
-        return String.format("$%,.0f", valor);
+        return UtilidadesFormato.formatearMoneda(valor);
     }
 
     /**

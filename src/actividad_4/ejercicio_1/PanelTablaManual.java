@@ -18,7 +18,7 @@ public class PanelTablaManual extends JPanel implements ControladorParametros.Pa
     private final JButton btnLimpiar;
 
     /**
-     * Constructor del panel de tabla manual para análisis de tasas de descuento personalizadas.
+     * Constructor del panel de tabla manual para an��lisis de tasas de descuento personalizadas.
      */
     public PanelTablaManual() {
         // Registramos este panel como oyente de cambios en los parámetros
@@ -269,7 +269,7 @@ public class PanelTablaManual extends JPanel implements ControladorParametros.Pa
      * @return Cadena formateada como moneda
      */
     private String formatearMoneda(double valor) {
-        return String.format("$%,.0f", valor);
+        return UtilidadesFormato.formatearMoneda(valor);
     }
 
     /**
