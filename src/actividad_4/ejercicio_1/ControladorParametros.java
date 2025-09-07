@@ -1,146 +1,149 @@
 package actividad_4.ejercicio_1;
 
 /**
- * Controlador de los parámetros del modelo Wozac.
- * Implementa el patrón Singleton para que los parámetros sean accesibles y modificables desde cualquier parte de la aplicación.
- * Permite obtener y modificar los valores de demanda, crecimiento, costos, precios y tasa de descuento.
+ * Controlador de parámetros específico para el EJERCICIO 1 (versión francesa).
+ * Patrón Singleton: centraliza los parámetros usados por la UI y el modelo de cálculo del VAN.
+ *
+ * Parámetros por defecto adaptados al enunciado:
+ * - Precio unitario: $50
+ * - Coste variable unitario: $10
+ * - Tamaño de mercado inicial: 300000 unidades
+ * - Crecimiento: 10% los primeros 5 años, 5% los siguientes 5 años
+ * - Cuota de mercado actual (versión en inglés): 30%
+ * - Cuota de mercado con la nueva versión (francesa): 40%
+ * - Coste fijo de crear la versión francesa: $6.000.000
+ * - Horizonte: 10 años
  */
 public class ControladorParametros {
     private static ControladorParametros instancia;
 
-    // Parámetros del modelo de Wozac
-    private int demandaInicial = 50000;
-    private double crecimientoAnual = 0.05;
-    private double costoCapacidadUnitaria = 16.0;
-    private double precioVentaUnitario = 3.0;
-    private double costoVariableUnitario = 0.20;
-    private double costoOperativoUnitario = 0.40;
+    // Parámetros del ejercicio
+    private int tamanoMercadoInicial = 300_000;
+    private double crecimientoPrimeros5 = 0.10; // 10%
+    private double crecimientoProximos5 = 0.05; // 5%
+    private double precioVentaUnitario = 50.0;
+    private double costoVariableUnitario = 10.0;
+    private double costeFijoNuevaVersion = 6_000_000.0;
+    private double cuotaMercadoVersionIngles = 0.30; // 30%
+    private double cuotaMercadoConNuevaVersion = 0.40; // 40%
+    private int horizonteAnios = 10;
     private double tasaDescuento = 0.10; // Por defecto 10%
-
-    /**
-     * Constructor privado para el patrón Singleton.
-     */
+    // Campos de compatibilidad con la versión previa del paquete
+    // (algunos panels y modelos esperan estos nombres)
+    private int demandaInicial = tamanoMercadoInicial;
+    private double crecimientoAnual = crecimientoPrimeros5;
     private ControladorParametros() {
     }
 
-    /**
-     * Obtiene la instancia única del controlador de parámetros.
-     * @return Instancia única de ControladorParametros.
-     */
     public static ControladorParametros getInstancia() {
         if (instancia == null) instancia = new ControladorParametros();
         return instancia;
     }
 
-    /**
-     * Obtiene la demanda inicial del modelo.
-     * @return Demanda inicial (unidades).
-     */
+    // Getters / Setters
+    public int getTamanoMercadoInicial() {
+        return tamanoMercadoInicial;
+    }
+
+    public void setTamanoMercadoInicial(int tamanoMercadoInicial) {
+        this.tamanoMercadoInicial = tamanoMercadoInicial;
+    }
+
+    public double getCrecimientoPrimeros5() {
+        return crecimientoPrimeros5;
+    }
+
+    public void setCrecimientoPrimeros5(double crecimientoPrimeros5) {
+        this.crecimientoPrimeros5 = crecimientoPrimeros5;
+    }
+
+    public double getCrecimientoProximos5() {
+        return crecimientoProximos5;
+    }
+
+    public void setCrecimientoProximos5(double crecimientoProximos5) {
+        this.crecimientoProximos5 = crecimientoProximos5;
+    }
+
+    public double getPrecioVentaUnitario() {
+        return precioVentaUnitario;
+    }
+
+    public void setPrecioVentaUnitario(double precioVentaUnitario) {
+        this.precioVentaUnitario = precioVentaUnitario;
+    }
+
+    public double getCostoVariableUnitario() {
+        return costoVariableUnitario;
+    }
+
+    public void setCostoVariableUnitario(double costoVariableUnitario) {
+        this.costoVariableUnitario = costoVariableUnitario;
+    }
+
+    public double getCosteFijoNuevaVersion() {
+        return costeFijoNuevaVersion;
+    }
+
+    public void setCosteFijoNuevaVersion(double costeFijoNuevaVersion) {
+        this.costeFijoNuevaVersion = costeFijoNuevaVersion;
+    }
+
+    public double getCuotaMercadoVersionIngles() {
+        return cuotaMercadoVersionIngles;
+    }
+
+    public void setCuotaMercadoVersionIngles(double cuotaMercadoVersionIngles) {
+        this.cuotaMercadoVersionIngles = cuotaMercadoVersionIngles;
+    }
+
+    public double getCuotaMercadoConNuevaVersion() {
+        return cuotaMercadoConNuevaVersion;
+    }
+
+    public void setCuotaMercadoConNuevaVersion(double cuotaMercadoConNuevaVersion) {
+        this.cuotaMercadoConNuevaVersion = cuotaMercadoConNuevaVersion;
+    }
+
+    public int getHorizonteAnios() {
+        return horizonteAnios;
+    }
+
+    public void setHorizonteAnios(int horizonteAnios) {
+        this.horizonteAnios = horizonteAnios;
+    }
+
+    public double getTasaDescuento() {
+        return tasaDescuento;
+    }
+
+    public void setTasaDescuento(double tasaDescuento) {
+        this.tasaDescuento = tasaDescuento;
+    }
+
+    // Métodos de compatibilidad con el API anterior
     public int getDemandaInicial() {
         return demandaInicial;
     }
 
-    /**
-     * Establece la demanda inicial del modelo.
-     * @param v Nueva demanda inicial (unidades).
-     */
-    public void setDemandaInicial(int v) {
-        demandaInicial = v;
+    public void setDemandaInicial(int demandaInicial) {
+        this.demandaInicial = demandaInicial;
+        this.tamanoMercadoInicial = demandaInicial;
     }
 
     /**
-     * Obtiene el crecimiento anual de la demanda.
-     * @return Crecimiento anual (proporción, ej: 0.05 para 5%).
+     * Devuelve el crecimiento anual por compatibilidad. Actualmente
+     * se usan dos tasas (primeros 5 años y próximos 5 años). Aquí
+     * devolvemos la tasa de los primeros 5 años para mantener
+     * compatibilidad con código existente.
      */
     public double getCrecimientoAnual() {
         return crecimientoAnual;
     }
 
-    /**
-     * Establece el crecimiento anual de la demanda.
-     * @param v Nuevo crecimiento anual (proporción).
-     */
-    public void setCrecimientoAnual(double v) {
-        crecimientoAnual = v;
+    public void setCrecimientoAnual(double crecimientoAnual) {
+        this.crecimientoAnual = crecimientoAnual;
+        this.crecimientoPrimeros5 = crecimientoAnual;
     }
 
-    /**
-     * Obtiene el costo de capacidad unitaria.
-     * @return Costo de capacidad unitaria ($ por unidad).
-     */
-    public double getCostoCapacidadUnitaria() {
-        return costoCapacidadUnitaria;
-    }
-
-    /**
-     * Establece el costo de capacidad unitaria.
-     * @param v Nuevo costo de capacidad unitaria ($ por unidad).
-     */
-    public void setCostoCapacidadUnitaria(double v) {
-        costoCapacidadUnitaria = v;
-    }
-
-    /**
-     * Obtiene el precio de venta unitario.
-     * @return Precio de venta unitario ($ por unidad).
-     */
-    public double getPrecioVentaUnitario() {
-        return precioVentaUnitario;
-    }
-
-    /**
-     * Establece el precio de venta unitario.
-     * @param v Nuevo precio de venta unitario ($ por unidad).
-     */
-    public void setPrecioVentaUnitario(double v) {
-        precioVentaUnitario = v;
-    }
-
-    /**
-     * Obtiene el costo variable unitario.
-     * @return Costo variable unitario ($ por unidad).
-     */
-    public double getCostoVariableUnitario() {
-        return costoVariableUnitario;
-    }
-
-    /**
-     * Establece el costo variable unitario.
-     * @param v Nuevo costo variable unitario ($ por unidad).
-     */
-    public void setCostoVariableUnitario(double v) {
-        costoVariableUnitario = v;
-    }
-
-    /**
-     * Obtiene el costo operativo unitario.
-     * @return Costo operativo unitario anual ($ por unidad).
-     */
-    public double getCostoOperativoUnitario() {
-        return costoOperativoUnitario;
-    }
-
-    /**
-     * Establece el costo operativo unitario.
-     * @param v Nuevo costo operativo unitario anual ($ por unidad).
-     */
-    public void setCostoOperativoUnitario(double v) {
-        costoOperativoUnitario = v;
-    }
-
-    /**
-     * Obtiene la tasa de descuento para el cálculo de VAN.
-     * @return Tasa de descuento anual (proporción, ej: 0.10 para 10%).
-     */
-    public double getTasaDescuento() {
-        return tasaDescuento;
-    }
-
-    /**
-     * Establece la tasa de descuento para el cálculo de VAN.
-     * @param v Nueva tasa de descuento anual (proporción).
-     */
-    public void setTasaDescuento(double v) {
-        tasaDescuento = v;
-    }
 }
