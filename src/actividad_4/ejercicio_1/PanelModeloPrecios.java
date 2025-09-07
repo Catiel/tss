@@ -191,6 +191,8 @@ public class PanelModeloPrecios extends JPanel {
                 ModeloSoftwareCalculo.ResultadoAnual rCon = resultados.resultadosCon[i];
                 ModeloSoftwareCalculo.ResultadoAnual rSin = resultados.resultadosSin[i];
 
+                // Los cálculos se hacen con decimales (no se modifica nada internamente)
+                // pero para la visualización formateamos como enteros
                 modeloTabla.addRow(new Object[] {
                     rCon.anio,
                     rCon.demanda,
@@ -203,7 +205,7 @@ public class PanelModeloPrecios extends JPanel {
                 });
             }
 
-            // Actualizamos las etiquetas de VAN
+            // Actualizamos las etiquetas de VAN (también con formato de números enteros)
             lblVANCon.setText(String.format("$%,.0f", resultados.vanCon));
             lblVANSin.setText(String.format("$%,.0f", resultados.vanSin));
             lblDiferenciaVAN.setText(String.format("$%,.0f", resultados.diferenciaVAN));
