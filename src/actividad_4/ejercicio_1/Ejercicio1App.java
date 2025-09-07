@@ -8,11 +8,17 @@ import javax.swing.*;
  * Ventana principal de la aplicación del Ejercicio 1.
  * Permite analizar el modelo de software con diferentes paneles interactivos:
  * - Comparación de Beneficios
+ * - Tabla Automática (con valores predefinidos)
+ * - Tabla Manual (con valores ingresados por el usuario)
+ * - Tabla Random (con valores generados aleatoriamente)
  * - Configuración de parámetros
  */
 public class Ejercicio1App extends JFrame {
     // Mantener referencias a los paneles para evitar que se pierdan los observadores
     private final PanelModeloPrecios panelModeloPrecios;
+    private final PanelTablaAuto panelTablaAuto;
+    private final PanelTablaManual panelTablaManual;
+    private final PanelTablaRandom panelTablaRandom;
     private final PanelConfiguracion panelConfiguracion;
 
     /**
@@ -32,10 +38,16 @@ public class Ejercicio1App extends JFrame {
 
         // Creamos las instancias de los paneles una sola vez
         panelModeloPrecios = new PanelModeloPrecios();
+        panelTablaAuto = new PanelTablaAuto();
+        panelTablaManual = new PanelTablaManual();
+        panelTablaRandom = new PanelTablaRandom();
         panelConfiguracion = new PanelConfiguracion();
 
         JTabbedPane pestanas = new JTabbedPane();
         pestanas.addTab("Comparación de Beneficios", panelModeloPrecios);
+        pestanas.addTab("Tabla Automática", panelTablaAuto);
+        pestanas.addTab("Tabla Manual", panelTablaManual);
+        pestanas.addTab("Tabla Random", panelTablaRandom);
         pestanas.addTab("Configuración", panelConfiguracion);
         add(pestanas);
     }
