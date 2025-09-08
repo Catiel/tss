@@ -52,7 +52,8 @@ public class PanelPaybackDetalle extends JPanel implements ControladorParametros
             modelo.addRow(new Object[]{r.anio, r.flujo, r.acumulado, r.menorQueInversion});
         }
         int periodo = res.periodoRecuperacion;
-        lblPeriodo.setText(periodo == -1 ? "-1" : String.valueOf(periodo));
+        int valorMostrar = (periodo == -1) ? (p.getHorizonteAnios() + 1) : periodo;
+        lblPeriodo.setText(String.valueOf(valorMostrar));
     }
 
     @Override public void onParametrosChanged(){ SwingUtilities.invokeLater(this::actualizar); }
