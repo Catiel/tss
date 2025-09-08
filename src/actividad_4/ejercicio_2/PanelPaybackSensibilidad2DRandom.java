@@ -53,10 +53,9 @@ public class PanelPaybackSensibilidad2DRandom extends JPanel implements Controla
     }
 
     private void crearTablaBase(int numFlujos, int numTasas){
-        String[] cols = new String[numFlujos+1]; cols[0]="Tasa/Flujo"; for(int i=1;i<cols.length;i++) cols[i]="F"+i;
-        modelo = new DefaultTableModel(cols,0){ @Override public boolean isCellEditable(int r,int c){return false;} };
-        Object[] fila0 = new Object[numFlujos+1]; for(int c=0;c<fila0.length;c++) fila0[c]=""; modelo.addRow(fila0);
-        for(int r=0;r<numTasas;r++){ Object[] f = new Object[numFlujos+1]; for(int c=0;c<f.length;c++) f[c]=""; modelo.addRow(f);}
+        // Random: usuario NO edita flujos ni tasas => ambos false
+        modelo = Payback2DUtil.crearModeloBase(numFlujos, numTasas, false, false);
+        Payback2DUtil.inicializarFilas(modelo, numFlujos, numTasas);
         if(tabla==null){
             tabla = new JTable(modelo){
                 @Override public Component prepareRenderer(javax.swing.table.TableCellRenderer renderer,int row,int column){
@@ -75,31 +74,19 @@ public class PanelPaybackSensibilidad2DRandom extends JPanel implements Controla
         if(fMax<=fMin || tMax<tMin || fMin<=0){ lblInfo.setText("Rangos inválidos"); return; }
         crearTablaBase(cols,filas);
         ThreadLocalRandom rnd=ThreadLocalRandom.current();
-        for(int c=1;c<=cols;c++){ double v=fMin+rnd.nextDouble()*(fMax-fMin); modelo.setValueAt(formato(v),0,c);}
+        for(int c=1;c<=cols;c++){ double v=fMin+rnd.nextDouble()*(fMax-fMin); modelo.setValueAt(Payback2DUtil.formatear(v),0,c);}
         for(int r=1;r<=filas;r++){ double t=tMin+rnd.nextDouble()*(tMax-tMin); modelo.setValueAt(String.format(Locale.US,"%.2f",t),r,0);}
-        calcularResultadosDesdeModelo();
-        actualizarCeldaEsquina();
+        recalcular();
         lblInfo.setText("Generado (h+1 = no recupera)");
     }
 
-    private void calcularResultadosDesdeModelo(){
-        if(modelo==null) return; int totalCols=modelo.getColumnCount(); int totalRows=modelo.getRowCount();
-        if(totalCols<=1||totalRows<=1) return;
-        double[] flujos=new double[totalCols-1]; boolean flujosOk=true;
-        for(int c=1;c<totalCols;c++){ flujos[c-1]=parse(modelo.getValueAt(0,c)); if(Double.isNaN(flujos[c-1])||flujos[c-1]<=0){ flujosOk=false; break; } }
-        double[] tasas=new double[totalRows-1]; boolean tasasOk=true;
-        for(int r=1;r<totalRows;r++){ tasas[r-1]=parse(modelo.getValueAt(r,0))/100.0; if(Double.isNaN(tasas[r-1])||tasas[r-1]<0){ tasasOk=false; break; } }
-        if(!flujosOk || !tasasOk){ datosGenerados=false; limpiarResultados(); return; }
-        datosGenerados=true;
+    private void recalcular(){
         ControladorParametros p=ControladorParametros.getInstancia();
-        double inversion=p.getInversionOriginal(); int horizonte=p.getHorizonteAnios();
-        for(int r=1;r<totalRows;r++) for(int c=1;c<totalCols;c++){
-            int pay=PaybackCalculo.calcularPeriodo(inversion, flujos[c-1], tasas[r-1], horizonte);
-            modelo.setValueAt(pay==-1? horizonte+1: pay, r,c);
-        }
+        boolean ok = Payback2DUtil.calcularYVolcar(modelo, p.getInversionOriginal(), p.getHorizonteAnios());
+        datosGenerados = ok;
+        actualizarCeldaEsquina();
+        if(!ok) lblInfo.setText("Datos inválidos");
     }
-
-    private void limpiarResultados(){ int tc=modelo.getColumnCount(); int tr=modelo.getRowCount(); for(int r=1;r<tr;r++) for(int c=1;c<tc;c++) modelo.setValueAt("",r,c); }
 
     private void actualizarCeldaEsquina(){
         ControladorParametros p=ControladorParametros.getInstancia();
@@ -107,10 +94,7 @@ public class PanelPaybackSensibilidad2DRandom extends JPanel implements Controla
         if(modelo!=null && modelo.getRowCount()>0) modelo.setValueAt(pay==-1? p.getHorizonteAnios()+1: pay,0,0);
     }
 
-    private double parse(Object v){ if(v==null) return Double.NaN; String s=v.toString().trim(); if(s.isEmpty()) return Double.NaN; if(s.endsWith("%")) s=s.substring(0,s.length()-1).trim(); s=s.replace(',','.'); try{return Double.parseDouble(s);}catch(Exception e){return Double.NaN;} }
-    private String formato(double d){ return Math.abs(d-Math.rint(d))<1e-6? String.format(Locale.US,"%.0f",d): String.format(Locale.US,"%.2f",d);}
-
-    @Override public void onParametrosChanged(){ SwingUtilities.invokeLater(() -> { actualizarCeldaEsquina(); if(datosGenerados) calcularResultadosDesdeModelo(); }); }
+    @Override public void onParametrosChanged(){ SwingUtilities.invokeLater(() -> { if(datosGenerados) recalcular(); else actualizarCeldaEsquina(); }); }
 
     @Override public void removeNotify(){ ControladorParametros.getInstancia().removeChangeListener(this); super.removeNotify(); }
 }

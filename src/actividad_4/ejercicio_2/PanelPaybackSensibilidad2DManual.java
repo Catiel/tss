@@ -63,31 +63,8 @@ public class PanelPaybackSensibilidad2DManual extends JPanel implements Controla
     }
 
     private void crearTablaBase(int numFlujos, int numTasas){
-        // Column identifiers: 1 + numFlujos
-        String[] cols = new String[numFlujos + 1];
-        cols[0] = "Tasa/Flujo";
-        for(int i=1;i<cols.length;i++) cols[i] = "F"+i; // temporales hasta que usuario llene
-
-        modelo = new DefaultTableModel(cols,0){
-            @Override public boolean isCellEditable(int row,int col){
-                // Editable sólo flujos (fila 0 excepto col0) y tasas (col0 excepto fila0)
-                if(row==0 && col>0) return true; // flujos
-                if(col==0 && row>0) return true; // tasas
-                return false; // resultados y (0,0)
-            }
-        };
-        // Añadir fila 0 (flujos) inicial vacía
-        Object[] filaFlujos = new Object[numFlujos + 1];
-        filaFlujos[0] = ""; // se seteará con payback actual
-        for(int c=1;c<filaFlujos.length;c++) filaFlujos[c] = ""; // vacío
-        modelo.addRow(filaFlujos);
-        // Añadir filas de tasas
-        for(int r=0;r<numTasas;r++){
-            Object[] fila = new Object[numFlujos + 1];
-            fila[0] = ""; // tasa % editable
-            for(int c=1;c<fila.length;c++) fila[c] = ""; // resultados en blanco
-            modelo.addRow(fila);
-        }
+        modelo = Payback2DUtil.crearModeloBase(numFlujos, numTasas, true, true); // manual: flujos y tasas editables
+        Payback2DUtil.inicializarFilas(modelo, numFlujos, numTasas);
         if(tabla==null){
             tabla = new JTable(modelo){
                 @Override public Component prepareRenderer(javax.swing.table.TableCellRenderer renderer,int row,int column){
@@ -113,67 +90,13 @@ public class PanelPaybackSensibilidad2DManual extends JPanel implements Controla
 
     private void calcularResultados(){
         ControladorParametros p = ControladorParametros.getInstancia();
-        double inversion = p.getInversionOriginal();
-        int horizonte = p.getHorizonteAnios();
-
-        int totalCols = modelo.getColumnCount();
-        int totalRows = modelo.getRowCount();
-
-        // Leer flujos
-        double[] flujos = new double[totalCols-1];
-        for(int c=1;c<totalCols;c++){
-            Object val = modelo.getValueAt(0,c);
-            flujos[c-1] = parseDoubleOrNaN(val);
-        }
-        // Leer tasas
-        double[] tasas = new double[totalRows-1];
-        for(int r=1;r<totalRows;r++){
-            Object val = modelo.getValueAt(r,0);
-            tasas[r-1] = parseDoubleOrNaN(val)/100.0; // convertir % a decimal
-        }
-
-        // Validar
-        boolean anyError=false;
-        StringBuilder sbErrores = new StringBuilder();
-        for(int i=0;i<flujos.length;i++) if(Double.isNaN(flujos[i])||flujos[i]<=0){ anyError=true; sbErrores.append("Flujo col ").append(i+1).append(" inválido. "); }
-        for(int i=0;i<tasas.length;i++) if(Double.isNaN(tasas[i])||tasas[i]<0){ anyError=true; sbErrores.append("Tasa fila ").append(i+1).append(" inválida. "); }
-        if(anyError){
-            lblInfo.setText("Errores: "+sbErrores);
+        boolean ok = Payback2DUtil.calcularYVolcar(modelo, p.getInversionOriginal(), p.getHorizonteAnios());
+        if(!ok){
+            lblInfo.setText("Errores: verifique flujos (>0) y tasas (>=0)");
             return;
         }
-
-        // Calcular
-        for(int r=1;r<totalRows;r++){
-            double tasa = tasas[r-1];
-            for(int c=1;c<totalCols;c++){
-                double flujo = flujos[c-1];
-                int payback = PaybackCalculo.calcularPeriodo(inversion, flujo, tasa, horizonte);
-                int valorMostrar = (payback == -1) ? (horizonte + 1) : payback;
-                modelo.setValueAt(valorMostrar, r, c);
-            }
-            // mostrar tasa formateada de nuevo (por si ingresó decimal)
-            modelo.setValueAt(String.format("%.2f", tasas[r-1]*100), r,0);
-        }
-        // Mostrar flujos formateados
-        for(int c=1;c<totalCols;c++) modelo.setValueAt(formatoNumero(flujos[c-1]),0,c);
-
-        // Actualizar esquina superior con payback actual
         onParametrosChanged();
-
-        lblInfo.setText("Cálculo completado. Valores = " + (horizonte + 1) + " indican no recupera en horizonte=" + horizonte + " años");
-    }
-
-    private double parseDoubleOrNaN(Object v){
-        if(v==null) return Double.NaN;
-        String str = v.toString().trim();
-        if (str.endsWith("%")) {
-            str = str.substring(0, str.length() - 1).trim(); // remover % si presente (por si acaso)
-        }
-        try { return Double.parseDouble(str); } catch(Exception e){ return Double.NaN; }
-    }
-    private String formatoNumero(double d){
-        if(Math.abs(d-Math.rint(d))<1e-6) return String.format("%.0f", d);
-        return String.format("%.2f", d);
+        lblInfo.setText("Cálculo completado. Valores = " + (p.getHorizonteAnios() + 1) + " indican no recupera en horizonte=" + p.getHorizonteAnios());
     }
 
     @Override public void onParametrosChanged(){
