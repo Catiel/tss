@@ -1,293 +1,201 @@
-package actividad_4.ejercicio_1;
+package actividad_4.ejercicio_1; // Paquete del ejercicio 1
 
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.util.Random;
+import javax.swing.*; // Componentes Swing
+import javax.swing.table.DefaultTableModel; // Modelo de tabla por defecto
+import java.awt.*; // Layouts y utilidades AWT
+import java.awt.event.ActionEvent; // Eventos de acción para botones
+import java.util.Random; // Generador de números aleatorios
 
 /**
  * Panel que genera tasas de descuento aleatorias y muestra cómo afectan a la diferencia de VAN.
  */
-public class PanelTablaRandom extends JPanel implements ControladorParametros.ParametrosChangeListener {
-    private final DefaultTableModel modeloTabla;
-    private final JTable tablaSensibilidad;
-    private final JTextField txtMinimo;
-    private final JTextField txtMaximo;
-    private final JTextField txtCantidad;
-    private final JButton btnGenerar;
-    private final JButton btnLimpiar;
+public class PanelTablaRandom extends JPanel implements ControladorParametros.ParametrosChangeListener { // Panel que escucha cambios de parámetros
+    private final DefaultTableModel modeloTabla; // Modelo de datos (no editable)
+    private final JTable tablaSensibilidad;      // Tabla de visualización
+    private final JTextField txtMinimo;          // Campo tasa mínima (%)
+    private final JTextField txtMaximo;          // Campo tasa máxima (%)
+    private final JTextField txtCantidad;        // Campo cantidad de tasas a generar
+    private final JButton btnGenerar;            // Botón generar valores aleatorios
+    private final JButton btnLimpiar;            // Botón limpiar la tabla
 
     /**
      * Constructor del panel de tabla con valores aleatorios para el análisis de sensibilidad.
      */
-    public PanelTablaRandom() {
-        // Registramos este panel como oyente de cambios en los parámetros
-        ControladorParametros.getInstancia().addChangeListener(this);
+    public PanelTablaRandom() { // Inicio constructor
+        ControladorParametros.getInstancia().addChangeListener(this); // Se registra como oyente de cambios
 
-        EstilosUI.aplicarEstiloPanel(this);
-        setLayout(new BorderLayout(10, 10));
+        EstilosUI.aplicarEstiloPanel(this);        // Aplica estilo base
+        setLayout(new BorderLayout(10, 10));       // Layout principal con márgenes
 
-        // Título del panel
-        JLabel titulo = new JLabel("Tabla con tasas de descuento aleatorias");
-        EstilosUI.aplicarEstiloTitulo(titulo);
-        titulo.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        add(titulo, BorderLayout.NORTH);
+        JLabel titulo = new JLabel("Tabla con tasas de descuento aleatorias"); // Título del panel
+        EstilosUI.aplicarEstiloTitulo(titulo);     // Estilo de título
+        titulo.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Márgenes del título
+        add(titulo, BorderLayout.NORTH);           // Añade título arriba
 
-        // Panel superior para controles
-        JPanel panelSuperior = new PanelSuperiorRandom();
+        JPanel panelSuperior = new PanelSuperiorRandom(); // Panel de controles superiores
 
-        // Creamos las columnas de la tabla
-        String[] columnas = {"Tasa de descuento", "Diferencia VAN"};
+        String[] columnas = {"Tasa de descuento", "Diferencia VAN"}; // Encabezados de tabla
 
-        // Creamos el modelo de tabla (no editable)
-        modeloTabla = new DefaultTableModel(columnas, 0) {
-            @Override
-            public boolean isCellEditable(int row, int col) {
-                return false;
-            }
+        modeloTabla = new DefaultTableModel(columnas, 0) { // Modelo sin filas iniciales
+            @Override public boolean isCellEditable(int row, int col) { return false; } // No editable
         };
 
-        // Creamos la tabla con el modelo
-        tablaSensibilidad = new JTable(modeloTabla);
-        EstilosUI.aplicarEstiloTabla(tablaSensibilidad);
+        tablaSensibilidad = new JTable(modeloTabla); // Crea tabla
+        EstilosUI.aplicarEstiloTabla(tablaSensibilidad); // Aplica estilo
 
-        // Ajustamos los anchos de las columnas
-        tablaSensibilidad.getColumnModel().getColumn(0).setPreferredWidth(150);
-        tablaSensibilidad.getColumnModel().getColumn(1).setPreferredWidth(250);
+        tablaSensibilidad.getColumnModel().getColumn(0).setPreferredWidth(150); // Ajusta ancho col 0
+        tablaSensibilidad.getColumnModel().getColumn(1).setPreferredWidth(250); // Ajusta ancho col 1
 
-        // Creamos un panel con scroll para la tabla
-        JScrollPane scrollPane = new JScrollPane(tablaSensibilidad);
-        scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        JScrollPane scrollPane = new JScrollPane(tablaSensibilidad); // Scroll para tabla
+        scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10)); // Márgenes
 
-        // Panel central que contiene el panel superior y la tabla
-        JPanel panelCentral = new JPanel(new BorderLayout());
-        panelCentral.add(panelSuperior, BorderLayout.NORTH);
-        panelCentral.add(scrollPane, BorderLayout.CENTER);
+        JPanel panelCentral = new JPanel(new BorderLayout()); // Panel central contenedor
+        panelCentral.add(panelSuperior, BorderLayout.NORTH);  // Controles arriba
+        panelCentral.add(scrollPane, BorderLayout.CENTER);    // Tabla al centro
+        add(panelCentral, BorderLayout.CENTER);               // Añade al panel principal
 
-        add(panelCentral, BorderLayout.CENTER);
+        JPanel panelDescripcion = new JPanel(new FlowLayout(FlowLayout.LEFT)); // Panel inferior descripción
+        JLabel lblDescripcion = new JLabel("Esta tabla muestra cómo varía la diferencia de VAN entre los escenarios con y sin versión francesa para tasas de descuento generadas aleatoriamente."); // Texto descriptivo
+        lblDescripcion.setFont(new Font("Segoe UI", Font.ITALIC, 12)); // Fuente itálica
+        panelDescripcion.add(lblDescripcion); // Añade descripción
+        add(panelDescripcion, BorderLayout.SOUTH); // Añade panel inferior
 
-        // Panel con descripción de la tabla
-        JPanel panelDescripcion = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JLabel lblDescripcion = new JLabel("Esta tabla muestra cómo varía la diferencia de VAN entre los escenarios con y sin versión francesa para tasas de descuento generadas aleatoriamente.");
-        lblDescripcion.setFont(new Font("Segoe UI", Font.ITALIC, 12));
-        panelDescripcion.add(lblDescripcion);
-        add(panelDescripcion, BorderLayout.SOUTH);
+        // Referencias a los componentes internos del panel superior
+        txtMinimo = ((PanelSuperiorRandom)panelSuperior).txtMinimo;   // Campo mínimo
+        txtMaximo = ((PanelSuperiorRandom)panelSuperior).txtMaximo;   // Campo máximo
+        txtCantidad = ((PanelSuperiorRandom)panelSuperior).txtCantidad; // Campo cantidad
+        btnGenerar = ((PanelSuperiorRandom)panelSuperior).btnGenerar; // Botón generar
+        btnLimpiar = ((PanelSuperiorRandom)panelSuperior).btnLimpiar; // Botón limpiar
 
-        // Referencias a los componentes del panel superior
-        txtMinimo = ((PanelSuperiorRandom)panelSuperior).txtMinimo;
-        txtMaximo = ((PanelSuperiorRandom)panelSuperior).txtMaximo;
-        txtCantidad = ((PanelSuperiorRandom)panelSuperior).txtCantidad;
-        btnGenerar = ((PanelSuperiorRandom)panelSuperior).btnGenerar;
-        btnLimpiar = ((PanelSuperiorRandom)panelSuperior).btnLimpiar;
-
-        // Configuramos los listeners para los botones
-        configurarListeners();
+        configurarListeners(); // Configura acciones de botones
     }
 
     /**
      * Panel superior con controles para generar valores aleatorios
      */
-    private class PanelSuperiorRandom extends JPanel {
-        final JTextField txtMinimo;
-        final JTextField txtMaximo;
-        final JTextField txtCantidad;
-        final JButton btnGenerar;
-        final JButton btnLimpiar;
+    private class PanelSuperiorRandom extends JPanel { // Panel interno con inputs
+        final JTextField txtMinimo;   // Campo tasa mínima (%)
+        final JTextField txtMaximo;   // Campo tasa máxima (%)
+        final JTextField txtCantidad; // Campo cantidad de valores a generar
+        final JButton btnGenerar;     // Botón generar
+        final JButton btnLimpiar;     // Botón limpiar
 
-        PanelSuperiorRandom() {
-            setLayout(new FlowLayout(FlowLayout.LEFT));
-            setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        PanelSuperiorRandom() { // Constructor panel superior
+            setLayout(new FlowLayout(FlowLayout.LEFT)); // Distribución horizontal
+            setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10)); // Márgenes
 
-            // Componentes para el rango mínimo
-            JLabel lblMinimo = new JLabel("Tasa mínima (%): ");
-            txtMinimo = new JTextField("5", 5);
+            JLabel lblMinimo = new JLabel("Tasa mínima (%): "); // Etiqueta mínimo
+            txtMinimo = new JTextField("5", 5);                 // Valor por defecto 5%
 
-            // Componentes para el rango máximo
-            JLabel lblMaximo = new JLabel("Tasa máxima (%): ");
-            txtMaximo = new JTextField("30", 5);
+            JLabel lblMaximo = new JLabel("Tasa máxima (%): "); // Etiqueta máximo
+            txtMaximo = new JTextField("30", 5);                // Valor por defecto 30%
 
-            // Componentes para la cantidad
-            JLabel lblCantidad = new JLabel("Cantidad: ");
-            txtCantidad = new JTextField("10", 5);
+            JLabel lblCantidad = new JLabel("Cantidad: ");      // Etiqueta cantidad
+            txtCantidad = new JTextField("10", 5);              // Valor por defecto 10
 
-            // Botones
-            btnGenerar = new JButton("Generar");
-            EstilosUI.aplicarEstiloBoton(btnGenerar);
-            btnLimpiar = new JButton("Limpiar");
-            EstilosUI.aplicarEstiloBoton(btnLimpiar);
+            btnGenerar = new JButton("Generar");                // Botón generar
+            EstilosUI.aplicarEstiloBoton(btnGenerar);            // Estilo
+            btnLimpiar = new JButton("Limpiar");                // Botón limpiar
+            EstilosUI.aplicarEstiloBoton(btnLimpiar);            // Estilo
 
-            // Agregamos los componentes al panel
-            add(lblMinimo);
-            add(txtMinimo);
-            add(lblMaximo);
-            add(txtMaximo);
-            add(lblCantidad);
-            add(txtCantidad);
-            add(btnGenerar);
-            add(btnLimpiar);
+            add(lblMinimo); add(txtMinimo);        // Agrega mínimo
+            add(lblMaximo); add(txtMaximo);        // Agrega máximo
+            add(lblCantidad); add(txtCantidad);    // Agrega cantidad
+            add(btnGenerar); add(btnLimpiar);      // Agrega botones
         }
     }
 
     /**
      * Configura los listeners para los botones de la interfaz
      */
-    private void configurarListeners() {
-        // Botón para generar valores aleatorios
-        btnGenerar.addActionListener((ActionEvent e) -> {
+    private void configurarListeners() { // Define acciones
+        btnGenerar.addActionListener((ActionEvent e) -> { // Acción generar
             try {
-                // Obtenemos los valores de los campos
-                double minimo = Double.parseDouble(txtMinimo.getText().trim());
-                double maximo = Double.parseDouble(txtMaximo.getText().trim());
-                int cantidad = Integer.parseInt(txtCantidad.getText().trim());
+                double minimo = Double.parseDouble(txtMinimo.getText().trim());   // Lee mínimo
+                double maximo = Double.parseDouble(txtMaximo.getText().trim());   // Lee máximo
+                int cantidad = Integer.parseInt(txtCantidad.getText().trim());    // Lee cantidad
 
-                // Validaciones
-                if (minimo < 0 || minimo >= 100) {
-                    JOptionPane.showMessageDialog(this, "La tasa mínima debe estar entre 0 y 100", "Valor fuera de rango", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-                if (maximo <= minimo || maximo > 100) {
-                    JOptionPane.showMessageDialog(this, "La tasa máxima debe ser mayor que la mínima y menor o igual a 100", "Valor fuera de rango", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-                if (cantidad <= 0 || cantidad > 100) {
-                    JOptionPane.showMessageDialog(this, "La cantidad debe estar entre 1 y 100", "Valor fuera de rango", JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
+                if (minimo < 0 || minimo >= 100) { // Validación mínimo
+                    JOptionPane.showMessageDialog(this, "La tasa mínima debe estar entre 0 y 100", "Valor fuera de rango", JOptionPane.WARNING_MESSAGE); return; }
+                if (maximo <= minimo || maximo > 100) { // Validación máximo
+                    JOptionPane.showMessageDialog(this, "La tasa máxima debe ser mayor que la mínima y menor o igual a 100", "Valor fuera de rango", JOptionPane.WARNING_MESSAGE); return; }
+                if (cantidad <= 0 || cantidad > 100) { // Validación cantidad
+                    JOptionPane.showMessageDialog(this, "La cantidad debe estar entre 1 y 100", "Valor fuera de rango", JOptionPane.WARNING_MESSAGE); return; }
 
-                // Limpiamos la tabla
-                modeloTabla.setRowCount(0);
+                modeloTabla.setRowCount(0); // Limpia tabla anterior
 
-                // Generamos los valores aleatorios
-                Random random = new Random();
-                for (int i = 0; i < cantidad; i++) {
-                    // Generamos una tasa aleatoria entre mínimo y máximo
-                    double tasa = minimo + (maximo - minimo) * random.nextDouble();
-                    tasa = tasa / 100.0; // Convertimos a decimal
-                    calcularYAgregarFila(tasa);
+                Random random = new Random(); // Generador aleatorio
+                for (int i = 0; i < cantidad; i++) { // Genera cada tasa
+                    double tasa = minimo + (maximo - minimo) * random.nextDouble(); // Tasa en rango
+                    tasa = tasa / 100.0; // Convierte a decimal
+                    calcularYAgregarFila(tasa); // Calcula y agrega
                 }
-
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "Por favor ingrese números válidos en todos los campos", "Error de formato", JOptionPane.ERROR_MESSAGE);
-            }
+            } catch (NumberFormatException ex) { // Error de formato
+                JOptionPane.showMessageDialog(this, "Por favor ingrese números válidos en todos los campos", "Error de formato", JOptionPane.ERROR_MESSAGE); }
         });
 
-        // Botón para limpiar la tabla
-        btnLimpiar.addActionListener((ActionEvent e) -> {
-            modeloTabla.setRowCount(0);
+        btnLimpiar.addActionListener((ActionEvent e) -> { // Acción limpiar
+            modeloTabla.setRowCount(0); // Borra filas
         });
     }
 
     /**
      * Calcula la diferencia de VAN para una tasa específica y la agrega a la tabla
      */
-    private void calcularYAgregarFila(double tasa) {
+    private void calcularYAgregarFila(double tasa) { // Añade fila calculada
         try {
-            ControladorParametros params = ControladorParametros.getInstancia();
-
-            // Calculamos el resultado comparativo usando la tasa de descuento proporcionada
-            ModeloSoftwareCalculo.ResultadoComparativo resultado =
+            ControladorParametros params = ControladorParametros.getInstancia(); // Parámetros actuales
+            ModeloSoftwareCalculo.ResultadoComparativo resultado = // Calcula comparativo
                 ModeloSoftwareCalculo.calcularComparativo(params, tasa);
-
-            // Formateamos la tasa como porcentaje y la diferencia como moneda
-            String tasaFormateada = String.format("%.2f%%", tasa * 100);
-            String diferenciaFormateada = formatearMoneda(resultado.diferenciaVAN);
-
-            // Añadimos la fila a la tabla
-            modeloTabla.addRow(new Object[]{tasaFormateada, diferenciaFormateada});
-
-            // Aplicamos formato condicional
-            aplicarFormatoCondicional();
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error al calcular el resultado", "Error", JOptionPane.ERROR_MESSAGE);
+            String tasaFormateada = String.format("%.2f%%", tasa * 100); // Formatea tasa
+            String diferenciaFormateada = formatearMoneda(resultado.diferenciaVAN); // Formatea VAN
+            modeloTabla.addRow(new Object[]{tasaFormateada, diferenciaFormateada}); // Inserta fila
+            aplicarFormatoCondicional(); // Actualiza colores
+        } catch (Exception ex) { // Cualquier error
+            ex.printStackTrace(); // Traza
+            JOptionPane.showMessageDialog(this, "Error al calcular el resultado", "Error", JOptionPane.ERROR_MESSAGE); // Mensaje error
         }
     }
 
     /**
-     * Aplica formato visual condicional a las celdas de la tabla:
-     * - Valores positivos en verde
-     * - Valores negativos en rojo
+     * Aplica formato visual condicional (verde positivo, rojo negativo)
      */
-    private void aplicarFormatoCondicional() {
+    private void aplicarFormatoCondicional() { // Renderer condicional
         tablaSensibilidad.setDefaultRenderer(Object.class, new javax.swing.table.DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value,
-                    boolean isSelected, boolean hasFocus, int row, int column) {
-
-                Component c = super.getTableCellRendererComponent(
-                        table, value, isSelected, hasFocus, row, column);
-
-                if (column == 1) { // Solo la columna de diferencia VAN
-                    String valorTexto = (String)value;
-                    if (valorTexto.contains("-")) {
-                        c.setForeground(new Color(192, 0, 0)); // Rojo para valores negativos
-                    } else {
-                        c.setForeground(new Color(0, 128, 0)); // Verde para valores positivos
-                    }
-                } else {
-                    c.setForeground(Color.BLACK); // Color normal para otras columnas
-                }
-
-                return c;
+            @Override public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column); // Base
+                if (column == 1) { // Sólo columna diferencia
+                    String valorTexto = (String) value; // Texto
+                    if (valorTexto.contains("-")) c.setForeground(new Color(192, 0, 0)); // Negativo => rojo
+                    else c.setForeground(new Color(0, 128, 0)); // Positivo => verde
+                } else c.setForeground(Color.BLACK); // Otras columnas
+                return c; // Retorna componente estilizado
             }
         });
     }
 
-    /**
-     * Formatea un valor numérico como moneda (con separador de miles y símbolo $).
-     * @param valor El valor a formatear
-     * @return Cadena formateada como moneda
-     */
-    private String formatearMoneda(double valor) {
-        return UtilidadesFormato.formatearMoneda(valor);
+    /** Formatea valor como moneda */
+    private String formatearMoneda(double valor) { return UtilidadesFormato.formatearMoneda(valor); }
+
+    /** Actualiza tabla tras cambios en parámetros si ya había datos */
+    private void actualizarTabla() { // Recalcula filas existentes
+        if (modeloTabla.getRowCount() == 0) return; // Nada que recalcular
+        java.util.List<Double> tasas = new java.util.ArrayList<>(); // Lista de tasas
+        for (int i = 0; i < modeloTabla.getRowCount(); i++) { // Recorre filas
+            String tasaStr = (String) modeloTabla.getValueAt(i, 0); // Lee texto
+            tasaStr = tasaStr.replace("%", "").trim(); // Quita %
+            tasas.add(Double.parseDouble(tasaStr) / 100.0); // Convierte a decimal
+        }
+        modeloTabla.setRowCount(0); // Limpia
+        for (Double t : tasas) calcularYAgregarFila(t); // Recalcula cada una
     }
 
-    /**
-     * Actualiza los valores de la tabla cuando cambian los parámetros
-     */
-    private void actualizarTabla() {
-        // Si la tabla está vacía, no hay nada que actualizar
-        if (modeloTabla.getRowCount() == 0) {
-            return;
-        }
+    /** Notificación de cambio de parámetros */
+    @Override public void onParametrosChanged() { SwingUtilities.invokeLater(this::actualizarTabla); }
 
-        // Guardamos las tasas actuales
-        java.util.List<Double> tasas = new java.util.ArrayList<>();
-        for (int i = 0; i < modeloTabla.getRowCount(); i++) {
-            String tasaStr = (String) modeloTabla.getValueAt(i, 0);
-            tasaStr = tasaStr.replace("%", "").trim();
-            tasas.add(Double.parseDouble(tasaStr) / 100.0);
-        }
-
-        // Limpiamos la tabla
-        modeloTabla.setRowCount(0);
-
-        // Recalculamos para cada tasa
-        for (Double tasa : tasas) {
-            calcularYAgregarFila(tasa);
-        }
-    }
-
-    /**
-     * Implementación del método requerido por la interfaz ControladorParametros.ParametrosChangeListener.
-     * Este método se llama automáticamente cuando hay cambios en los parámetros.
-     */
-    @Override
-    public void onParametrosChanged() {
-        // Cuando cambian los parámetros, actualizamos la tabla
-        SwingUtilities.invokeLater(this::actualizarTabla);
-    }
-
-    /**
-     * Método que se llama cuando este panel se elimina del contenedor padre.
-     * Nos desregistramos como oyente para evitar memory leaks.
-     */
-    @Override
-    public void removeNotify() {
-        // Nos desregistramos como oyente de cambios
-        ControladorParametros.getInstancia().removeChangeListener(this);
-        super.removeNotify();
+    /** Limpieza de listener al remover panel */
+    @Override public void removeNotify() { // Eliminación del panel
+        ControladorParametros.getInstancia().removeChangeListener(this); // Se des-registra
+        super.removeNotify(); // Llama a super
     }
 }

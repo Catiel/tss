@@ -1,273 +1,212 @@
-package actividad_4.ejercicio_1;
+package actividad_4.ejercicio_1; // Paquete del ejercicio 1
 
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
+import javax.swing.*; // Componentes Swing
+import javax.swing.table.DefaultTableModel; // Modelo de tabla por defecto
+import java.awt.*; // Layouts y utilidades AWT
 
-public class PanelModeloPrecios extends JPanel implements ControladorParametros.ParametrosChangeListener {
-    private final JLabel lblVANCon;
-    private final JLabel lblVANSin;
-    private final JLabel lblDiferenciaVAN;
-    private final JLabel lblTasaDescuentoValor; // Para mostrar la tasa de descuento actual
-    private final DefaultTableModel modeloTabla;
-    private final JTable tablaResultados;
+public class PanelModeloPrecios extends JPanel implements ControladorParametros.ParametrosChangeListener { // Panel principal que escucha cambios de parámetros
+    private final JLabel lblVANCon;               // Etiqueta VAN escenario con nueva versión
+    private final JLabel lblVANSin;               // Etiqueta VAN escenario sin nueva versión
+    private final JLabel lblDiferenciaVAN;        // Etiqueta diferencia de VAN
+    private final JLabel lblTasaDescuentoValor;   // Etiqueta valor tasa de descuento actual
+    private final DefaultTableModel modeloTabla;  // Modelo de datos de la tabla de resultados
+    private final JTable tablaResultados;         // Tabla visual de resultados
 
     /**
-     * Constructor. Inicializa la interfaz del panel para el modelo de decisión de capacidad y utilidades esperadas.
-     * Configura los componentes visuales y los listeners para actualizar los resultados automáticamente.
+     * Constructor. Inicializa UI, registra listener y dispara primer cálculo.
      */
-    public PanelModeloPrecios() {
-        // Registramos este panel como oyente de cambios en los parámetros
-        ControladorParametros.getInstancia().addChangeListener(this);
+    public PanelModeloPrecios() { // Inicio constructor
+        ControladorParametros.getInstancia().addChangeListener(this); // Se registra para recibir notificaciones
 
-        EstilosUI.aplicarEstiloPanel(this);
-        setLayout(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(12, 18, 12, 18);
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.gridy = 0;
+        EstilosUI.aplicarEstiloPanel(this);          // Aplica estilo fondo
+        setLayout(new GridBagLayout());              // Usa GridBagLayout para disposición flexible
+        GridBagConstraints gbc = new GridBagConstraints(); // Restricciones de layout
+        gbc.insets = new Insets(12, 18, 12, 18);     // Márgenes entre componentes
+        gbc.anchor = GridBagConstraints.WEST;        // Alineación izquierda
+        gbc.gridy = 0;                               // Fila inicial
 
-        // Título
-        JLabel titulo = new JLabel("Modelo de beneficios");
-        EstilosUI.aplicarEstiloTitulo(titulo);
-        gbc.gridx = 0; gbc.gridwidth = 8;
-        add(titulo, gbc);
+        // Título principal ---------------------------------------------
+        JLabel titulo = new JLabel("Modelo de beneficios"); // Título
+        EstilosUI.aplicarEstiloTitulo(titulo);       // Estilo título
+        gbc.gridx = 0; gbc.gridwidth = 8;            // Ocupa 8 columnas lógicas
+        add(titulo, gbc);                            // Añade título
 
-        // VAN con versión francesa
-        gbc.gridy++;
-        gbc.gridwidth = 1;
-        gbc.gridx = 0;
-        JLabel lblVANConTitulo = new JLabel("VAN con versión francesa ($):");
-        EstilosUI.aplicarEstiloLabel(lblVANConTitulo);
-        add(lblVANConTitulo, gbc);
-        gbc.gridx = 1;
-        lblVANCon = new JLabel("-");
-        EstilosUI.aplicarEstiloLabel(lblVANCon);
-        add(lblVANCon, gbc);
+        // Fila de VANs -------------------------------------------------
+        gbc.gridy++;                                 // Siguiente fila
+        gbc.gridwidth = 1;                           // Restablece ancho por defecto
+        gbc.gridx = 0;                               // Columna 0
+        JLabel lblVANConTitulo = new JLabel("VAN con versión francesa ($):"); // Etiqueta título VAN con
+        EstilosUI.aplicarEstiloLabel(lblVANConTitulo); // Estilo label
+        add(lblVANConTitulo, gbc);                   // Añade label
+        gbc.gridx = 1;                               // Columna valor
+        lblVANCon = new JLabel("-");                // Valor inicial
+        EstilosUI.aplicarEstiloLabel(lblVANCon);     // Estilo valor
+        add(lblVANCon, gbc);                         // Añade valor
 
-        // VAN sin versión francesa
-        gbc.gridx = 2;
-        JLabel lblVANSinTitulo = new JLabel("VAN sin versión francesa ($):");
-        EstilosUI.aplicarEstiloLabel(lblVANSinTitulo);
-        add(lblVANSinTitulo, gbc);
-        gbc.gridx = 3;
-        lblVANSin = new JLabel("-");
-        EstilosUI.aplicarEstiloLabel(lblVANSin);
-        add(lblVANSin, gbc);
+        gbc.gridx = 2;                               // Columna título VAN sin
+        JLabel lblVANSinTitulo = new JLabel("VAN sin versión francesa ($):"); // Etiqueta VAN sin
+        EstilosUI.aplicarEstiloLabel(lblVANSinTitulo); // Estilo
+        add(lblVANSinTitulo, gbc);                   // Añade etiqueta
+        gbc.gridx = 3;                               // Columna valor
+        lblVANSin = new JLabel("-");                // Valor inicial
+        EstilosUI.aplicarEstiloLabel(lblVANSin);     // Estilo valor
+        add(lblVANSin, gbc);                         // Añade valor
 
-        // Diferencia VAN
-        gbc.gridx = 4;
-        JLabel lblDiferenciaVANTitulo = new JLabel("Diferencia VAN ($):");
-        EstilosUI.aplicarEstiloLabel(lblDiferenciaVANTitulo);
-        add(lblDiferenciaVANTitulo, gbc);
-        gbc.gridx = 5;
-        lblDiferenciaVAN = new JLabel("-");
-        EstilosUI.aplicarEstiloLabel(lblDiferenciaVAN);
-        add(lblDiferenciaVAN, gbc);
+        gbc.gridx = 4;                               // Columna título diferencia
+        JLabel lblDiferenciaVANTitulo = new JLabel("Diferencia VAN ($):"); // Etiqueta diferencia
+        EstilosUI.aplicarEstiloLabel(lblDiferenciaVANTitulo); // Estilo
+        add(lblDiferenciaVANTitulo, gbc);            // Añade etiqueta
+        gbc.gridx = 5;                               // Columna valor diferencia
+        lblDiferenciaVAN = new JLabel("-");         // Valor inicial
+        EstilosUI.aplicarEstiloLabel(lblDiferenciaVAN); // Estilo valor
+        add(lblDiferenciaVAN, gbc);                  // Añade valor
 
-        // Creamos las columnas según el Excel
+        // Definición de columnas (estructura espejo SIN / CON) ---------
         String[] columnas = {
-            "Año",
-            "Tamaño de mercado",
-            "Unidades vendidas",
-            "Costo variable",
-            "Ingresos",
-            "Unidades vendidas",
-            "Costo variable",
-            "Ingresos"
+            "Año",                 // Col 0
+            "Tamaño de mercado",   // Col 1
+            "Unidades vendidas",   // Col 2 (sin)
+            "Costo variable",      // Col 3 (sin)
+            "Ingresos",            // Col 4 (sin)
+            "Unidades vendidas",   // Col 5 (con)
+            "Costo variable",      // Col 6 (con)
+            "Ingresos"             // Col 7 (con)
         };
 
-        // Creamos el modelo de tabla y configuramos que las celdas no sean editables
-        modeloTabla = new DefaultTableModel(columnas, 0) {
-            @Override
-            public boolean isCellEditable(int row, int col) {
-                return false;
-            }
+        // Modelo de tabla no editable ----------------------------------
+        modeloTabla = new DefaultTableModel(columnas, 0) { // Crea modelo sin filas
+            @Override public boolean isCellEditable(int row, int col) { return false; } // Bloquea edición
         };
 
-        // Creamos la tabla con el modelo
-        tablaResultados = new JTable(modeloTabla);
-        EstilosUI.aplicarEstiloTabla(tablaResultados);
+        // Tabla ---------------------------------------------------------
+        tablaResultados = new JTable(modeloTabla); // Instancia JTable
+        EstilosUI.aplicarEstiloTabla(tablaResultados); // Estilo tabla
 
-        // Ajustamos los anchos de las columnas para que se vean bien
-        int[] anchos = {60, 120, 120, 120, 120, 120, 120, 120};
-        for (int i = 0; i < anchos.length; i++) {
-            tablaResultados.getColumnModel().getColumn(i).setPreferredWidth(anchos[i]);
+        // Ajuste de anchos de columnas ---------------------------------
+        int[] anchos = {60,120,120,120,120,120,120,120}; // Anchos preferidos
+        for (int i = 0; i < anchos.length; i++) {        // Itera columnas
+            tablaResultados.getColumnModel().getColumn(i).setPreferredWidth(anchos[i]); // Aplica ancho
         }
 
-        // Creamos un panel para los encabezados de grupo
-        JPanel headerPanel = new JPanel(new BorderLayout());
+        // (headerPanel no utilizado directamente; podría retirarse o reutilizarse) -----
+        JPanel headerPanel = new JPanel(new BorderLayout()); // Panel placeholder encabezados agrupados
 
-        // Panel para los encabezados "Sin versión francesa" y "Con versión francesa"
-        JPanel groupHeaderPanel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbcHeader = new GridBagConstraints();
-        gbcHeader.fill = GridBagConstraints.HORIZONTAL;
-        gbcHeader.insets = new Insets(2, 0, 2, 0);
+        // Panel de encabezados agrupados (sin / con) --------------------
+        JPanel groupHeaderPanel = new JPanel(new GridBagLayout()); // Panel grid para títulos agrupados
+        GridBagConstraints gbcHeader = new GridBagConstraints();   // Restricciones header
+        gbcHeader.fill = GridBagConstraints.HORIZONTAL;            // Expandir horizontal
+        gbcHeader.insets = new Insets(2,0,2,0);                    // Márgenes
 
-        // Encabezado para "Sin la versión francesa"
-        JLabel sinVersionLabel = new JLabel("Sin la versión francesa", SwingConstants.CENTER);
-        sinVersionLabel.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.LIGHT_GRAY));
-        sinVersionLabel.setOpaque(true);
-        sinVersionLabel.setBackground(new Color(230, 230, 255));
-        EstilosUI.aplicarEstiloLabel(sinVersionLabel);
+        // Encabezado vacío cubre columnas 0-1 (Año + Tamaño) -----------
+        JLabel espacioLabel = new JLabel("");                       // Label vacío
+        espacioLabel.setBorder(BorderFactory.createMatteBorder(1,1,1,1, Color.LIGHT_GRAY)); // Borde
+        espacioLabel.setOpaque(true);                                 // Fondo visible
 
-        // Encabezado para "Con versión francesa"
-        JLabel conVersionLabel = new JLabel("Con versión francesa", SwingConstants.CENTER);
-        conVersionLabel.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.LIGHT_GRAY));
-        conVersionLabel.setOpaque(true);
-        conVersionLabel.setBackground(new Color(230, 255, 230));
-        EstilosUI.aplicarEstiloLabel(conVersionLabel);
+        // Encabezado escenario SIN nueva versión ----------------------
+        JLabel sinVersionLabel = new JLabel("Sin la versión francesa", SwingConstants.CENTER); // Texto
+        sinVersionLabel.setBorder(BorderFactory.createMatteBorder(1,1,1,1, Color.LIGHT_GRAY)); // Borde
+        sinVersionLabel.setOpaque(true);                              // Fondo visible
+        sinVersionLabel.setBackground(new Color(230,230,255));        // Color diferenciador
+        EstilosUI.aplicarEstiloLabel(sinVersionLabel);                // Estilo tipográfico
 
-        // Espacio para las primeras dos columnas (Año, Tamaño de mercado)
-        JLabel espacioLabel = new JLabel("");
-        espacioLabel.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.LIGHT_GRAY));
-        espacioLabel.setOpaque(true);
+        // Encabezado escenario CON nueva versión ----------------------
+        JLabel conVersionLabel = new JLabel("Con versión francesa", SwingConstants.CENTER); // Texto
+        conVersionLabel.setBorder(BorderFactory.createMatteBorder(1,1,1,1, Color.LIGHT_GRAY)); // Borde
+        conVersionLabel.setOpaque(true);                              // Fondo visible
+        conVersionLabel.setBackground(new Color(230,255,230));        // Color diferenciador
+        EstilosUI.aplicarEstiloLabel(conVersionLabel);                // Estilo tipográfico
 
-        // Añadimos los encabezados al panel
-        gbcHeader.gridx = 0;
-        gbcHeader.gridy = 0;
-        gbcHeader.gridwidth = 2;
-        gbcHeader.weightx = 0.25;
-        groupHeaderPanel.add(espacioLabel, gbcHeader);
+        // Colocación de encabezados agrupados -------------------------
+        gbcHeader.gridx = 0; gbcHeader.gridy = 0; gbcHeader.gridwidth = 2; gbcHeader.weightx = 0.25; // Segmento inicial
+        groupHeaderPanel.add(espacioLabel, gbcHeader);                // Añade placeholder
+        gbcHeader.gridx = 2; gbcHeader.gridwidth = 3; gbcHeader.weightx = 0.375; // Segmento SIN
+        groupHeaderPanel.add(sinVersionLabel, gbcHeader);             // Añade encabezado SIN
+        gbcHeader.gridx = 5; gbcHeader.gridwidth = 3; gbcHeader.weightx = 0.375; // Segmento CON
+        groupHeaderPanel.add(conVersionLabel, gbcHeader);             // Añade encabezado CON
 
-        gbcHeader.gridx = 2;
-        gbcHeader.gridwidth = 3;
-        gbcHeader.weightx = 0.375;
-        groupHeaderPanel.add(sinVersionLabel, gbcHeader);
+        // Panel contenedor de tabla + encabezados ---------------------
+        JPanel panelTabla = new JPanel(new BorderLayout()); // Panel tabla
+        panelTabla.add(groupHeaderPanel, BorderLayout.NORTH); // Inserta encabezados agrupados
+        JScrollPane scrollPane = new JScrollPane(tablaResultados);   // Scroll para tabla
+        panelTabla.add(scrollPane, BorderLayout.CENTER);              // Añade tabla en centro
 
-        gbcHeader.gridx = 5;
-        gbcHeader.gridwidth = 3;
-        gbcHeader.weightx = 0.375;
-        groupHeaderPanel.add(conVersionLabel, gbcHeader);
+        // Inserta panel de tabla en layout principal ------------------
+        gbc.gridy++; gbc.gridx = 0; gbc.gridwidth = 8;                // Nueva fila ocupa ancho completo
+        gbc.weightx = 1.0; gbc.weighty = 1.0;                         // Prioridad de expansión
+        gbc.fill = GridBagConstraints.BOTH;                           // Expandir ambos ejes
+        add(panelTabla, gbc);                                         // Añade panelTabla
 
-        // Creamos el panel de la tabla con los encabezados y la tabla
-        JPanel panelTabla = new JPanel(new BorderLayout());
-        panelTabla.add(groupHeaderPanel, BorderLayout.NORTH);
+        // Panel info tasa de descuento --------------------------------
+        gbc.gridy++; gbc.gridx = 0; gbc.gridwidth = 8;                // Fila siguiente
+        gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weighty = 0.0;  // Sólo horizontal
+        JPanel panelTasaDescuento = new JPanel(new FlowLayout(FlowLayout.LEFT)); // Panel izquierda
+        JLabel lblTasaDescuentoTitulo = new JLabel("Tasa de descuento: "); // Etiqueta titulo tasa
+        EstilosUI.aplicarEstiloLabel(lblTasaDescuentoTitulo);        // Estilo
+        lblTasaDescuentoValor = new JLabel("10%");                  // Valor inicial placeholder
+        EstilosUI.aplicarEstiloLabel(lblTasaDescuentoValor);         // Estilo
+        panelTasaDescuento.add(lblTasaDescuentoTitulo);              // Añade titulo
+        panelTasaDescuento.add(lblTasaDescuentoValor);               // Añade valor
+        add(panelTasaDescuento, gbc);                                // Añade panel tasa
 
-        JScrollPane scrollPane = new JScrollPane(tablaResultados);
-        panelTabla.add(scrollPane, BorderLayout.CENTER);
-
-        // Agregamos el panel de la tabla al panel principal
-        gbc.gridy++;
-        gbc.gridx = 0;
-        gbc.gridwidth = 8;
-        gbc.weightx = 1.0;
-        gbc.weighty = 1.0;
-        gbc.fill = GridBagConstraints.BOTH;
-        add(panelTabla, gbc);
-
-        // Añadimos información sobre la tasa de descuento
-        gbc.gridy++;
-        gbc.gridx = 0;
-        gbc.gridwidth = 8;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.weighty = 0.0;
-
-        JPanel panelTasaDescuento = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JLabel lblTasaDescuentoTitulo = new JLabel("Tasa de descuento: ");
-        EstilosUI.aplicarEstiloLabel(lblTasaDescuentoTitulo);
-        lblTasaDescuentoValor = new JLabel("10%");
-        EstilosUI.aplicarEstiloLabel(lblTasaDescuentoValor);
-        panelTasaDescuento.add(lblTasaDescuentoTitulo);
-        panelTasaDescuento.add(lblTasaDescuentoValor);
-
-        add(panelTasaDescuento, gbc);
-
-        // Actualizamos los resultados
-        actualizarResultados();
+        actualizarResultados(); // Primer cálculo y llenado de tabla
     }
 
-    /**
-     * Formatea un valor numérico como moneda (con separador de miles, símbolo $ y dos decimales).
-     * @param valor El valor a formatear
-     * @return Cadena formateada como moneda
-     */
-    private String formatearMoneda(double valor) {
-        return UtilidadesFormato.formatearMoneda(valor);
-    }
+    // Formatea un número como moneda usando utilidades centralizadas ----
+    private String formatearMoneda(double valor) { return UtilidadesFormato.formatearMoneda(valor); }
 
-    /**
-     * Actualiza las etiquetas de VAN con los valores proporcionados.
-     * @param vanCon Valor del VAN con versión francesa
-     * @param vanSin Valor del VAN sin versión francesa
-     * @param diferenciaVAN Diferencia entre ambos valores
-     */
+    // Actualiza las etiquetas de VAN ------------------------------------
     private void actualizarEtiquetasVAN(double vanCon, double vanSin, double diferenciaVAN) {
-        lblVANCon.setText(formatearMoneda(vanCon));
-        lblVANSin.setText(formatearMoneda(vanSin));
-        lblDiferenciaVAN.setText(formatearMoneda(diferenciaVAN));
+        lblVANCon.setText(formatearMoneda(vanCon));       // VAN con
+        lblVANSin.setText(formatearMoneda(vanSin));       // VAN sin
+        lblDiferenciaVAN.setText(formatearMoneda(diferenciaVAN)); // Diferencia
     }
 
-    /**
-     * Limpia los resultados en caso de error.
-     */
+    // Limpia resultados (en caso de error) -------------------------------
     private void limpiarResultados() {
-        lblVANCon.setText("-");
-        lblVANSin.setText("-");
-        lblDiferenciaVAN.setText("-");
-        modeloTabla.setRowCount(0);
+        lblVANCon.setText("-");  // Limpia VAN con
+        lblVANSin.setText("-");  // Limpia VAN sin
+        lblDiferenciaVAN.setText("-"); // Limpia diferencia
+        modeloTabla.setRowCount(0); // Vacía tabla
     }
 
-    /**
-     * Actualiza la tabla de resultados y la ganancia total en función de la capacidad ingresada.
-     * Obtiene los parámetros del modelo, ejecuta el cálculo y muestra los resultados en la tabla.
-     * Si hay un error en los datos, limpia la tabla y muestra '-'.
-     */
+    // Recalcula y pinta la tabla completa -------------------------------
     private void actualizarResultados() {
-        try {
-            ControladorParametros params = ControladorParametros.getInstancia();
-            double tasaDescuento = params.getTasaDescuento();
-            // La capacidad ya no se usa, se pasa 0 solo por compatibilidad de firma
-            ModeloSoftwareCalculo.ResultadoComparativo resultados = ModeloSoftwareCalculo.calcularComparativo(params, tasaDescuento);
+        try { // Bloque protegido
+            ControladorParametros params = ControladorParametros.getInstancia(); // Parámetros globales
+            double tasaDescuento = params.getTasaDescuento(); // Tasa de descuento actual
+            ModeloSoftwareCalculo.ResultadoComparativo resultados = ModeloSoftwareCalculo.calcularComparativo(params, tasaDescuento); // Cálculo
 
-            // Limpiamos la tabla y llenamos con nuevos datos
-            modeloTabla.setRowCount(0);
-            for (int i = 0; i < resultados.resultadosCon.length; i++) {
-                ModeloSoftwareCalculo.ResultadoAnual rCon = resultados.resultadosCon[i];
-                ModeloSoftwareCalculo.ResultadoAnual rSin = resultados.resultadosSin[i];
+            modeloTabla.setRowCount(0); // Limpia filas previas
+            for (int i = 0; i < resultados.resultadosCon.length; i++) { // Itera años
+                ModeloSoftwareCalculo.ResultadoAnual rCon = resultados.resultadosCon[i]; // Registro escenario con
+                ModeloSoftwareCalculo.ResultadoAnual rSin = resultados.resultadosSin[i]; // Registro escenario sin
 
-                // Agregamos fila con los datos formateados usando el método formatearMoneda
-                modeloTabla.addRow(new Object[] {
-                    rCon.anio,
-                    rCon.demanda,
-                    rSin.unidadesProducidas,
-                    formatearMoneda(rSin.costoVariableProduccion),
-                    formatearMoneda(rSin.ingresosVentas),
-                    rCon.unidadesProducidas,
-                    formatearMoneda(rCon.costoVariableProduccion),
-                    formatearMoneda(rCon.ingresosVentas)
+                modeloTabla.addRow(new Object[]{ // Añade fila combinada
+                    rCon.anio,                         // Año
+                    rCon.demanda,                      // Tamaño mercado
+                    rSin.unidadesProducidas,           // Unidades sin
+                    formatearMoneda(rSin.costoVariableProduccion), // Coste variable sin
+                    formatearMoneda(rSin.ingresosVentas),           // Ingresos sin
+                    rCon.unidadesProducidas,           // Unidades con
+                    formatearMoneda(rCon.costoVariableProduccion), // Coste variable con
+                    formatearMoneda(rCon.ingresosVentas)           // Ingresos con
                 });
             }
 
-            // Actualizamos las etiquetas de VAN
-            actualizarEtiquetasVAN(resultados.vanCon, resultados.vanSin, resultados.diferenciaVAN);
-
-            // Actualizamos el label de la tasa de descuento
-            lblTasaDescuentoValor.setText(String.format("%.0f%%", tasaDescuento * 100));
-        } catch (Exception ex) {
-            ex.printStackTrace(); // Para depuración
-            limpiarResultados();
+            actualizarEtiquetasVAN(resultados.vanCon, resultados.vanSin, resultados.diferenciaVAN); // Actualiza VANs
+            lblTasaDescuentoValor.setText(String.format("%.0f%%", tasaDescuento * 100)); // Refresca tasa
+        } catch (Exception ex) { // Cualquier error
+            ex.printStackTrace(); // Traza (depuración)
+            limpiarResultados();  // Limpia UI
         }
     }
 
-    /**
-     * Implementación del método requerido por la interfaz ControladorParametros.ParametrosChangeListener.
-     * Este método se llama automáticamente cuando hay cambios en los parámetros.
-     */
-    @Override
-    public void onParametrosChanged() {
-        // Cuando cambian los parámetros, actualizamos los resultados
-        SwingUtilities.invokeLater(this::actualizarResultados);
+    @Override public void onParametrosChanged() { // Notificación de cambios globales
+        SwingUtilities.invokeLater(this::actualizarResultados); // Recalcula en EDT
     }
 
-    /**
-     * Método que se llama cuando este panel se elimina del contenedor padre.
-     * Nos desregistramos como oyente para evitar memory leaks.
-     */
-    @Override
-    public void removeNotify() {
-        // Nos desregistramos como oyente de cambios
-        ControladorParametros.getInstancia().removeChangeListener(this);
-        super.removeNotify();
+    @Override public void removeNotify() { // Al sacar el panel del contenedor
+        ControladorParametros.getInstancia().removeChangeListener(this); // Se des-registra
+        super.removeNotify(); // Llama a super
     }
 }

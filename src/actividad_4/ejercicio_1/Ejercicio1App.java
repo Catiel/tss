@@ -1,8 +1,8 @@
-package actividad_4.ejercicio_1;
+package actividad_4.ejercicio_1; // Paquete donde reside la aplicación del Ejercicio 1
 
-import com.formdev.flatlaf.FlatLightLaf;
+import com.formdev.flatlaf.FlatLightLaf; // Importa Look & Feel FlatLaf
 
-import javax.swing.*;
+import javax.swing.*; // Importa clases Swing básicas
 
 /**
  * Ventana principal de la aplicación del Ejercicio 1.
@@ -13,52 +13,52 @@ import javax.swing.*;
  * - Tabla Random (con valores generados aleatoriamente)
  * - Configuración de parámetros
  */
-public class Ejercicio1App extends JFrame {
+public class Ejercicio1App extends JFrame { // Clase principal que extiende JFrame
     // Mantener referencias a los paneles para evitar que se pierdan los observadores
-    private final PanelModeloPrecios panelModeloPrecios;
-    private final PanelTablaAuto panelTablaAuto;
-    private final PanelTablaManual panelTablaManual;
-    private final PanelTablaRandom panelTablaRandom;
-    private final PanelConfiguracion panelConfiguracion;
+    private final PanelModeloPrecios panelModeloPrecios; // Panel comparación de beneficios
+    private final PanelTablaAuto panelTablaAuto;         // Panel tabla automática
+    private final PanelTablaManual panelTablaManual;     // Panel tabla manual
+    private final PanelTablaRandom panelTablaRandom;     // Panel tabla aleatoria
+    private final PanelConfiguracion panelConfiguracion; // Panel configuración parámetros
 
     /**
      * Constructor. Inicializa la ventana principal, los paneles y la interfaz gráfica.
      * Aplica el Look & Feel FlatLaf y configura las pestañas de la aplicación.
      */
-    public Ejercicio1App() {
-        try {
-            UIManager.setLookAndFeel(new FlatLightLaf());
-        } catch (Exception e) {
-            System.out.println("No se pudo aplicar FlatLaf, usando el Look & Feel por defecto.");
+    public Ejercicio1App() { // Constructor de la ventana
+        try { // Intenta aplicar el Look & Feel FlatLaf
+            UIManager.setLookAndFeel(new FlatLightLaf()); // Establece FlatLaf
+        } catch (Exception e) { // Captura cualquier error
+            System.out.println("No se pudo aplicar FlatLaf, usando el Look & Feel por defecto."); // Mensaje de advertencia
         }
-        setTitle("Ejercicio 1 - Proyecto de software");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1000, 700);
-        setLocationRelativeTo(null);
+        setTitle("Ejercicio 1 - Proyecto de software"); // Define título de la ventana
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);   // Termina la app al cerrar
+        setSize(1000, 700);                               // Tamaño inicial de la ventana
+        setLocationRelativeTo(null);                     // Centra la ventana en pantalla
 
         // Creamos las instancias de los paneles una sola vez
-        panelModeloPrecios = new PanelModeloPrecios();
-        panelTablaAuto = new PanelTablaAuto();
-        panelTablaManual = new PanelTablaManual();
-        panelTablaRandom = new PanelTablaRandom();
-        panelConfiguracion = new PanelConfiguracion();
+        panelModeloPrecios = new PanelModeloPrecios();    // Instancia panel de modelo de precios
+        panelTablaAuto = new PanelTablaAuto();            // Instancia panel de tabla automática
+        panelTablaManual = new PanelTablaManual();        // Instancia panel de tabla manual
+        panelTablaRandom = new PanelTablaRandom();        // Instancia panel de tabla aleatoria
+        panelConfiguracion = new PanelConfiguracion();    // Instancia panel de configuración
 
-        JTabbedPane pestanas = new JTabbedPane();
-        pestanas.addTab("Comparación de Beneficios", panelModeloPrecios);
-        pestanas.addTab("Tabla Automática", panelTablaAuto);
-        pestanas.addTab("Tabla Manual", panelTablaManual);
-        pestanas.addTab("Tabla Random", panelTablaRandom);
-        pestanas.addTab("Configuración", panelConfiguracion);
-        add(pestanas);
+        JTabbedPane pestanas = new JTabbedPane();         // Crea contenedor de pestañas
+        pestanas.addTab("Comparación de Beneficios", panelModeloPrecios); // Añade pestaña beneficios
+        pestanas.addTab("Tabla Automática", panelTablaAuto);             // Añade pestaña automática
+        pestanas.addTab("Tabla Manual", panelTablaManual);               // Añade pestaña manual
+        pestanas.addTab("Tabla Random", panelTablaRandom);               // Añade pestaña aleatoria
+        pestanas.addTab("Configuración", panelConfiguracion);            // Añade pestaña configuración
+        add(pestanas); // Agrega el contenedor de pestañas al frame
     }
 
     /**
      * Método principal. Lanza la aplicación Swing en el hilo de eventos.
      */
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            Ejercicio1App app = new Ejercicio1App();
-            app.setVisible(true);
+    public static void main(String[] args) { // Punto de entrada
+        SwingUtilities.invokeLater(() -> {    // Asegura ejecución en EDT
+            Ejercicio1App app = new Ejercicio1App(); // Crea instancia de la app
+            app.setVisible(true);                   // Muestra la ventana
         });
     }
 }
