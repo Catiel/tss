@@ -7,9 +7,10 @@ import java.awt.*;
 /**
  * Panel de sensibilidad 2D manual editable EN LA MISMA TABLA.
  * Estructura de la tabla:
- *  - Fila 0: encabezado de flujos (columna 0 = etiqueta "Tasa/Flujo", columnas 1..N = valores de Flujo Año 1 editables)
+ *  - Fila 0: encabezado de flujos (columna 0 = payback actual calculado con params trial, columnas 1..N = valores de Flujo Año 1 editables)
  *  - Filas 1..M: cada fila representa una tasa de crecimiento (columna 0 = tasa % editable). El resto de celdas son resultados calculados (payback) no editables.
  * Flujo y tasa se introducen en bruto (flujo en millones, tasa en %). Botón "Calcular" genera los paybacks.
+ * Si no recupera dentro del horizonte, muestra horizonte + 1 (ej: 11 si horizonte=10) en lugar de -1.
  */
 public class PanelPaybackSensibilidad2DManual extends JPanel implements ControladorParametros.ParametrosChangeListener {
     private JTable tabla;
@@ -56,6 +57,9 @@ public class PanelPaybackSensibilidad2DManual extends JPanel implements Controla
         EstilosUI.aplicarEstiloPanel(south);
         south.add(lblInfo);
         add(south, BorderLayout.SOUTH);
+
+        // Inicializar esquina superior con payback actual
+        onParametrosChanged();
     }
 
     private void crearTablaBase(int numFlujos, int numTasas){
@@ -69,12 +73,12 @@ public class PanelPaybackSensibilidad2DManual extends JPanel implements Controla
                 // Editable sólo flujos (fila 0 excepto col0) y tasas (col0 excepto fila0)
                 if(row==0 && col>0) return true; // flujos
                 if(col==0 && row>0) return true; // tasas
-                return false; // resultados
+                return false; // resultados y (0,0)
             }
         };
         // Añadir fila 0 (flujos) inicial vacía
         Object[] filaFlujos = new Object[numFlujos + 1];
-        filaFlujos[0] = "Flujos";
+        filaFlujos[0] = ""; // se seteará con payback actual
         for(int c=1;c<filaFlujos.length;c++) filaFlujos[c] = ""; // vacío
         modelo.addRow(filaFlujos);
         // Añadir filas de tasas
@@ -103,6 +107,8 @@ public class PanelPaybackSensibilidad2DManual extends JPanel implements Controla
         int cols = (Integer) spCols.getValue();
         int filas = (Integer) spFilas.getValue();
         crearTablaBase(cols, filas);
+        // Actualizar esquina con payback actual después de generar
+        onParametrosChanged();
     }
 
     private void calcularResultados(){
@@ -142,26 +148,44 @@ public class PanelPaybackSensibilidad2DManual extends JPanel implements Controla
             for(int c=1;c<totalCols;c++){
                 double flujo = flujos[c-1];
                 int payback = PaybackCalculo.calcularPeriodo(inversion, flujo, tasa, horizonte);
-                modelo.setValueAt(payback==-1?"NR":payback, r, c);
+                int valorMostrar = (payback == -1) ? (horizonte + 1) : payback;
+                modelo.setValueAt(valorMostrar, r, c);
             }
             // mostrar tasa formateada de nuevo (por si ingresó decimal)
             modelo.setValueAt(String.format("%.2f", tasas[r-1]*100), r,0);
         }
         // Mostrar flujos formateados
         for(int c=1;c<totalCols;c++) modelo.setValueAt(formatoNumero(flujos[c-1]),0,c);
-        lblInfo.setText("Cálculo completado. 'NR' = No recupera en horizonte="+horizonte+" años");
+
+        // Actualizar esquina superior con payback actual
+        onParametrosChanged();
+
+        lblInfo.setText("Cálculo completado. Valores = " + (horizonte + 1) + " indican no recupera en horizonte=" + horizonte + " años");
     }
 
     private double parseDoubleOrNaN(Object v){
         if(v==null) return Double.NaN;
-        try { return Double.parseDouble(v.toString().trim()); } catch(Exception e){ return Double.NaN; }
+        String str = v.toString().trim();
+        if (str.endsWith("%")) {
+            str = str.substring(0, str.length() - 1).trim(); // remover % si presente (por si acaso)
+        }
+        try { return Double.parseDouble(str); } catch(Exception e){ return Double.NaN; }
     }
     private String formatoNumero(double d){
         if(Math.abs(d-Math.rint(d))<1e-6) return String.format("%.0f", d);
         return String.format("%.2f", d);
     }
 
-    @Override public void onParametrosChanged(){ /* Recalcular sólo si ya hay datos manuales */ }
+    @Override public void onParametrosChanged(){
+        SwingUtilities.invokeLater(() -> {
+            ControladorParametros p = ControladorParametros.getInstancia();
+            int payback = PaybackCalculo.calcularPeriodo(p.getInversionOriginal(), p.getFlujoAnio1(), p.getTasaCrecimientoAnual(), p.getHorizonteAnios());
+            int valorMostrar = (payback == -1) ? (p.getHorizonteAnios() + 1) : payback;
+            if (modelo != null && modelo.getRowCount() > 0) {
+                modelo.setValueAt(valorMostrar, 0, 0);
+            }
+        });
+    }
 
     @Override public void removeNotify(){ ControladorParametros.getInstancia().removeChangeListener(this); super.removeNotify(); }
 }
