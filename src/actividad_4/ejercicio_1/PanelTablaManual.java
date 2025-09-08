@@ -200,7 +200,7 @@ public class PanelTablaManual extends JPanel implements ControladorParametros.Pa
                     // Calculamos el resultado para esta tasa
                     ControladorParametros params = ControladorParametros.getInstancia();
                     ModeloSoftwareCalculo.ResultadoComparativo resultado =
-                        ModeloSoftwareCalculo.calcularComparativo(params, 0, tasa);
+                        ModeloSoftwareCalculo.calcularComparativo(params, tasa);
 
                     // Formateamos la diferencia como moneda
                     String diferenciaFormateada = formatearMoneda(resultado.diferenciaVAN);

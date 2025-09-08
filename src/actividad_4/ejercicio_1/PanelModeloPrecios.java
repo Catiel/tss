@@ -218,7 +218,7 @@ public class PanelModeloPrecios extends JPanel implements ControladorParametros.
             ControladorParametros params = ControladorParametros.getInstancia();
             double tasaDescuento = params.getTasaDescuento();
             // La capacidad ya no se usa, se pasa 0 solo por compatibilidad de firma
-            ModeloSoftwareCalculo.ResultadoComparativo resultados = ModeloSoftwareCalculo.calcularComparativo(params, 0, tasaDescuento);
+            ModeloSoftwareCalculo.ResultadoComparativo resultados = ModeloSoftwareCalculo.calcularComparativo(params, tasaDescuento);
 
             // Limpiamos la tabla y llenamos con nuevos datos
             modeloTabla.setRowCount(0);

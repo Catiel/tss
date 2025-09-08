@@ -187,7 +187,7 @@ public class PanelTablaRandom extends JPanel implements ControladorParametros.Pa
 
             // Calculamos el resultado comparativo usando la tasa de descuento proporcionada
             ModeloSoftwareCalculo.ResultadoComparativo resultado =
-                ModeloSoftwareCalculo.calcularComparativo(params, 0, tasa);
+                ModeloSoftwareCalculo.calcularComparativo(params, tasa);
 
             // Formateamos la tasa como porcentaje y la diferencia como moneda
             String tasaFormateada = String.format("%.2f%%", tasa * 100);

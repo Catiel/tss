@@ -81,7 +81,7 @@ public class PanelTablaAuto extends JPanel implements ControladorParametros.Para
             for (double tasa : tasasDescuento) {
                 // Calculamos el resultado comparativo usando la tasa de descuento actual
                 ModeloSoftwareCalculo.ResultadoComparativo resultado =
-                    ModeloSoftwareCalculo.calcularComparativo(params, 0, tasa);
+                    ModeloSoftwareCalculo.calcularComparativo(params, tasa);
 
                 // Formateamos la tasa como porcentaje y la diferencia como moneda
                 String tasaFormateada = UtilidadesFormato.formatearPorcentaje(tasa);

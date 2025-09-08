@@ -19,7 +19,7 @@ public class ModeloSoftwareCalculo {
         public double diferenciaVAN;
     }
 
-    public static ResultadoComparativo calcularComparativo(ControladorParametros params, int capacidad, double tasaDescuento) {
+    public static ResultadoComparativo calcularComparativo(ControladorParametros params, double tasaDescuento) {
         int H = params.getHorizonteAnios();
         ResultadoAnual[] resCon = new ResultadoAnual[H];
         ResultadoAnual[] resSin = new ResultadoAnual[H];

@@ -35,16 +35,6 @@ public class UtilidadesFormato {
     }
 
     /**
-     * Formatea un valor numérico con dos decimales.
-     * @param valor El valor a formatear
-     * @return Cadena formateada con dos decimales
-     */
-    public static String formatearDosDecimales(double valor) {
-        DecimalFormat formato = new DecimalFormat("0.00");
-        return formato.format(redondearDosDecimales(valor));
-    }
-
-    /**
      * Formatea un valor numérico como porcentaje con dos decimales.
      * @param valor El valor a formatear (en formato decimal, ej: 0.10 para 10%)
      * @return Cadena formateada como porcentaje con dos decimales
