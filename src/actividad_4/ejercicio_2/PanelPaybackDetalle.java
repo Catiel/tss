@@ -35,7 +35,8 @@ public class PanelPaybackDetalle extends JPanel implements ControladorParametros
         scroll.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
         add(scroll, BorderLayout.CENTER);
 
-        lblPeriodo = new JLabel("Amortización: -");
+        // Solo valor numérico
+        lblPeriodo = new JLabel("-");
         EstilosUI.aplicarEstiloLabel(lblPeriodo);
         lblPeriodo.setBorder(BorderFactory.createEmptyBorder(0,15,10,10));
         add(lblPeriodo, BorderLayout.SOUTH);
@@ -51,8 +52,7 @@ public class PanelPaybackDetalle extends JPanel implements ControladorParametros
             modelo.addRow(new Object[]{r.anio, r.flujo, r.acumulado, r.menorQueInversion});
         }
         int periodo = res.periodoRecuperacion;
-        if (periodo == -1) lblPeriodo.setText("Amortización: No recupera en " + p.getHorizonteAnios() + " años");
-        else lblPeriodo.setText("Amortización: " + periodo);
+        lblPeriodo.setText(periodo == -1 ? "-1" : String.valueOf(periodo));
     }
 
     @Override public void onParametrosChanged(){ SwingUtilities.invokeLater(this::actualizar); }
