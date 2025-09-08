@@ -50,7 +50,7 @@ public class PanelPaybackSensibilidad2D extends JPanel implements ControladorPar
 
         JPanel panelInfo = new JPanel(new FlowLayout(FlowLayout.LEFT));
         EstilosUI.aplicarEstiloPanel(panelInfo);
-        JLabel lbl = new JLabel("Valores > horizonte se muestran como 'NR' (No Recupera)");
+        JLabel lbl = new JLabel("Valores = horizonte+1 indican no recupera en horizonte (ej: 11 para horizonte=10)");
         EstilosUI.aplicarEstiloLabel(lbl);
         panelInfo.add(lbl);
         add(panelInfo, BorderLayout.SOUTH);
@@ -68,7 +68,8 @@ public class PanelPaybackSensibilidad2D extends JPanel implements ControladorPar
             fila[0] = String.format("%.0f%%", tasa*100);
             for (int i=0;i<flujosAnio1.length;i++){
                 int payback = PaybackCalculo.calcularPeriodo(inversion, flujosAnio1[i], tasa, horizonte);
-                fila[i+1] = payback == -1 ? "NR" : payback;
+                int valorMostrar = (payback == -1) ? (horizonte + 1) : payback;
+                fila[i+1] = valorMostrar;
             }
             modelo.addRow(fila);
         }
@@ -78,4 +79,3 @@ public class PanelPaybackSensibilidad2D extends JPanel implements ControladorPar
 
     @Override public void removeNotify(){ ControladorParametros.getInstancia().removeChangeListener(this); super.removeNotify(); }
 }
-
