@@ -1,104 +1,95 @@
-package actividad_5.urnas;
+package actividad_5.urnas; // Paquete del panel de números proporcionados
 
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
+import javax.swing.*; // Importa componentes Swing
+import javax.swing.table.DefaultTableModel; // Importa modelo de tabla por defecto
+import java.awt.*; // Importa clases AWT (layouts, color, fuente)
 
-/** Panel que muestra la simulación con los 10 números pseudoaleatorios proporcionados por la práctica. */
-public class PanelUrnaPredefinida extends JPanel {
-    // Modelo para la tabla de simulación
-    private final DefaultTableModel modeloSim;
-    // Modelo para la tabla de distribución
-    private final DefaultTableModel modeloDist;
+/** Panel que muestra la simulación con los 10 números pseudoaleatorios proporcionados por la práctica. */ // Descripción general del panel
+public class PanelUrnaPredefinida extends JPanel { // Inicio de la clase que extiende JPanel
+    private final DefaultTableModel modeloSim; // Modelo para la tabla de simulación
+    private final DefaultTableModel modeloDist; // Modelo para la tabla de distribución
 
-    // Números dados en el enunciado (coma -> punto)
-    private static final double[] NUMEROS = {0.81,0.95,0.79,0.24,0.26,0.34,0.51,0.72,0.08,0.94};
+    private static final double[] NUMEROS = {0.81,0.95,0.79,0.24,0.26,0.34,0.51,0.72,0.08,0.94}; // Arreglo con los 10 números fijos
 
-    public PanelUrnaPredefinida(){
-        EstilosUI.aplicarEstiloPanel(this);
-        setLayout(new BorderLayout(10,10));
+    public PanelUrnaPredefinida(){ // Constructor del panel
+        EstilosUI.aplicarEstiloPanel(this); // Aplica fondo estándar
+        setLayout(new BorderLayout(10,10)); // Define BorderLayout con separación
 
-        JLabel titulo = new JLabel("Simulación (números proporcionados por la práctica)");
-        EstilosUI.aplicarEstiloTitulo(titulo);
-        titulo.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
-        add(titulo, BorderLayout.NORTH);
+        JLabel titulo = new JLabel("Simulación (números proporcionados por la práctica)"); // Crea etiqueta de título
+        EstilosUI.aplicarEstiloTitulo(titulo); // Aplica estilo de título
+        titulo.setBorder(BorderFactory.createEmptyBorder(10,10,10,10)); // Margen interno del título
+        add(titulo, BorderLayout.NORTH); // Añade título en la parte superior
 
-        // Panel central que contendrá ambas tablas
-        JPanel centro = new JPanel();
-        centro.setLayout(new BoxLayout(centro, BoxLayout.Y_AXIS));
-        EstilosUI.aplicarEstiloPanel(centro);
+        JPanel centro = new JPanel(); // Panel contenedor central
+        centro.setLayout(new BoxLayout(centro, BoxLayout.Y_AXIS)); // Layout vertical para apilar tablas
+        EstilosUI.aplicarEstiloPanel(centro); // Aplica estilo al panel contenedor
 
-        // ----- Tabla de distribución -----
-        modeloDist = new DefaultTableModel(new Object[]{
-                "Distribuciones de probabilidad",
-                "Distribución acumulada",
-                "Rango inicio",
-                "Rango fin",
-                "Color"},0){
-            @Override public boolean isCellEditable(int r,int c){ return false; }
-        };
-        JTable tablaDist = new JTable(modeloDist);
-        EstilosUI.aplicarEstiloTabla(tablaDist);
-        JScrollPane spDist = new JScrollPane(tablaDist);
-        spDist.setBorder(BorderFactory.createTitledBorder("Distribución de probabilidades"));
-        centro.add(spDist);
-        centro.add(Box.createVerticalStrut(8));
+        modeloDist = new DefaultTableModel(new Object[]{ // Inicializa columnas de la tabla distribución
+                "Distribuciones de probabilidad", // Columna de probabilidades individuales
+                "Distribución acumulada", // Columna de acumuladas
+                "Rango inicio", // Columna inicio del rango
+                "Rango fin", // Columna fin del rango
+                "Color"},0){ // Columna color textual
+            @Override public boolean isCellEditable(int r,int c){ return false; } // Hace la tabla no editable
+        }; // Fin definición modeloDist
+        JTable tablaDist = new JTable(modeloDist); // Crea tabla visual para la distribución
+        EstilosUI.aplicarEstiloTabla(tablaDist); // Aplica estilo visual a la tabla de distribución
+        JScrollPane spDist = new JScrollPane(tablaDist); // Scroll para la tabla de distribución
+        spDist.setBorder(BorderFactory.createTitledBorder("Distribución de probabilidades")); // Borde con título
+        centro.add(spDist); // Añade la tabla de distribución al contenedor
+        centro.add(Box.createVerticalStrut(8)); // Espacio vertical entre tablas
 
-        // ----- Tabla de simulación -----
-        modeloSim = new DefaultTableModel(new Object[]{"# de pelota","Número aleatorio","Color"},0){
-            @Override public boolean isCellEditable(int r,int c){return false;}
-            @Override public Class<?> getColumnClass(int c){ return c==0?Integer.class:String.class; }
-        };
-        JTable tablaSim = new JTable(modeloSim);
-        EstilosUI.aplicarEstiloTabla(tablaSim);
-        JScrollPane spSim = new JScrollPane(tablaSim);
-        spSim.setBorder(BorderFactory.createTitledBorder("Simulación de extracciones"));
-        centro.add(spSim);
+        modeloSim = new DefaultTableModel(new Object[]{"# de pelota","Número aleatorio","Color"},0){ // Modelo de la tabla de simulación
+            @Override public boolean isCellEditable(int r,int c){return false;} // Celdas no editables
+            @Override public Class<?> getColumnClass(int c){ return c==0?Integer.class:String.class; } // Tipos de columnas
+        }; // Fin definición modeloSim
+        JTable tablaSim = new JTable(modeloSim); // Crea tabla para la simulación
+        EstilosUI.aplicarEstiloTabla(tablaSim); // Aplica estilo a la tabla de simulación
+        JScrollPane spSim = new JScrollPane(tablaSim); // Scroll para la tabla de simulación
+        spSim.setBorder(BorderFactory.createTitledBorder("Simulación de extracciones")); // Borde con título
+        centro.add(spSim); // Añade la tabla de simulación al contenedor
 
-        add(centro, BorderLayout.CENTER);
+        add(centro, BorderLayout.CENTER); // Inserta el panel central en el centro
 
-        // Texto explicativo
-        JTextArea area = new JTextArea();
-        area.setEditable(false);
-        area.setBackground(getBackground());
-        area.setFont(new Font("Segoe UI", Font.ITALIC, 12));
-        area.setText("Se extraen 10 pelotas (con reemplazo)." +
-                "\nProbabilidades: 10% verdes, 40% rojas, 50% amarillas." +
-                "\nRangos: [0,0.10)->verdes | [0.10,0.50)->rojas | [0.50,1.00]->amarillas.");
-        add(area, BorderLayout.SOUTH);
+        JTextArea area = new JTextArea(); // Área de texto explicativa
+        area.setEditable(false); // Deshabilita edición
+        area.setBackground(getBackground()); // Igual fondo al del panel
+        area.setFont(new Font("Segoe UI", Font.ITALIC, 12)); // Fuente itálica
+        area.setText("Se extraen 10 pelotas (con reemplazo)." + // Línea 1
+                "\nProbabilidades: 10% verdes, 40% rojas, 50% amarillas." + // Línea 2
+                "\nRangos: [0,0.10)->verdes | [0.10,0.50)->rojas | [0.50,1.00]->amarillas."); // Línea 3 con rangos
+        add(area, BorderLayout.SOUTH); // Añade el área de texto abajo
 
-        generarDistribucion();
-        llenarSimulacion();
-    }
+        generarDistribucion(); // Genera filas de la tabla de distribución
+        llenarSimulacion(); // Llena la tabla de simulación con los números fijos
+    } // Fin constructor
 
-    /** Genera dinámicamente la tabla de distribución a partir de las constantes del modelo. */
-    private void generarDistribucion(){
-        modeloDist.setRowCount(0);
-        double[] probs = {UrnaModelo.P_VERDE, UrnaModelo.P_ROJA, UrnaModelo.P_AMARILLA};
-        String[] colores = {"verde","rojas","amarillas"};
-        double acumulada = 0.0;
-        double inicio = 0.0;
-        for(int i=0;i<probs.length;i++){
-            double p = probs[i];
-            acumulada += p;
-            if(i==probs.length-1) acumulada = 1.0; // asegurar 1.00 exacto
-            double fin = acumulada;
-            String pTxt = UtilFormatoUrnas.fmt(p);          // prob individual
-            String acTxt = UtilFormatoUrnas.fmt(acumulada); // acumulada
-            String iniTxt = UtilFormatoUrnas.fmt(inicio);   // rango inicio
-            String finTxt = UtilFormatoUrnas.fmt(fin);      // rango fin
-            modeloDist.addRow(new Object[]{pTxt, acTxt, iniTxt, finTxt, colores[i]});
-            inicio = fin;
-        }
-    }
+    private void generarDistribucion(){ // Método para construir la tabla de distribución
+        modeloDist.setRowCount(0); // Limpia cualquier fila previa
+        double[] probs = {UrnaModelo.P_VERDE, UrnaModelo.P_ROJA, UrnaModelo.P_AMARILLA}; // Arreglo de probabilidades base
+        String[] colores = {"verde","rojas","amarillas"}; // Arreglo de colores asociados
+        double acumulada = 0.0; // Inicializa acumulada
+        double inicio = 0.0; // Inicio de rango actual
+        for(int i=0;i<probs.length;i++){ // Itera cada probabilidad
+            double p = probs[i]; // Probabilidad individual
+            acumulada += p; // Suma a la acumulada
+            if(i==probs.length-1) acumulada = 1.0; // Fuerza 1.0 exacto en la última fila
+            double fin = acumulada; // Fin del intervalo
+            String pTxt = UtilFormatoUrnas.fmt(p); // Formatea prob individual
+            String acTxt = UtilFormatoUrnas.fmt(acumulada); // Formatea acumulada
+            String iniTxt = UtilFormatoUrnas.fmt(inicio); // Formatea inicio de rango
+            String finTxt = UtilFormatoUrnas.fmt(fin); // Formatea fin de rango
+            modeloDist.addRow(new Object[]{pTxt, acTxt, iniTxt, finTxt, colores[i]}); // Inserta fila en la tabla
+            inicio = fin; // Actualiza inicio para siguiente intervalo
+        } // Fin for
+    } // Fin generarDistribucion
 
-    /** Llena la tabla de simulación con los números pseudoaleatorios dados. */
-    private void llenarSimulacion(){
-        modeloSim.setRowCount(0);
-        for(int i=0;i<NUMEROS.length;i++){
-            double r = NUMEROS[i];
-            String color = UrnaModelo.colorPara(r);
-            modeloSim.addRow(new Object[]{i+1, UtilFormatoUrnas.fmt(r), color});
-        }
-    }
-}
+    private void llenarSimulacion(){ // Método que llena la tabla de simulación
+        modeloSim.setRowCount(0); // Limpia filas previas
+        for(int i=0;i<NUMEROS.length;i++){ // Itera cada número fijo
+            double r = NUMEROS[i]; // Número actual
+            String color = UrnaModelo.colorPara(r); // Determina color
+            modeloSim.addRow(new Object[]{i+1, UtilFormatoUrnas.fmt(r), color}); // Agrega fila a la tabla
+        } // Fin for
+    } // Fin llenarSimulacion
+} // Fin clase PanelUrnaPredefinida
