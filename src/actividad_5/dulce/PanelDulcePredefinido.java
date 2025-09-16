@@ -4,130 +4,180 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
-/** Panel con simulación usando los 100 números aleatorios fijos del Excel */
+/** Panel con los datos predefinidos del Excel - 100 números aleatorios fijos */
 public class PanelDulcePredefinido extends JPanel {
-    private final JSpinner spDecision;
-    private final DefaultTableModel modeloDistribucion;
+    private final DefaultTableModel modeloDistrib;
     private final DefaultTableModel modeloSim;
     private final DefaultTableModel modeloComparacion;
-    private final JLabel lblPromedio;
-
-    private static final int[] DECISIONES_DEFECTO = {40, 50, 60, 70, 80, 90};
 
     public PanelDulcePredefinido() {
         setLayout(new BorderLayout(8, 8));
         EstilosUI.aplicarEstiloPanel(this);
 
-        JLabel titulo = new JLabel("Dulce Ada - Simulación (100 réplicas fijas)");
+        JLabel titulo = new JLabel("Dulce Ada - Ejemplo predefinido (100 réplicas)");
         EstilosUI.aplicarEstiloTitulo(titulo);
         add(titulo, BorderLayout.NORTH);
 
-        // Panel superior de controles
-        JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        EstilosUI.aplicarEstiloPanel(top);
-        top.add(new JLabel("Cantidad comprada (Q):"));
-        spDecision = new JSpinner(new SpinnerNumberModel(60, 40, 120, 10));
-        top.add(spDecision);
-        JButton btnActualizar = new JButton("Actualizar detalle");
-        EstilosUI.aplicarEstiloBoton(btnActualizar);
-        top.add(btnActualizar);
-        add(top, BorderLayout.BEFORE_FIRST_LINE);
+        // Panel principal dividido
+        JPanel panelPrincipal = new JPanel(new BorderLayout(8, 8));
+        EstilosUI.aplicarEstiloPanel(panelPrincipal);
 
-        // Panel izquierdo - Distribución y Comparación
+        // Panel izquierdo: distribución y comparación
         JPanel panelIzq = new JPanel();
         panelIzq.setLayout(new BoxLayout(panelIzq, BoxLayout.Y_AXIS));
         EstilosUI.aplicarEstiloPanel(panelIzq);
 
         // Tabla de distribución
-        modeloDistribucion = new DefaultTableModel(new Object[]{
-            "Probabilidad", "Distribución acumulada", "Rango del # aleatorio", "Demanda"
+        modeloDistrib = new DefaultTableModel(new Object[]{
+            "Probabilidad", "Distribución acumulada", "Rangos de #s aleatorios", "Demanda"
         }, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
         };
         llenarDistribucion();
-        JTable tablaDist = new JTable(modeloDistribucion);
-        EstilosUI.aplicarEstiloTabla(tablaDist);
-        tablaDist.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        tablaDist.getColumnModel().getColumn(0).setPreferredWidth(80);
-        tablaDist.getColumnModel().getColumn(1).setPreferredWidth(120);
-        tablaDist.getColumnModel().getColumn(2).setPreferredWidth(140);
-        tablaDist.getColumnModel().getColumn(3).setPreferredWidth(70);
-        JScrollPane spDist = new JScrollPane(tablaDist);
-        spDist.setBorder(BorderFactory.createTitledBorder("Distribución de probabilidades de la demanda"));
-        spDist.setPreferredSize(new Dimension(420, 200));
+
+        JTable tDist = new JTable(modeloDistrib);
+        EstilosUI.aplicarEstiloTabla(tDist);
+        tDist.getTableHeader().setBackground(new Color(200, 240, 255));
+        tDist.getTableHeader().setForeground(Color.BLACK);
+        tDist.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        tDist.getColumnModel().getColumn(0).setPreferredWidth(90);
+        tDist.getColumnModel().getColumn(1).setPreferredWidth(120);
+        tDist.getColumnModel().getColumn(2).setPreferredWidth(140);
+        tDist.getColumnModel().getColumn(3).setPreferredWidth(70);
+
+        JScrollPane spDist = new JScrollPane(tDist);
+        spDist.setBorder(BorderFactory.createTitledBorder("Tabla de distribución de probabilidades de la demanda"));
+        spDist.setPreferredSize(new Dimension(430, 220));
         panelIzq.add(spDist);
 
         panelIzq.add(Box.createVerticalStrut(8));
 
-        // Tabla de comparación de ganancias
+        // Tabla de comparación de ganancias generales
         modeloComparacion = new DefaultTableModel(new Object[]{
             "Compra", "Ganancia promedio"
         }, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
         };
+        llenarComparacion();
+
         JTable tablaComp = new JTable(modeloComparacion);
         EstilosUI.aplicarEstiloTabla(tablaComp);
         tablaComp.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        tablaComp.getColumnModel().getColumn(0).setPreferredWidth(60);
+        tablaComp.getColumnModel().getColumn(0).setPreferredWidth(70);
         tablaComp.getColumnModel().getColumn(1).setPreferredWidth(130);
         JScrollPane spComp = new JScrollPane(tablaComp);
         spComp.setBorder(BorderFactory.createTitledBorder("Ganancias generales de la simulación dulce hada"));
-        spComp.setPreferredSize(new Dimension(200, 200));
+        spComp.setPreferredSize(new Dimension(210, 220));
         panelIzq.add(spComp);
 
-        // Tabla de simulación detallada
+        panelPrincipal.add(panelIzq, BorderLayout.WEST);
+
+        // Panel derecho: tabla de simulación (con Q=60 por defecto)
         modeloSim = new DefaultTableModel(new Object[]{
             "Replica", "# Aleatorio", "Demanda", "Ganancia"
         }, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
+            @Override
+            public Class<?> getColumnClass(int c) {
+                if (c == 0 || c == 2) return Integer.class;
+                return String.class;
+            }
         };
-        JTable tablaSim = new JTable(modeloSim);
-        EstilosUI.aplicarEstiloTabla(tablaSim);
-        tablaSim.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        tablaSim.getColumnModel().getColumn(0).setPreferredWidth(60);
-        tablaSim.getColumnModel().getColumn(1).setPreferredWidth(80);
-        tablaSim.getColumnModel().getColumn(2).setPreferredWidth(70);
-        tablaSim.getColumnModel().getColumn(3).setPreferredWidth(85);
-        JScrollPane spSim = new JScrollPane(tablaSim);
-        spSim.setBorder(BorderFactory.createTitledBorder("Tabla de simulación"));
 
-        JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, panelIzq, spSim);
-        split.setResizeWeight(0.45);
-        split.setOneTouchExpandable(true);
-        add(split, BorderLayout.CENTER);
+        JTable tSim = new JTable(modeloSim) {
+            @Override
+            public Component prepareRenderer(javax.swing.table.TableCellRenderer renderer, int row, int column) {
+                Component c = super.prepareRenderer(renderer, row, column);
+                if (row == getRowCount() - 1) { // fila de promedio
+                    c.setBackground(new Color(220, 220, 220));
+                } else if (row % 2 == 0) {
+                    c.setBackground(Color.WHITE);
+                } else {
+                    c.setBackground(new Color(245, 245, 245));
+                }
+                return c;
+            }
+        };
 
-        lblPromedio = new JLabel(" ");
+        EstilosUI.aplicarEstiloTabla(tSim);
+        tSim.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        tSim.getColumnModel().getColumn(0).setPreferredWidth(60);
+        tSim.getColumnModel().getColumn(1).setPreferredWidth(80);
+        tSim.getColumnModel().getColumn(2).setPreferredWidth(70);
+        tSim.getColumnModel().getColumn(3).setPreferredWidth(90);
+
+        simular();
+        JScrollPane spSim = new JScrollPane(tSim);
+        spSim.setBorder(BorderFactory.createTitledBorder("Tabla de simulación (Variable de decisión: Cantidad comprada = 60)"));
+        panelPrincipal.add(spSim, BorderLayout.CENTER);
+
+        add(panelPrincipal, BorderLayout.CENTER);
+
+        // Panel inferior para mostrar el promedio
+        JPanel panelInferior = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        EstilosUI.aplicarEstiloPanel(panelInferior);
+        JLabel lblPromedio = new JLabel();
         EstilosUI.aplicarEstiloLabel(lblPromedio);
-        lblPromedio.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
-        add(lblPromedio, BorderLayout.SOUTH);
+        lblPromedio.setFont(new Font("Arial", Font.BOLD, 14));
+        lblPromedio.setForeground(new Color(0, 100, 0)); // Verde oscuro
 
-        btnActualizar.addActionListener(e -> refrescarSimulacion());
+        // Calcular y mostrar el promedio
+        double[] ganancias = DulceModelo.simularGanancias(60, DulceModelo.RAND_FIJOS);
+        double promedio = DulceModelo.promedio(ganancias);
+        lblPromedio.setText("Ganancia promedio para Q=60: " + UtilFormatoDulce.m2(promedio));
 
-        // Carga inicial
-        llenarComparativa();
-        refrescarSimulacion();
+        panelInferior.add(lblPromedio);
+        add(panelInferior, BorderLayout.SOUTH);
     }
 
     private void llenarDistribucion() {
-        modeloDistribucion.setRowCount(0);
+        modeloDistrib.setRowCount(0);
         double[][] rangos = DulceModelo.getRangos();
 
         for (int i = 0; i < DulceModelo.DEMANDAS.length; i++) {
-            String rango = String.format("%.4f", rangos[i][0]) + " - " + String.format("%.4f", rangos[i][1]);
-            modeloDistribucion.addRow(new Object[]{
-                String.format("%.4f", DulceModelo.PROB[i]),
-                String.format("%.4f", rangos[i][1]),
+            String rango = UtilFormatoDulce.p4(rangos[i][0]) + " - " + UtilFormatoDulce.p4(rangos[i][1]);
+            modeloDistrib.addRow(new Object[]{
+                UtilFormatoDulce.p4(DulceModelo.PROB[i]),
+                UtilFormatoDulce.p4(getSumaAcumulada(DulceModelo.PROB, i)),
                 rango,
                 DulceModelo.DEMANDAS[i]
             });
         }
     }
 
-    private void refrescarSimulacion() {
-        int Q = (int) spDecision.getValue();
-        modeloSim.setRowCount(0);
-
+    private double getSumaAcumulada(double[] probs, int hasta) {
         double suma = 0;
+        for (int i = 0; i <= hasta; i++) {
+            suma += probs[i];
+        }
+        return suma;
+    }
+
+    private void llenarComparacion() {
+        modeloComparacion.setRowCount(0);
+        int[] decisiones = {40, 50, 60, 70, 80, 90};
+
+        for (int Q : decisiones) {
+            double[] ganancias = DulceModelo.simularGanancias(Q, DulceModelo.RAND_FIJOS);
+            double promedio = DulceModelo.promedio(ganancias);
+            modeloComparacion.addRow(new Object[]{Q, UtilFormatoDulce.m2(promedio)});
+        }
+    }
+
+    private void simular() {
+        modeloSim.setRowCount(0);
+        int Q = 60; // Cantidad fija para la tabla de simulación
+        double suma = 0;
+
         for (int i = 0; i < DulceModelo.RAND_FIJOS.length; i++) {
             double r = DulceModelo.RAND_FIJOS[i];
             int demanda = DulceModelo.demandaPara(r);
@@ -136,27 +186,19 @@ public class PanelDulcePredefinido extends JPanel {
 
             modeloSim.addRow(new Object[]{
                 i + 1,
-                String.format("%.4f", r),
+                UtilFormatoDulce.p4(r),
                 demanda,
                 UtilFormatoDulce.m2(ganancia)
             });
         }
 
+        // Fila de promedio con mejor formato
         double promedio = suma / DulceModelo.RAND_FIJOS.length;
-        lblPromedio.setText("Ganancia promedio: " + UtilFormatoDulce.m2(promedio));
-    }
-
-    private void llenarComparativa() {
-        modeloComparacion.setRowCount(0);
-
-        for (int Q : DECISIONES_DEFECTO) {
-            double[] ganancias = DulceModelo.simularGanancias(Q, DulceModelo.RAND_FIJOS);
-            double promedio = DulceModelo.promedio(ganancias);
-
-            modeloComparacion.addRow(new Object[]{
-                Q,
-                UtilFormatoDulce.m2(promedio)
-            });
-        }
+        modeloSim.addRow(new Object[]{
+            "TOTAL/PROMEDIO",
+            "",
+            "",
+            UtilFormatoDulce.m2(promedio)
+        });
     }
 }
