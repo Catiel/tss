@@ -14,6 +14,7 @@ public class PanelDulceManual extends JPanel {
     private final DefaultTableModel modeloInput;
     private final DefaultTableModel modeloSim;
     private final DefaultTableModel modeloComp;
+    private final JTextField txtDecisiones; // NUEVO: lista editable de decisiones Q
 
     public PanelDulceManual() {
         setLayout(new BorderLayout(8, 8));
@@ -29,6 +30,9 @@ public class PanelDulceManual extends JPanel {
         controles.add(new JLabel("Número de réplicas:"));
         spReplicas = new JSpinner(new SpinnerNumberModel(100, 10, 500, 10));
         controles.add(spReplicas);
+        controles.add(new JLabel("Decisiones Q (coma):"));
+        txtDecisiones = new JTextField("40,50,60,70,80,90",14);
+        controles.add(txtDecisiones);
         btnCrear = new JButton("Crear tabla de entrada");
         EstilosUI.aplicarEstiloBoton(btnCrear);
         controles.add(btnCrear);
@@ -290,12 +294,25 @@ public class PanelDulceManual extends JPanel {
 
     private void llenarComparativa(double[] randoms) {
         modeloComp.setRowCount(0);
-        int[] decisiones = {40, 50, 60, 70, 80, 90};
-
+        int[] decisiones = parseDecisiones();
+        if(decisiones.length==0){
+            modeloComp.addRow(new Object[]{"(sin Q)", ""});
+            return;
+        }
+        double mejorProm = -Double.MAX_VALUE; int mejorQ = -1;
         for (int Q : decisiones) {
             double[] ganancias = DulceModelo.simularGanancias(Q, randoms);
             double promedio = DulceModelo.promedio(ganancias);
+            if(promedio > mejorProm){ mejorProm = promedio; mejorQ = Q; }
             modeloComp.addRow(new Object[]{Q, UtilFormatoDulce.m2(promedio)});
         }
+        modeloComp.addRow(new Object[]{"Mejor", mejorQ + " (" + UtilFormatoDulce.m2(mejorProm) + ")"});
+    }
+
+    private int[] parseDecisiones(){
+        String txt = txtDecisiones.getText(); if(txt==null) return new int[0];
+        String[] partes = txt.split(","); java.util.List<Integer> lista = new java.util.ArrayList<>();
+        for(String p: partes){ p = p.trim(); if(p.isEmpty()) continue; try { int q = Integer.parseInt(p); if(q>0) lista.add(q);} catch(Exception ignored){} }
+        int[] arr = new int[lista.size()]; for(int i=0;i<lista.size();i++) arr[i]=lista.get(i); return arr;
     }
 }
