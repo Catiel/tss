@@ -40,6 +40,7 @@ public class PanelVentasPredefinido extends JPanel {
         EstilosUI.aplicarEstiloTabla(tDist);
         tDist.getTableHeader().setBackground(new Color(200, 240, 255));
         tDist.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        tDist.getTableHeader().setForeground(Color.BLACK);
         tDist.getColumnModel().getColumn(0).setPreferredWidth(90);
         tDist.getColumnModel().getColumn(1).setPreferredWidth(120);
         tDist.getColumnModel().getColumn(2).setPreferredWidth(140);

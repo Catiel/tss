@@ -55,6 +55,7 @@ public class PanelVentasManual extends JPanel {
         JTable tDist = new JTable(modeloDist);
         EstilosUI.aplicarEstiloTabla(tDist);
         tDist.getTableHeader().setBackground(new Color(200, 240, 255));
+        tDist.getTableHeader().setForeground(Color.BLACK);
         tDist.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         tDist.getColumnModel().getColumn(0).setPreferredWidth(90);
         tDist.getColumnModel().getColumn(1).setPreferredWidth(120);
@@ -86,6 +87,7 @@ public class PanelVentasManual extends JPanel {
         JTable tablaInput = new JTable(modeloInput);
         EstilosUI.aplicarEstiloTabla(tablaInput);
         tablaInput.getTableHeader().setBackground(new Color(255, 255, 200));
+        tablaInput.getTableHeader().setForeground(Color.BLACK);
         tablaInput.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         tablaInput.getColumnModel().getColumn(0).setPreferredWidth(50);
         tablaInput.getColumnModel().getColumn(1).setPreferredWidth(120);
