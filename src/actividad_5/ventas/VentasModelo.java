@@ -30,24 +30,6 @@ public class VentasModelo {
         return 0;
     }
 
-    /** Calcula el valor esperado de la demanda */
-    public static double esperadoDemanda() {
-        double suma = 0;
-        for (int i = 0; i < DEMANDA.length; i++) {
-            suma += DEMANDA[i] * PROBS[i];
-        }
-        return suma;
-    }
-
-    /** Calcula el valor esperado de la ganancia */
-    public static double esperadoGanancia() {
-        double suma = 0;
-        for (int i = 0; i < GANANCIA.length; i++) {
-            suma += GANANCIA[i] * PROBS[i];
-        }
-        return suma;
-    }
-
     /** Obtiene los rangos de números aleatorios para la simulación */
     public static double[][] getRangos() {
         double[][] rangos = new double[DEMANDA.length][2];

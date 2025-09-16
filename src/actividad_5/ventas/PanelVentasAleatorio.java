@@ -196,28 +196,10 @@ public class PanelVentasAleatorio extends JPanel {
         sb.append("DEMANDA:\n");
         sb.append("• Total programas vendidos: ").append(totalDemanda).append(" programas\n");
         sb.append("• Promedio diario simulado: ").append(UtilFormatoVentas.f2(promDemanda)).append(" programas\n");
-        sb.append("• Valor esperado teórico: ").append(UtilFormatoVentas.f2(VentasModelo.esperadoDemanda())).append(" programas\n\n");
 
         sb.append("GANANCIAS:\n");
         sb.append("• Total ganancia: $").append(totalGanancia).append("\n");
         sb.append("• Ganancia promedio diaria: $").append(UtilFormatoVentas.f2(promGanancia)).append("\n");
-        sb.append("• Valor esperado teórico: $").append(UtilFormatoVentas.f2(VentasModelo.esperadoGanancia())).append("\n\n");
-
-        double difDemanda = Math.abs(promDemanda - VentasModelo.esperadoDemanda());
-        double difGanancia = Math.abs(promGanancia - VentasModelo.esperadoGanancia());
-
-        sb.append("ANÁLISIS:\n");
-        sb.append("• Diferencia en demanda vs esperado: ").append(UtilFormatoVentas.f2(difDemanda)).append(" programas\n");
-        sb.append("• Diferencia en ganancia vs esperado: $").append(UtilFormatoVentas.f2(difGanancia)).append("\n\n");
-
-        sb.append("CONCLUSIONES:\n");
-        if (difDemanda < 50 && difGanancia < 100) {
-            sb.append("• Los resultados son muy cercanos a los valores esperados\n");
-        } else {
-            sb.append("• Los resultados muestran variabilidad natural de la simulación\n");
-        }
-        sb.append("• Con más días simulados, los promedios convergen hacia los valores teóricos\n");
-        sb.append("• Cada ejecución genera resultados diferentes debido a la naturaleza aleatoria");
 
         resumen.setText(sb.toString());
     }

@@ -179,17 +179,10 @@ public class PanelVentasPredefinido extends JPanel {
         sb.append("DEMANDA:\n");
         sb.append("• Total programas vendidos: ").append(totalDemanda).append(" programas\n");
         sb.append("• Promedio diario: ").append(UtilFormatoVentas.f2(promDemanda)).append(" programas\n");
-        sb.append("• Valor esperado teórico: ").append(UtilFormatoVentas.f2(VentasModelo.esperadoDemanda())).append(" programas\n\n");
 
         sb.append("GANANCIAS:\n");
         sb.append("• Total ganancia: $").append(totalGanancia).append("\n");
         sb.append("• Ganancia promedio diaria: $").append(UtilFormatoVentas.f2(promGanancia)).append("\n");
-        sb.append("• Valor esperado teórico: $").append(UtilFormatoVentas.f2(VentasModelo.esperadoGanancia())).append("\n\n");
-
-        sb.append("ANÁLISIS:\n");
-        sb.append("La simulación muestra los resultados para 10 días de venta de programas de fútbol.\n");
-        sb.append("Los valores se acercan a los esperados teóricamente, validando el modelo de simulación.\n");
-        sb.append("Con más días simulados, los promedios convergen hacia los valores esperados.");
 
         resumen.setText(sb.toString());
     }
