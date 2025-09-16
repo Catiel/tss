@@ -1,14 +1,13 @@
-package actividad_5.calentadores;
+package actividad_5.calentadores; // Define el paquete donde se encuentra esta clase
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.*; // Importa todas las clases de Swing para componentes de interfaz gráfica
+import java.awt.*; // Importa clases de AWT para manejo de colores y gráficos
 
 /** Reutiliza estilos generales de actividad_3.ejercicio_1 */
-public class EstilosUI {
-    public static void aplicarEstiloPanel(JPanel p){ p.setBackground(Color.white); }
-    public static void aplicarEstiloTitulo(JLabel l){ actividad_3.ejercicio_1.EstilosUI.aplicarEstiloTitulo(l); }
-    public static void aplicarEstiloTabla(JTable t){ actividad_3.ejercicio_1.EstilosUI.tablanueva(t); }
-    public static void aplicarEstiloBoton(JButton b){ actividad_3.ejercicio_1.EstilosUI.botonuevo(b); }
-    public static void aplicarEstiloLabel(JLabel l){ actividad_3.ejercicio_1.EstilosUI.aplicarEstiloLabel(l); }
+public class EstilosUI { // Clase utilitaria que proporciona métodos estáticos para aplicar estilos a componentes UI
+    public static void aplicarEstiloPanel(JPanel p){ p.setBackground(Color.white); } // Establece el fondo blanco para cualquier panel pasado como parámetro
+    public static void aplicarEstiloTitulo(JLabel l){ actividad_3.ejercicio_1.EstilosUI.aplicarEstiloTitulo(l); } // Delega la aplicación de estilo de título a la clase EstilosUI de actividad_3.ejercicio_1
+    public static void aplicarEstiloTabla(JTable t){ actividad_3.ejercicio_1.EstilosUI.tablanueva(t); } // Delega la aplicación de estilo de tabla al método tablanueva de la clase EstilosUI de actividad_3.ejercicio_1
+    public static void aplicarEstiloBoton(JButton b){ actividad_3.ejercicio_1.EstilosUI.botonuevo(b); } // Delega la aplicación de estilo de botón al método botonuevo de la clase EstilosUI de actividad_3.ejercicio_1
+    public static void aplicarEstiloLabel(JLabel l){ actividad_3.ejercicio_1.EstilosUI.aplicarEstiloLabel(l); } // Delega la aplicación de estilo de etiqueta a la clase EstilosUI de actividad_3.ejercicio_1
 }
-
