@@ -13,16 +13,16 @@ public class PanelSangrePredefinida extends JPanel { // Declara la clase que ext
     private final DefaultTableModel modeloSim; // Declara el modelo de datos para la tabla de simulación semanal
 
     // Números aleatorios del ejemplo por semana
-    private final double[] RAND_SUPPLY = {0.59,0.22,0.39,0.06,0.85,0.08}; // Array de números aleatorios predefinidos para el suministro de cada una de las 6 semanas
-    private final double[] RAND_PACIENTES = {0.27,0.51,0.67,0.91,0.56,0.27}; // Array de números aleatorios predefinidos para el número de pacientes de cada una de las 6 semanas
+    private final double[] RAND_SUPPLY = {0.74,0.31,0.02,0.53,0.16,0.40}; // Array de números aleatorios predefinidos para el suministro de cada una de las 6 semanas (actualizado con nuevos valores)
+    private final double[] RAND_PACIENTES = {0.85,0.28,0.72,0.44,0.16,0.83}; // Array de números aleatorios predefinidos para el número de pacientes de cada una de las 6 semanas (actualizado con nuevos valores)
     // Matriz de números de demanda por paciente por semana (max 4)
-    private final double[][] RAND_DEM = { // Matriz bidimensional de números aleatorios predefinidos para la demanda individual de cada paciente por semana
-            {0.79, Double.NaN, Double.NaN, Double.NaN}, // Semana 1: solo 1 paciente, por eso los otros 3 valores son NaN (No es un Número)
-            {0.42,0.30,Double.NaN,Double.NaN}, // Semana 2: 2 pacientes, por eso solo los primeros 2 valores son válidos
-            {0.71,0.36,Double.NaN,Double.NaN}, // Semana 3: 2 pacientes, por eso solo los primeros 2 valores son válidos
-            {0.72,0.86,0.33,Double.NaN}, // Semana 4: 3 pacientes, por eso los primeros 3 valores son válidos
-            {0.63,0.93,Double.NaN,Double.NaN}, // Semana 5: 2 pacientes, por eso solo los primeros 2 valores son válidos
-            {0.60,Double.NaN,Double.NaN,Double.NaN} // Semana 6: solo 1 paciente, por eso los otros 3 valores son NaN
+    private final double[][] RAND_DEM = { // Matriz bidimensional de números aleatorios predefinidos para la demanda individual de cada paciente por semana (actualizada con nuevos valores)
+            {0.21,0.06,0.71,Double.NaN}, // Semana 1: 3 pacientes con números aleatorios 0.21, 0.06, 0.71
+            {0.96,Double.NaN,Double.NaN,Double.NaN}, // Semana 2: 1 paciente con número aleatorio 0.96
+            {0.12,0.67,Double.NaN,Double.NaN}, // Semana 3: 2 pacientes con números aleatorios 0.12, 0.67
+            {0.23,Double.NaN,Double.NaN,Double.NaN}, // Semana 4: 1 paciente con número aleatorio 0.23
+            {Double.NaN,Double.NaN,Double.NaN,Double.NaN}, // Semana 5: 0 pacientes, todos los valores son NaN
+            {0.65,0.34,0.82,Double.NaN} // Semana 6: 3 pacientes con números aleatorios 0.65, 0.34, 0.82
     };
 
     public PanelSangrePredefinida(){ // Constructor de la clase
