@@ -9,7 +9,7 @@ public class PanelUrnaPredefinida extends JPanel { // Inicio de la clase que ext
     private final DefaultTableModel modeloSim; // Modelo para la tabla de simulación
     private final DefaultTableModel modeloDist; // Modelo para la tabla de distribución
 
-    private static final double[] NUMEROS = {0.81,0.95,0.79,0.24,0.26,0.34,0.51,0.72,0.08,0.94}; // Arreglo con los 10 números fijos
+    private static final double[] NUMEROS = {0.26,0.42,0.95,0.95,0.66,0.17,0.03,0.56,0.83,0.55}; ; // Arreglo con los 10 números fijos
 
     public PanelUrnaPredefinida(){ // Constructor del panel
         EstilosUI.aplicarEstiloPanel(this); // Aplica fondo estándar
