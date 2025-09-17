@@ -53,7 +53,7 @@ public class PanelVentasPredefinido extends JPanel { // Declara la clase que ext
 
         // Panel derecho: tabla de simulación
         modeloSim = new DefaultTableModel(new Object[]{ // Inicializa el modelo de la tabla de simulación con las columnas
-            "Día", "# Aleatorio", "Demanda", "Ganancia" // Define los nombres de las columnas de resultados
+            "Día", "# Aleatorio", "Demanda", "Ganancia (2500)", "Ganancia (2600)" // Define los nombres de las columnas de resultados incluyendo ambas ganancias
         }, 0) { // Establece 0 filas iniciales
             @Override
             public boolean isCellEditable(int r, int c) { // Sobrescribe el método para determinar si una celda es editable
@@ -61,7 +61,7 @@ public class PanelVentasPredefinido extends JPanel { // Declara la clase que ext
             }
             @Override
             public Class<?> getColumnClass(int c) { // Sobrescribe el método para definir el tipo de datos de cada columna
-                if (c == 0 || c == 2 || c == 3) return Integer.class; // Primera, tercera y cuarta columna son Integer
+                if (c == 0 || c == 2 || c == 3 || c == 4) return Integer.class; // Primera, tercera, cuarta y quinta columna son Integer
                 return String.class; // La segunda columna (números aleatorios) es String
             }
         };
@@ -86,7 +86,8 @@ public class PanelVentasPredefinido extends JPanel { // Declara la clase que ext
         tSim.getColumnModel().getColumn(0).setPreferredWidth(50); // Establece el ancho preferido de la primera columna (Día)
         tSim.getColumnModel().getColumn(1).setPreferredWidth(80); // Establece el ancho preferido de la segunda columna (# Aleatorio)
         tSim.getColumnModel().getColumn(2).setPreferredWidth(80); // Establece el ancho preferido de la tercera columna (Demanda)
-        tSim.getColumnModel().getColumn(3).setPreferredWidth(80); // Establece el ancho preferido de la cuarta columna (Ganancia)
+        tSim.getColumnModel().getColumn(3).setPreferredWidth(100); // Establece el ancho preferido de la cuarta columna (Ganancia 2500)
+        tSim.getColumnModel().getColumn(4).setPreferredWidth(100); // Establece el ancho preferido de la quinta columna (Ganancia 2600)
 
         simular(); // Ejecuta inmediatamente la simulación con los datos predefinidos
         JScrollPane spSim = new JScrollPane(tSim); // Crea un panel de desplazamiento para la tabla de simulación
@@ -135,21 +136,25 @@ public class PanelVentasPredefinido extends JPanel { // Declara la clase que ext
     private void simular() { // Método para ejecutar la simulación usando los números aleatorios predefinidos
         modeloSim.setRowCount(0); // Limpia todas las filas de la tabla de simulación
         int totalDemanda = 0; // Inicializa el acumulador de demanda total
-        int totalGanancia = 0; // Inicializa el acumulador de ganancia total
+        int totalGanancia2500 = 0; // Inicializa el acumulador de ganancia total para producción de 2500
+        int totalGanancia2600 = 0; // Inicializa el acumulador de ganancia total para producción de 2600
 
         for (int i = 0; i < RAND.length; i++) { // Itera sobre cada número aleatorio predefinido
             double r = RAND[i]; // Obtiene el número aleatorio predefinido para este día
             int demanda = VentasModelo.demandaPara(r); // Convierte el número aleatorio en demanda usando el modelo
-            int ganancia = VentasModelo.gananciaParaDemanda(demanda); // Calcula la ganancia correspondiente a la demanda
+            int ganancia2500 = VentasModelo.gananciaParaDemanda(demanda); // Calcula la ganancia para producción de 2500
+            int ganancia2600 = VentasModelo.gananciaParaDemanda2600(demanda); // Calcula la ganancia para producción de 2600
 
             totalDemanda += demanda; // Acumula la demanda diaria al total
-            totalGanancia += ganancia; // Acumula la ganancia diaria al total
+            totalGanancia2500 += ganancia2500; // Acumula la ganancia diaria al total para 2500
+            totalGanancia2600 += ganancia2600; // Acumula la ganancia diaria al total para 2600
 
             modeloSim.addRow(new Object[]{ // Agrega una nueva fila con los resultados del día
                 i + 1, // Número del día (índice + 1)
                 UtilFormatoVentas.f2(r), // Número aleatorio predefinido formateado con 2 decimales
                 demanda, // Demanda calculada (programas vendidos)
-                ganancia // Ganancia calculada
+                ganancia2500, // Ganancia calculada para producción de 2500
+                ganancia2600 // Ganancia calculada para producción de 2600
             });
         }
 
@@ -158,32 +163,52 @@ public class PanelVentasPredefinido extends JPanel { // Declara la clase que ext
             "Total", // Etiqueta para la fila de totales
             "", // Columna vacía
             totalDemanda, // Total de demanda acumulada
-            totalGanancia // Total de ganancia acumulada
+            totalGanancia2500, // Total de ganancia acumulada para 2500
+            totalGanancia2600 // Total de ganancia acumulada para 2600
         });
     }
 
     private void actualizarResumen() { // Método para calcular y actualizar el área de resumen con estadísticas de la simulación
         int totalDemanda = 0; // Inicializa el acumulador de demanda total
-        int totalGanancia = 0; // Inicializa el acumulador de ganancia total
+        int totalGanancia2500 = 0; // Inicializa el acumulador de ganancia total para producción de 2500
+        int totalGanancia2600 = 0; // Inicializa el acumulador de ganancia total para producción de 2600
 
         for (double r : RAND) { // Itera sobre cada número aleatorio predefinido usando enhanced for loop
             int demanda = VentasModelo.demandaPara(r); // Convierte el número aleatorio en demanda usando el modelo
             totalDemanda += demanda; // Acumula la demanda al total
-            totalGanancia += VentasModelo.gananciaParaDemanda(demanda); // Calcula y acumula la ganancia correspondiente
+            totalGanancia2500 += VentasModelo.gananciaParaDemanda(demanda); // Calcula y acumula la ganancia para 2500
+            totalGanancia2600 += VentasModelo.gananciaParaDemanda2600(demanda); // Calcula y acumula la ganancia para 2600
         }
 
         double promDemanda = totalDemanda / (double) RAND.length; // Calcula el promedio de demanda dividiendo total entre número de días
-        double promGanancia = totalGanancia / (double) RAND.length; // Calcula el promedio de ganancia dividiendo total entre número de días
+        double promGanancia2500 = totalGanancia2500 / (double) RAND.length; // Calcula el promedio de ganancia para 2500 dividiendo total entre número de días
+        double promGanancia2600 = totalGanancia2600 / (double) RAND.length; // Calcula el promedio de ganancia para 2600 dividiendo total entre número de días
 
         StringBuilder sb = new StringBuilder(); // Crea un constructor de cadenas para armar el texto del resumen
         sb.append("RESULTADOS DE LA SIMULACIÓN (").append(RAND.length).append(" días):\n\n"); // Agrega el encabezado con el número de días simulados
         sb.append("DEMANDA:\n"); // Agrega la sección de demanda
         sb.append("• Total programas vendidos: ").append(totalDemanda).append(" programas\n"); // Agrega el total de programas vendidos
-        sb.append("• Promedio diario: ").append(UtilFormatoVentas.f2(promDemanda)).append(" programas\n"); // Agrega el promedio diario de programas
+        sb.append("• Promedio diario: ").append(UtilFormatoVentas.f2(promDemanda)).append(" programas\n\n"); // Agrega el promedio diario de programas
 
-        sb.append("GANANCIAS:\n"); // Agrega la sección de ganancias
-        sb.append("• Total ganancia: $").append(totalGanancia).append("\n"); // Agrega la ganancia total con símbolo de dólar
-        sb.append("• Ganancia promedio diaria: $").append(UtilFormatoVentas.f2(promGanancia)).append("\n"); // Agrega el promedio de ganancia diaria
+        sb.append("GANANCIAS COMPARATIVAS:\n"); // Agrega la sección de ganancias comparativas
+        sb.append("PRODUCCIÓN DE 2500 PROGRAMAS:\n"); // Sección para producción de 2500
+        sb.append("• Total ganancia: $").append(totalGanancia2500).append("\n"); // Agrega la ganancia total para 2500
+        sb.append("• Ganancia promedio diaria: $").append(UtilFormatoVentas.f2(promGanancia2500)).append("\n\n"); // Agrega el promedio de ganancia diaria para 2500
+
+        sb.append("PRODUCCIÓN DE 2600 PROGRAMAS:\n"); // Sección para producción de 2600
+        sb.append("• Total ganancia: $").append(totalGanancia2600).append("\n"); // Agrega la ganancia total para 2600
+        sb.append("• Ganancia promedio diaria: $").append(UtilFormatoVentas.f2(promGanancia2600)).append("\n\n"); // Agrega el promedio de ganancia diaria para 2600
+
+        int diferencia = totalGanancia2600 - totalGanancia2500; // Calcula la diferencia entre ambas estrategias
+        sb.append("DIFERENCIA:\n"); // Sección de análisis comparativo
+        sb.append("• Producir 2600 vs 2500: $").append(diferencia); // Muestra la diferencia
+        if (diferencia > 0) {
+            sb.append(" (2600 es mejor)");
+        } else if (diferencia < 0) {
+            sb.append(" (2500 es mejor)");
+        } else {
+            sb.append(" (igual resultado)");
+        }
 
         resumen.setText(sb.toString()); // Establece el texto del área de resumen con el contenido construido
     }
