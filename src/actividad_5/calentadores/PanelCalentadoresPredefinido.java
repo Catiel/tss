@@ -128,17 +128,6 @@ public class PanelCalentadoresPredefinido extends JPanel { // Clase que extiende
         double esperado = CalentadoresModelo.esperado(); // Obtiene el valor esperado teórico del modelo
 
         StringBuilder sb = new StringBuilder(); // Builder para construir el texto del resumen
-        sb.append("ANÁLISIS DE LA SIMULACIÓN (20 semanas con inventario fijo de 8 calentadores):\n\n"); // Encabezado del análisis
-        sb.append("a) Faltantes: ").append(faltantes).append(" semanas con demanda > inventario\n"); // Número de semanas con faltantes
-        sb.append("   Semanas con faltantes: ").append(semanasFaltantes).append("\n\n"); // Lista específica de semanas con faltantes
-        sb.append("b) Total de calentadores vendidos: ").append(totalVentas).append(" unidades\n"); // Total de ventas
-        sb.append("   Promedio de ventas simulado: ").append(UtilFormatoCalent.f2(promedioSim)).append(" calentadores/semana\n\n"); // Promedio simulado
-        sb.append("c) Valor esperado analítico E(ventas): ").append(UtilFormatoCalent.f2(esperado)).append(" calentadores/semana\n"); // Valor teórico esperado
-        sb.append("   Diferencia entre simulado y teórico: ").append(UtilFormatoCalent.f2(Math.abs(promedioSim - esperado))).append("\n\n"); // Diferencia entre simulado y teórico
-        sb.append("INTERPRETACIÓN:\n"); // Sección de interpretación
-        sb.append("- Con un inventario fijo de 8 calentadores, hubo faltantes en ").append(faltantes).append(" de 20 semanas (").append(UtilFormatoCalent.f2((faltantes/20.0)*100)).append("%)\n"); // Porcentaje de semanas con faltantes
-        sb.append("- La simulación con más semanas convergerá al valor esperado teórico\n"); // Explicación sobre convergencia
-        sb.append("- Las semanas marcadas en rojo indican cuando la demanda superó el inventario disponible"); // Explicación del código de colores
 
         resumen.setText(sb.toString()); // Establece el texto completo del resumen en el área de texto
         add(resumen, BorderLayout.SOUTH); // Agrega el área de resumen en la parte inferior del panel

@@ -13,7 +13,6 @@ public class PanelCalentadoresAleatorio extends JPanel { // Clase que extiende J
 
     private final DefaultTableModel modeloRangos; // tabla de distribución con rangos - Modelo para la tabla que muestra los rangos de probabilidad
     private final DefaultTableModel modeloSim;    // tabla de simulación - Modelo para la tabla que muestra los resultados de simulación
-    private final JTextArea resumen;              // resumen de resultados - Área de texto para mostrar el análisis de resultados
 
     public PanelCalentadoresAleatorio(){ // Constructor que inicializa todo el panel de simulación aleatoria
         setLayout(new BorderLayout(8,8)); // Establece el layout BorderLayout con espaciado de 8 píxeles horizontal y vertical
@@ -94,16 +93,6 @@ public class PanelCalentadoresAleatorio extends JPanel { // Clase que extiende J
         add(panelPrincipal, BorderLayout.CENTER); // Agrega el panel principal al centro del panel general
 
         // Área de resumen
-        resumen = new JTextArea(); // Crea el área de texto para mostrar el resumen
-        resumen.setEditable(false); // Hace que el área de texto sea de solo lectura
-        resumen.setBackground(getBackground()); // Establece el mismo color de fondo que el panel padre
-        resumen.setBorder(BorderFactory.createTitledBorder("Análisis de resultados")); // Agrega borde con título
-        resumen.setLineWrap(true); // Activa el ajuste automático de líneas
-        resumen.setWrapStyleWord(true); // Ajusta las líneas por palabras completas, no por caracteres
-        resumen.setFont(new Font("Arial", Font.PLAIN, 12)); // Establece fuente Arial, normal, tamaño 12
-        resumen.setPreferredSize(new Dimension(0, 120)); // Establece altura preferida de 120 píxeles, ancho flexible
-        add(resumen, BorderLayout.SOUTH); // Agrega el área de resumen en la parte inferior
-
         btnSimular.addActionListener(this::simular); // Asocia el método simular como listener del evento de clic del botón
 
         // Ejecutar simulación inicial
@@ -195,6 +184,5 @@ public class PanelCalentadoresAleatorio extends JPanel { // Clase que extiende J
         sb.append("Las filas marcadas en rojo indican semanas donde la demanda superó el inventario disponible.\n"); // Explicación del código de colores
         sb.append("Con más semanas de simulación, el promedio converge hacia el valor esperado teórico."); // Explicación sobre convergencia
 
-        resumen.setText(sb.toString()); // Establece el texto completo del resumen en el área de texto
     }
 }

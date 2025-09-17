@@ -14,7 +14,6 @@ public class PanelCalentadoresManual extends JPanel { // Clase que extiende JPan
     private final DefaultTableModel modeloRangos; // Modelo para la tabla que muestra los rangos de probabilidad (referencia)
     private final DefaultTableModel modeloInput; // tabla de entrada de números aleatorios - Modelo para la tabla donde el usuario ingresa números aleatorios
     private final DefaultTableModel modeloSim; // Modelo para la tabla que muestra los resultados de la simulación
-    private final JTextArea resumen; // Área de texto para mostrar el análisis de resultados
 
     public PanelCalentadoresManual(){ // Constructor que inicializa todo el panel de simulación manual
         setLayout(new BorderLayout(8,8)); // Establece el layout BorderLayout con espaciado de 8 píxeles horizontal y vertical
@@ -121,17 +120,6 @@ public class PanelCalentadoresManual extends JPanel { // Clase que extiende JPan
         panelPrincipal.add(panelCentral, BorderLayout.CENTER); // Agrega el panel central al centro del panel principal
         add(panelPrincipal, BorderLayout.CENTER); // Agrega el panel principal al centro del panel general
 
-        // Área de resumen
-        resumen = new JTextArea(); // Crea el área de texto para mostrar el resumen
-        resumen.setEditable(false); // Hace que el área de texto sea de solo lectura
-        resumen.setBackground(getBackground()); // Establece el mismo color de fondo que el panel padre
-        resumen.setLineWrap(true); // Activa el ajuste automático de líneas
-        resumen.setWrapStyleWord(true); // Ajusta las líneas por palabras completas, no por caracteres
-        resumen.setBorder(BorderFactory.createTitledBorder("Análisis de resultados")); // Agrega borde con título
-        resumen.setFont(new Font("Arial", Font.PLAIN, 12)); // Establece fuente Arial, normal, tamaño 12
-        resumen.setPreferredSize(new Dimension(0, 120)); // Establece altura preferida de 120 píxeles, ancho flexible
-        add(resumen, BorderLayout.SOUTH); // Agrega el área de resumen en la parte inferior
-
         btnCrear.addActionListener(this::crearFilas); // Asocia el método crearFilas como listener del evento de clic del botón crear
         btnCalcular.addActionListener(this::calcular); // Asocia el método calcular como listener del evento de clic del botón calcular
         btnCalcular.setEnabled(false); // Desactiva el botón calcular inicialmente hasta que se cree la tabla
@@ -175,7 +163,6 @@ public class PanelCalentadoresManual extends JPanel { // Clase que extiende JPan
         int semanas = (int) spSemanas.getValue(); // Obtiene el número de semanas seleccionado por el usuario
         modeloInput.setRowCount(0); // Limpia todas las filas existentes en la tabla de entrada
         modeloSim.setRowCount(0); // Limpia todas las filas existentes en la tabla de simulación
-        resumen.setText(""); // Limpia el texto del área de resumen
 
         for(int s=1;s<=semanas;s++) { // Bucle que crea una fila para cada semana
             modeloInput.addRow(new Object[]{s, ""}); // Agrega fila con número de semana y campo vacío para número aleatorio
@@ -276,11 +263,9 @@ public class PanelCalentadoresManual extends JPanel { // Clase que extiende JPan
         sb.append("Las filas marcadas en rojo indican semanas donde la demanda superó el inventario disponible.\n"); // Explicación del código de colores
         sb.append("Los resultados dependen de los números aleatorios ingresados manualmente."); // Nota sobre la dependencia de los números ingresados
 
-        resumen.setText(sb.toString()); // Establece el texto completo del resumen en el área de texto
-
         JOptionPane.showMessageDialog(this, // Muestra diálogo de confirmación de finalización
             "Simulación completada exitosamente!\n" +
-            "Revise los resultados en las tablas y el análisis detallado.",
+            "",
             "Cálculo terminado",
             JOptionPane.INFORMATION_MESSAGE);
     }
