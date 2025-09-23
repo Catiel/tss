@@ -29,18 +29,26 @@ public class ejercicio2 extends JFrame {
         this.setDefaultCloseOperation(3);
         this.setLocationRelativeTo((Component)null);
         JPanel var1 = new JPanel(new FlowLayout());
-        var1.add(new JLabel("Número de Piezas:"));
+
+        // Campo oculto - no se muestra en la interfaz pero se usa internamente
         this.txtNumPiezas = new JTextField("18", 5);
-        var1.add(this.txtNumPiezas);
+        // No agregamos este campo al panel para que no sea visible
+
         var1.add(new JLabel("Media Exponencial (tiempo entre llegadas):"));
         this.txtMediaExponencial = new JTextField("5", 5);
+        this.txtMediaExponencial.setEditable(false); // Solo lectura
         var1.add(this.txtMediaExponencial);
+
         var1.add(new JLabel("Media Normal (tiempo inspección):"));
         this.txtMediaNormal = new JTextField("4", 5);
+        this.txtMediaNormal.setEditable(false); // Solo lectura
         var1.add(this.txtMediaNormal);
+
         var1.add(new JLabel("Desviación Normal:"));
         this.txtDesvNormal = new JTextField("0.5", 5);
+        this.txtDesvNormal.setEditable(false); // Solo lectura
         var1.add(this.txtDesvNormal);
+
         JButton var2 = new JButton("Simular");
         var1.add(var2);
         String[] var3 = new String[]{"Pieza", "Rn Llegada", "Tiempo entre llegadas", "Minuto en que llega", "Minuto en que inicia inspección", "Rn Inspección", "Tiempo de inspección", "Minuto en que finaliza inspección", "Tiempo total inspección", "Tiempo en espera"};
@@ -62,9 +70,9 @@ public class ejercicio2 extends JFrame {
     private void simular(ActionEvent var1) {
         this.model.setRowCount(0);
         int var2 = Integer.parseInt(this.txtNumPiezas.getText());
-        double var3 = Double.parseDouble(this.txtMediaExponencial.getText());
-        double var5 = Double.parseDouble(this.txtMediaNormal.getText());
-        double var7 = Double.parseDouble(this.txtDesvNormal.getText());
+        double mediaExponencial = Double.parseDouble(this.txtMediaExponencial.getText());
+        double mediaNormal = Double.parseDouble(this.txtMediaNormal.getText());
+        double desviacionNormal = Double.parseDouble(this.txtDesvNormal.getText());
 
         // Valores aleatorios predeterminados para Rn Llegada (columna 2)
         double[] valoresRnLlegada = {
@@ -104,9 +112,9 @@ public class ejercicio2 extends JFrame {
             }
         }
 
-        // Calcular tiempo entre llegadas usando media fija de 5
+        // Calcular tiempo entre llegadas usando la media exponencial del usuario
         for(int var20 = 0; var20 < var2; ++var20) {
-            var10[var20] = -Math.log(1.0 - var9[var20]) * 5.0; // Media fija de 5
+            var10[var20] = -Math.log(1.0 - var9[var20]) * mediaExponencial; // Usar media exponencial ingresada
         }
 
         // Calcular tiempo de llegada acumulado
@@ -115,9 +123,9 @@ public class ejercicio2 extends JFrame {
             var11[var21] = var11[var21 - 1] + var10[var21];
         }
 
-        // Calcular tiempo de inspección usando NORM.INV con valores fijos (media=4, sigma=0.5)
+        // Calcular tiempo de inspección usando los parámetros ingresados por el usuario
         for(int var22 = 0; var22 < var2; ++var22) {
-            var14[var22] = normInv(var13[var22], 4.0, 0.5); // Equivalente a DISTR.NORM.INV(segundo rn;4;0.5)
+            var14[var22] = normInv(var13[var22], mediaNormal, desviacionNormal); // Usar valores del usuario
             if (var14[var22] < 0.0) {
                 var14[var22] = 0.0;
             }
