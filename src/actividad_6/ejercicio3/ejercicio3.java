@@ -56,30 +56,37 @@ public class ejercicio3 extends JFrame {
 
         panelInput.add(new JLabel("Número de Ensambles:"));
         txtNumMuestras = new JTextField("15", 5);
+        txtNumMuestras.setEditable(false);
         panelInput.add(txtNumMuestras);
 
         panelInput.add(new JLabel("Mínimo Barra A (cm):"));
         txtMinBarraA = new JTextField("45", 5);
+        txtMinBarraA.setEditable(false);
         panelInput.add(txtMinBarraA);
 
         panelInput.add(new JLabel("Máximo Barra A (cm):"));
         txtMaxBarraA = new JTextField("55", 5);
+        txtMaxBarraA.setEditable(false);
         panelInput.add(txtMaxBarraA);
 
         panelInput.add(new JLabel("Valor Esperado Erlang (cm):"));
         txtValorEsperadoErlang = new JTextField("30", 5);
+        txtValorEsperadoErlang.setEditable(false);
         panelInput.add(txtValorEsperadoErlang);
 
         panelInput.add(new JLabel("Parámetro forma Erlang k:"));
         txtFormaErlang = new JTextField("4", 5);
+        txtFormaErlang.setEditable(false);
         panelInput.add(txtFormaErlang);
 
         panelInput.add(new JLabel("Especificación inferior (cm):"));
         txtEspecInf = new JTextField("70", 5);
+        txtEspecInf.setEditable(false);
         panelInput.add(txtEspecInf);
 
         panelInput.add(new JLabel("Especificación superior (cm):"));
         txtEspecSup = new JTextField("90", 5);
+        txtEspecSup.setEditable(false);
         panelInput.add(txtEspecSup);
 
         JButton btnSimular = new JButton("Simular");
@@ -141,13 +148,13 @@ public class ejercicio3 extends JFrame {
             model.addRow(new Object[] {
                 i,
                 String.format("%.4f", rnA),
-                String.format("%.4f", dimBarraA),
+                String.format("%.2f", dimBarraA),
                 String.format("%.4f", rn1),
                 String.format("%.4f", rn2),
                 String.format("%.4f", rn3),
                 String.format("%.4f", rn4),
-                String.format("%.4f", dimBarraB),
-                String.format("%.4f", longitudTotal),
+                String.format("%.2f", dimBarraB),
+                String.format("%.2f", longitudTotal),
                 String.format("%.2f", especInf),
                 String.format("%.2f", especSup),
                 defectInt,
