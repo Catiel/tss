@@ -4,7 +4,6 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.util.Random;
 
 public class ejercicio3 extends JFrame {
 
@@ -16,6 +15,36 @@ public class ejercicio3 extends JFrame {
     private final JTextField txtEspecInf;
     private final JTextField txtEspecSup;
     private final DefaultTableModel model;
+
+    // Valores predeterminados para Rn (Barra A - Distribución Uniforme)
+    private final double[] valoresRn = {
+        0.6367, 0.0640, 0.6685, 0.2177, 0.6229, 0.6813, 0.1551, 0.7678,
+        0.8208, 0.4394, 0.9858, 0.6969, 0.4822, 0.9188, 0.7084
+    };
+
+    // Valores predeterminados para Rn1 (Barra B - Distribución Erlang)
+    private final double[] valoresRn1 = {
+        0.0887, 0.2574, 0.2031, 0.1525, 0.9888, 0.7149, 0.2019, 0.2213,
+        0.9547, 0.9271, 0.6493, 0.3526, 0.7490, 0.6757, 0.8639
+    };
+
+    // Valores predeterminados para Rn2 (Barra B - Distribución Erlang)
+    private final double[] valoresRn2 = {
+        0.3345, 0.2086, 0.2513, 0.0631, 0.9721, 0.4351, 0.6910, 0.1118,
+        0.2845, 0.8603, 0.4857, 0.3081, 0.1997, 0.6390, 0.3940
+    };
+
+    // Valores predeterminados para Rn3 (Barra B - Distribución Erlang)
+    private final double[] valoresRn3 = {
+        0.6019, 0.5317, 0.0923, 0.2564, 0.0830, 0.7227, 0.3506, 0.6067,
+        0.0808, 0.3498, 0.9285, 0.6747, 0.0057, 0.7344, 0.0645
+    };
+
+    // Valores predeterminados para Rn4 (Barra B - Distribución Erlang)
+    private final double[] valoresRn4 = {
+        0.5768, 0.8775, 0.7669, 0.8342, 0.4201, 0.6741, 0.9184, 0.7222,
+        0.9865, 0.9188, 0.0485, 0.5950, 0.4104, 0.9229, 0.6055
+    };
 
     public ejercicio3() {
         setTitle("Simulación Barras Defectuosas");
@@ -84,18 +113,18 @@ public class ejercicio3 extends JFrame {
         double especInf = Double.parseDouble(txtEspecInf.getText());
         double especSup = Double.parseDouble(txtEspecSup.getText());
 
-        Random random = new Random();
         int acumDefectuosas = 0;
 
         for (int i = 1; i <= n; i++) {
-            double rnA = random.nextDouble();
+            // Usar valores predeterminados en lugar de números aleatorios
+            double rnA = valoresRn[i-1];  // i-1 porque el array empieza en índice 0
             double dimBarraA = minA + (maxA - minA) * rnA;
 
-            // 4 aleatorios uniformes para Erlang
-            double rn1 = random.nextDouble();
-            double rn2 = random.nextDouble();
-            double rn3 = random.nextDouble();
-            double rn4 = random.nextDouble();
+            // Usar valores predeterminados para Erlang
+            double rn1 = valoresRn1[i-1];
+            double rn2 = valoresRn2[i-1];
+            double rn3 = valoresRn3[i-1];
+            double rn4 = valoresRn4[i-1];
 
             // Sumar ln(1 - ri) para Erlang
             double lnProduct = Math.log(1 - rn1) + Math.log(1 - rn2) + Math.log(1 - rn3) + Math.log(1 - rn4);
@@ -134,4 +163,3 @@ public class ejercicio3 extends JFrame {
         });
     }
 }
-
