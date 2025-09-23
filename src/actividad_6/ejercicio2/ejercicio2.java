@@ -14,6 +14,8 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.table.DefaultTableModel;
 
+import org.apache.commons.math3.distribution.NormalDistribution;
+
 public class ejercicio2 extends JFrame {
     private final JTextField txtNumPiezas;
     private final JTextField txtMediaExponencial;
@@ -50,61 +52,11 @@ public class ejercicio2 extends JFrame {
         var2.addActionListener(this::simular);
     }
 
-    // Implementación de la función inversa de la distribución normal estándar
-    // Equivalente a NORM.INV en Excel
-    private double normInv(double p) {
-        // Constantes para la aproximación de Beasley-Springer-Moro
-        double a0 = -3.969683028665376e+01;
-        double a1 =  2.209460984245205e+02;
-        double a2 = -2.759285104469687e+02;
-        double a3 =  1.383577518672690e+02;
-        double a4 = -3.066479806614716e+01;
-        double a5 =  2.506628277459239e+00;
-
-        double b1 = -5.447609879822406e+01;
-        double b2 =  1.615858368580409e+02;
-        double b3 = -1.556989798598866e+02;
-        double b4 =  6.680131188771972e+01;
-        double b5 = -1.328068155288572e+01;
-
-        double c0 = -7.784894002430293e-03;
-        double c1 = -3.223964580411365e-01;
-        double c2 = -2.400758277161838e+00;
-        double c3 = -2.549732539343734e+00;
-        double c4 =  4.374664141464968e+00;
-        double c5 =  2.938163982698783e+00;
-
-        double d1 =  7.784695709041462e-03;
-        double d2 =  3.224671290700398e-01;
-        double d3 =  2.445134137142996e+00;
-        double d4 =  3.754408661907416e+00;
-
-        double pLow = 0.02425;
-        double pHigh = 1 - pLow;
-        double q, r;
-
-        if (p < 0 || p > 1) {
-            throw new IllegalArgumentException("p debe estar entre 0 y 1");
-        } else if (p == 0) {
-            return Double.NEGATIVE_INFINITY;
-        } else if (p == 1) {
-            return Double.POSITIVE_INFINITY;
-        } else if (p < pLow) {
-            q = Math.sqrt(-2 * Math.log(p));
-            return (((((c0*q+c1)*q+c2)*q+c3)*q+c4)*q+c5) / ((((d1*q+d2)*q+d3)*q+d4)*q+1);
-        } else if (p <= pHigh) {
-            q = p - 0.5;
-            r = q*q;
-            return (((((a0*r+a1)*r+a2)*r+a3)*r+a4)*r+a5)*q / (((((b1*r+b2)*r+b3)*r+b4)*r+b5)*r+1);
-        } else {
-            q = Math.sqrt(-2 * Math.log(1-p));
-            return -(((((c0*q+c1)*q+c2)*q+c3)*q+c4)*q+c5) / ((((d1*q+d2)*q+d3)*q+d4)*q+1);
-        }
-    }
-
-    // Función para calcular NORM.INV(p, mu, sigma) = mu + sigma * NORM.INV(p, 0, 1)
+    // Función para calcular NORM.INV(p, mu, sigma) usando Apache Commons Math3
     private double normInv(double p, double mu, double sigma) {
-        return mu + sigma * normInv(p);
+        // Usamos directamente la distribución normal con parámetros específicos
+        NormalDistribution normal = new NormalDistribution(mu, sigma);
+        return normal.inverseCumulativeProbability(p);
     }
 
     private void simular(ActionEvent var1) {
