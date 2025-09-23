@@ -4,7 +4,6 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.util.Random;
 
 public class ejercicio1 extends JFrame {
 
@@ -24,18 +23,22 @@ public class ejercicio1 extends JFrame {
 
         inputPanel.add(new JLabel("Media - Tiempo entreg llegadas"));
         txtMediaLlegada = new JTextField("5", 5);
+        txtMediaLlegada.setEditable(false);
         inputPanel.add(txtMediaLlegada);
 
         inputPanel.add(new JLabel("Media - Tiempo inspección"));
         txtMediaInspeccion = new JTextField("4", 5);
+        txtMediaInspeccion.setEditable(false);
         inputPanel.add(txtMediaInspeccion);
 
         inputPanel.add(new JLabel("Desv Est - Tiempo inspección"));
         txtDesvEstInspeccion = new JTextField("0.5", 5);
+        txtDesvEstInspeccion.setEditable(false);
         inputPanel.add(txtDesvEstInspeccion);
 
         inputPanel.add(new JLabel("Número de piezas"));
-        txtNumPiezas = new JTextField("15", 5);
+        txtNumPiezas = new JTextField("9", 5);
+        txtNumPiezas.setEditable(false);
         inputPanel.add(txtNumPiezas);
 
         JButton btnSimular = new JButton("Simular");
@@ -61,54 +64,69 @@ public class ejercicio1 extends JFrame {
     private void simular(ActionEvent e) {
         model.setRowCount(0);
 
-        int n = Integer.parseInt(txtNumPiezas.getText());
-        double mediaLlegada = Double.parseDouble(txtMediaLlegada.getText());
-        double mediaInspeccion = Double.parseDouble(txtMediaInspeccion.getText());
-        double desvInspeccion = Double.parseDouble(txtDesvEstInspeccion.getText());
+        // Valores predeterminados fijos
+        int n = 9;
 
-        Random random = new Random();
+        // Valores predeterminados para tiempo entreg llegadas
+        double[] tiempoEntregLlegadas = {
+                1.327607, 6.5310326, 5.1946396, 7.0961155, 7.31768001,
+                2.0867485, 1.4688669, 4.6554184, 0.4156928
+        };
+
+        // Valores predeterminados para tiempo de inspección
+        double[] tiempoInspeccionPred = {
+                3.0058359, 4.13466238, 3.9414644, 4.2697994, 4.1262137,
+                3.9923443, 4.1267457, 4.4108686, 2.7754816
+        };
 
         double[] tiempoLlegada = new double[n];
         double[] inicioInspeccion = new double[n];
-        double[] duracionInspeccion = new double[n];
         double[] finInspeccion = new double[n];
+        double[] duracionInspeccion = new double[n];
         double[] tiempoEspera = new double[n];
 
         for (int i = 0; i < n; i++) {
-            double r = random.nextDouble();
-            double tiempoEntregLlegadas = -Math.log(r) * mediaLlegada;
-
+            // Calcular tiempo de llegada
             if (i == 0) {
-                tiempoLlegada[i] = tiempoEntregLlegadas;
+                tiempoLlegada[i] = tiempoEntregLlegadas[i];
             } else {
-                tiempoLlegada[i] = tiempoLlegada[i - 1] + tiempoEntregLlegadas;
+                tiempoLlegada[i] = tiempoLlegada[i - 1] + tiempoEntregLlegadas[i];
             }
 
+            // Calcular inicio de inspección
             if (i == 0) {
                 inicioInspeccion[i] = tiempoLlegada[i];
             } else {
                 inicioInspeccion[i] = Math.max(tiempoLlegada[i], finInspeccion[i - 1]);
             }
 
-            duracionInspeccion[i] = mediaInspeccion + desvInspeccion * random.nextGaussian();
-            if (duracionInspeccion[i] < 0) duracionInspeccion[i] = 0;
+            // Calcular fin de inspección = inicio de inspección + tiempo de inspección
+            finInspeccion[i] = inicioInspeccion[i] + tiempoInspeccionPred[i];
 
-            finInspeccion[i] = inicioInspeccion[i] + duracionInspeccion[i];
+            // Calcular duración de la inspección = fin de la inspección - tiempo de llegada
+            duracionInspeccion[i] = finInspeccion[i] - tiempoLlegada[i];
 
+            // Calcular tiempo en espera
             tiempoEspera[i] = Math.max(0, inicioInspeccion[i] - tiempoLlegada[i]);
 
-            double tiempoProm = finInspeccion[i] - tiempoLlegada[i];
+            // Calcular tiempo promedio en inspección (promedio entre la primera fila y la actual)
+            double tiempoPromInspeccion;
+            if (i == 0) {
+                tiempoPromInspeccion = duracionInspeccion[0];
+            } else {
+                tiempoPromInspeccion = (duracionInspeccion[0] + duracionInspeccion[i]) / 2.0;
+            }
 
             model.addRow(new Object[]{
                     i + 1,
-                    String.format("%.6f", tiempoEntregLlegadas),
+                    String.format("%.7f", tiempoEntregLlegadas[i]),
                     String.format("%.6f", tiempoLlegada[i]),
                     String.format("%.6f", inicioInspeccion[i]),
-                    String.format("%.6f", duracionInspeccion[i]),
+                    String.format("%.7f", tiempoInspeccionPred[i]),
                     String.format("%.6f", finInspeccion[i]),
                     String.format("%.6f", duracionInspeccion[i]),
                     String.format("%.6f", tiempoEspera[i]),
-                    String.format("%.6f", tiempoProm)
+                    String.format("%.6f", tiempoPromInspeccion)
             });
         }
     }
