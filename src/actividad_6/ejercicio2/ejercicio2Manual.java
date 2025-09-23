@@ -22,15 +22,15 @@ public class ejercicio2Manual extends JFrame {
     private final JTextField txtMediaNormal;
     private final JTextField txtDesvNormal;
     private final DefaultTableModel model;
-    private JTable tabla;
-    private JButton btnCrearFilas;
-    private JButton btnCalcular;
+    private final JTable tabla;
+    private final JButton btnCrearFilas;
+    private final JButton btnCalcular;
 
     public ejercicio2Manual() {
         this.setTitle("Simulación de Inspección - Entrada Manual");
         this.setSize(1200, 500);
-        this.setDefaultCloseOperation(3);
-        this.setLocationRelativeTo((Component)null);
+        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.setLocationRelativeTo(null);
 
         // Panel superior con parámetros y botones
         JPanel panelSuperior = new JPanel(new FlowLayout());
@@ -41,14 +41,17 @@ public class ejercicio2Manual extends JFrame {
 
         panelSuperior.add(new JLabel("Media Exponencial:"));
         this.txtMediaExponencial = new JTextField("5", 5);
+        this.txtMediaExponencial.setEnabled(false); // No editable - solo para visualizar
         panelSuperior.add(this.txtMediaExponencial);
 
         panelSuperior.add(new JLabel("Media Normal:"));
         this.txtMediaNormal = new JTextField("4", 5);
+        this.txtMediaNormal.setEnabled(false); // No editable - solo para visualizar
         panelSuperior.add(this.txtMediaNormal);
 
         panelSuperior.add(new JLabel("Desviación Normal:"));
         this.txtDesvNormal = new JTextField("0.5", 5);
+        this.txtDesvNormal.setEnabled(false); // No editable - solo para visualizar
         panelSuperior.add(this.txtDesvNormal);
 
         // Botones
@@ -84,6 +87,20 @@ public class ejercicio2Manual extends JFrame {
         // Event listeners
         btnCrearFilas.addActionListener(this::crearFilas);
         btnCalcular.addActionListener(this::calcular);
+
+        // Listener para el campo de número de piezas para permitir recrear filas
+        txtNumPiezas.addActionListener(e -> habilitarCrearFilas());
+        txtNumPiezas.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { habilitarCrearFilas(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { habilitarCrearFilas(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { habilitarCrearFilas(); }
+        });
+    }
+
+    private void habilitarCrearFilas() {
+        // Habilitar solo el botón crear filas cuando se modifica el número de piezas
+        btnCrearFilas.setEnabled(true);
+        btnCalcular.setEnabled(false);
     }
 
     private void crearFilas(ActionEvent e) {
@@ -97,11 +114,11 @@ public class ejercicio2Manual extends JFrame {
             for(int i = 0; i < numPiezas; i++) {
                 Object[] fila = new Object[10];
                 fila[0] = i + 1; // Número de pieza
-                fila[1] = "0.0000"; // Rn Llegada - editable
+                fila[1] = ""; // Rn Llegada - editable, inicialmente vacío
                 fila[2] = ""; // Tiempo entre llegadas - calculado
                 fila[3] = ""; // Minuto en que llega - calculado
                 fila[4] = ""; // Minuto en que inicia inspección - calculado
-                fila[5] = "0.0000"; // Rn Inspección - editable
+                fila[5] = ""; // Rn Inspección - editable, inicialmente vacío
                 fila[6] = ""; // Tiempo de inspección - calculado
                 fila[7] = ""; // Minuto en que finaliza inspección - calculado
                 fila[8] = ""; // Tiempo total inspección - calculado
@@ -113,7 +130,6 @@ public class ejercicio2Manual extends JFrame {
             // Habilitar el botón calcular y deshabilitar crear filas
             this.btnCalcular.setEnabled(true);
             this.btnCrearFilas.setEnabled(false);
-            this.txtNumPiezas.setEnabled(false);
 
         } catch (NumberFormatException ex) {
             javax.swing.JOptionPane.showMessageDialog(this,
@@ -227,4 +243,3 @@ public class ejercicio2Manual extends JFrame {
         SwingUtilities.invokeLater(() -> (new ejercicio2Manual()).setVisible(true));
     }
 }
-
