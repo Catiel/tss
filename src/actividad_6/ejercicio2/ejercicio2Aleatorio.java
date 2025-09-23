@@ -36,14 +36,17 @@ public class ejercicio2Aleatorio extends JFrame {
 
         var1.add(new JLabel("Media Exponencial (tiempo entre llegadas):"));
         this.txtMediaExponencial = new JTextField("5", 5);
+        this.txtMediaExponencial.setEnabled(false); // No editable - solo para visualizar
         var1.add(this.txtMediaExponencial);
 
         var1.add(new JLabel("Media Normal (tiempo inspección):"));
         this.txtMediaNormal = new JTextField("4", 5);
+        this.txtMediaNormal.setEnabled(false); // No editable - solo para visualizar
         var1.add(this.txtMediaNormal);
 
         var1.add(new JLabel("Desviación Normal:"));
         this.txtDesvNormal = new JTextField("0.5", 5);
+        this.txtDesvNormal.setEnabled(false); // No editable - solo para visualizar
         var1.add(this.txtDesvNormal);
 
         JButton var2 = new JButton("Simular");
