@@ -2,9 +2,9 @@ package actividad_6.ejercicio1;
 
 import javax.swing.*;
 
-public class SimulacionInspeccionApp extends JFrame {
+public class simulacionEjercicio1 extends JFrame {
 
-    public SimulacionInspeccionApp() {
+    public simulacionEjercicio1() {
         setTitle("Simulación de Inspección - Aplicación Completa");
         setSize(1500, 700);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -27,6 +27,6 @@ public class SimulacionInspeccionApp extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new SimulacionInspeccionApp().setVisible(true));
+        SwingUtilities.invokeLater(() -> new simulacionEjercicio1().setVisible(true));
     }
 }
