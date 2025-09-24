@@ -142,6 +142,21 @@ public class ejercicio2Aleatorio extends JFrame { // Declaración de la clase qu
                 String.format("%.4f", tiempoEspera[i]) // Tiempo de espera formateado a 4 decimales
             });
         }
+
+        // Calcular y mostrar el promedio de tiempo total de inspección
+        double sumaTiempoTotal = 0.0; // Inicializa la suma de todos los tiempos totales de inspección
+        for (int i = 0; i < numPiezas; i++) { // Itera a través de todas las piezas
+            sumaTiempoTotal += tiempoTotalInspeccion[i]; // Suma el tiempo total de inspección de cada pieza
+        }
+        double promedioTiempoTotal = sumaTiempoTotal / numPiezas; // Calcula el promedio dividiendo la suma entre el número de piezas
+
+        // Mostrar el resultado en un cuadro de diálogo
+        javax.swing.JOptionPane.showMessageDialog(this, // Muestra un cuadro de diálogo con el resultado
+            String.format("Promedio de Tiempo Total de Inspección: %.4f minutos por pieza\n" +
+                         "Basado en %d piezas simuladas",
+                         promedioTiempoTotal, numPiezas), // Formatea el mensaje con el promedio y número de piezas
+            "Estadísticas de la Simulación", // Título del cuadro de diálogo
+            javax.swing.JOptionPane.INFORMATION_MESSAGE); // Tipo de mensaje informativo
     }
 
     public static void main(String[] args) { // Método principal para ejecutar la aplicación
