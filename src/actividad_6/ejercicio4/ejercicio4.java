@@ -4,7 +4,6 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.util.Random;
 
 public class ejercicio4 extends JFrame {
 
@@ -24,8 +23,9 @@ public class ejercicio4 extends JFrame {
 
         JPanel panelInput = new JPanel(new FlowLayout());
 
-        panelInput.add(new JLabel("Número de Días:"));
+        panelInput.add(new JLabel("Numero de Días:"));
         txtDias = new JTextField("14", 5);
+        txtDias.setEditable(false); // Fijo en 14 días
         panelInput.add(txtDias);
 
         panelInput.add(new JLabel("Capacidad Bodega (Kg):"));
@@ -52,7 +52,7 @@ public class ejercicio4 extends JFrame {
         panelInput.add(btnSimular);
 
         String[] columnas = {
-                "Día", "Inventario Inicial (Kg)", "Entrega del Proveedor (Kg)", "Inventario Total (Kg)",
+                "Dia", "Inventario Inicial (Kg)", "Entrega del Proveedor (Kg)", "Inventario Total (Kg)",
                 "Rn Demanda", "Demanda (Kg)", "Venta (Kg)", "Inventario Final (Kg)",
                 "Ventas Perdidas (Kg)", "Costo de ordenar ($)", "Costo de faltante ($)",
                 "Costo de mantenimiento ($)", "Costo total ($)"
@@ -77,21 +77,45 @@ public class ejercicio4 extends JFrame {
         double costoMantenimiento = Double.parseDouble(txtCostoMantenimiento.getText());
         double mediaDemanda = Double.parseDouble(txtMediaDemanda.getText());
 
-        Random random = new Random();
+        // Valores predefinidos de Rn que proporcionaste
+        double[] valoresRn = {
+            0.9350, 0.1307, 0.8557, 0.4987, 0.2534,
+            0.8885, 0.2714, 0.5620, 0.2332, 0.9056,
+            0.4334, 0.4872, 0.3084, 0.0584
+        };
+
         double inventarioInicial = 0;
+        double inventarioFinalAnterior = 0; // Para el cálculo de entregas del proveedor
 
         for (int dia = 1; dia <= dias; dia++) {
-            double entregaProveedor = (dia % 7 == 1) ? capacidadBodega : 0;
+            // Fórmula de entregas del proveedor según tus especificaciones de Excel
+            double entregaProveedor;
+            if (dia == 1) {
+                // Primer día: =SI(RESIDUO(A7;7)=1;700;0)
+                entregaProveedor = (dia % 7 == 1) ? capacidadBodega : 0;
+            } else {
+                // Días siguientes: =SI(RESIDUO(A8;7)=0;700-H7;0) donde H7 es inventario final anterior
+                entregaProveedor = (dia % 7 == 0) ? Math.max(0, capacidadBodega - inventarioFinalAnterior) : 0;
+            }
+
             double inventarioTotal = inventarioInicial + entregaProveedor;
 
-            double rnDemanda = random.nextDouble();
-            // Demanda exponencial
+            // Usar valor predefinido de Rn
+            double rnDemanda = valoresRn[(dia - 1) % valoresRn.length];
+
+            // Demanda usando tu fórmula de Excel: =-100*LN(1-E7)
             double demanda = -mediaDemanda * Math.log(1 - rnDemanda);
 
+            // Venta usando tu fórmula de Excel: =MIN(F7;D7) - mínimo entre demanda e inventario total
             double venta = Math.min(demanda, inventarioTotal);
+
+            // Inventario final: inventario total - venta
             double inventarioFinal = inventarioTotal - venta;
+
+            // Ventas perdidas usando tu fórmula de Excel: =MAX(0;F7-D7) - demanda menos inventario total
             double ventasPerdidas = Math.max(0, demanda - inventarioTotal);
 
+            // Costo de ordenar usando tu fórmula de Excel: =SI(C7>0;1000;0) - si hay entrega del proveedor
             double costoOrden = (entregaProveedor > 0) ? costoOrdenar : 0;
             double costoFalt = ventasPerdidas * costoFaltante;
             double costoMant = inventarioFinal * costoMantenimiento;
@@ -113,13 +137,13 @@ public class ejercicio4 extends JFrame {
                     String.format("$%.2f", costoTotal)
             });
 
+            // Actualizar valores para la siguiente iteración
             inventarioInicial = inventarioFinal;
+            inventarioFinalAnterior = inventarioFinal;
         }
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            new ejercicio4().setVisible(true);
-        });
+        SwingUtilities.invokeLater(() -> new ejercicio4().setVisible(true));
     }
 }
