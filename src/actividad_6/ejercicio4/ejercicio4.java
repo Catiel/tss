@@ -123,18 +123,18 @@ public class ejercicio4 extends JFrame {
 
             model.addRow(new Object[]{
                     dia,
-                    String.format("%.2f", inventarioInicial),
-                    String.format("%.2f", entregaProveedor),
-                    String.format("%.2f", inventarioTotal),
+                    String.format("%.0f", inventarioInicial),
+                    String.format("%.0f", entregaProveedor),
+                    String.format("%.0f", inventarioTotal),
                     String.format("%.4f", rnDemanda),
-                    String.format("%.2f", demanda),
-                    String.format("%.2f", venta),
-                    String.format("%.2f", inventarioFinal),
-                    String.format("%.2f", ventasPerdidas),
-                    String.format("$%.2f", costoOrden),
-                    String.format("$%.2f", costoFalt),
-                    String.format("$%.2f", costoMant),
-                    String.format("$%.2f", costoTotal)
+                    String.format("%.0f", demanda),
+                    String.format("%.0f", venta),
+                    String.format("%.0f", inventarioFinal),
+                    String.format("%.0f", ventasPerdidas),
+                    String.format("$%.0f", costoOrden),
+                    String.format("$%.0f", costoFalt),
+                    String.format("$%.0f", costoMant),
+                    String.format("$%.0f", costoTotal)
             });
 
             // Actualizar valores para la siguiente iteración
