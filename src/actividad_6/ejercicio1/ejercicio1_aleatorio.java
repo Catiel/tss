@@ -24,17 +24,17 @@ public class ejercicio1_aleatorio extends JFrame { // Declara la clase que extie
 
         inputPanel.add(new JLabel("Media - Tiempo entreg llegadas")); // Agrega etiqueta para el campo de media de llegadas
         txtMediaLlegada = new JTextField("5", 5); // Crea campo de texto con valor "5" (media para distribución exponencial) y ancho de 5 caracteres
-        txtMediaLlegada.setEditable(false); // Hace el campo no editable ya que es un parámetro fijo del problema
+        txtMediaLlegada.setEditable(true); // Hace el campo EDITABLE para que el usuario pueda modificar la media de llegadas
         inputPanel.add(txtMediaLlegada); // Agrega el campo al panel
 
         inputPanel.add(new JLabel("Media - Tiempo inspección")); // Agrega etiqueta para el campo de media de inspección
         txtMediaInspeccion = new JTextField("4", 5); // Crea campo de texto con valor "4" (media para distribución normal) y ancho de 5 caracteres
-        txtMediaInspeccion.setEditable(false); // Hace el campo no editable ya que es un parámetro fijo del problema
+        txtMediaInspeccion.setEditable(true); // Hace el campo EDITABLE para que el usuario pueda modificar la media de inspección
         inputPanel.add(txtMediaInspeccion); // Agrega el campo al panel
 
         inputPanel.add(new JLabel("Desv Est - Tiempo inspección")); // Agrega etiqueta para el campo de desviación estándar
         txtDesvEstInspeccion = new JTextField("0.5", 5); // Crea campo de texto con valor "0.5" (desviación estándar para distribución normal) y ancho de 5 caracteres
-        txtDesvEstInspeccion.setEditable(false); // Hace el campo no editable ya que es un parámetro fijo del problema
+        txtDesvEstInspeccion.setEditable(true); // Hace el campo EDITABLE para que el usuario pueda modificar la desviación estándar
         inputPanel.add(txtDesvEstInspeccion); // Agrega el campo al panel
 
         inputPanel.add(new JLabel("Número de piezas")); // Agrega etiqueta para el campo de número de piezas
@@ -72,6 +72,28 @@ public class ejercicio1_aleatorio extends JFrame { // Declara la clase que extie
         double mediaLlegada = 5.0;    // Media para distribución exponencial // Define la media de la distribución exponencial para tiempos entre llegadas
         double mediaInspeccion = 4.0;  // Media para distribución normal // Define la media de la distribución normal para tiempos de inspección
         double desvInspeccion = 0.5;   // Desviación estándar para distribución normal // Define la desviación estándar de la distribución normal
+
+        // Obtener parámetros desde los campos de texto
+        try {
+            mediaLlegada = Double.parseDouble(txtMediaLlegada.getText()); // Intenta obtener y parsear la media de llegadas
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Valor inválido para la media de tiempo entre llegadas.", "Error", JOptionPane.ERROR_MESSAGE);
+            return; // Sale del método si hay un error en el valor ingresado
+        }
+
+        try {
+            mediaInspeccion = Double.parseDouble(txtMediaInspeccion.getText()); // Intenta obtener y parsear la media de inspección
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Valor inválido para la media de tiempo de inspección.", "Error", JOptionPane.ERROR_MESSAGE);
+            return; // Sale del método si hay un error en el valor ingresado
+        }
+
+        try {
+            desvInspeccion = Double.parseDouble(txtDesvEstInspeccion.getText()); // Intenta obtener y parsear la desviación estándar
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Valor inválido para la desviación estándar de inspección.", "Error", JOptionPane.ERROR_MESSAGE);
+            return; // Sale del método si hay un error en el valor ingresado
+        }
 
         Random random = new Random(); // Crea una instancia del generador de números aleatorios
 
