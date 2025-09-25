@@ -26,7 +26,7 @@ public class SimulacionCompleta extends JFrame {
 
         // Extraer el contenido de cada simulación y agregarlo como pestaña
         tabbedPane.addTab("Ejercicio 1 - Inspección", simulacion1.getContentPane());
-        tabbedPane.addTab("Ejercicio 2 - Inspección completa", simulacion1.getContentPane());
+        tabbedPane.addTab("Ejercicio 2 - Inspección completa", simulacion2.getContentPane());
         tabbedPane.addTab("Ejercicio 3 - Barras Defectuosas", simulacion3.getContentPane());
         tabbedPane.addTab("Ejercicio 4 - Inventario Azúcar", simulacion4.getContentPane());
 
