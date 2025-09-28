@@ -17,6 +17,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.BasicStroke;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -577,25 +578,238 @@ public class SimulacionCompleta extends JFrame {
         JPanel panelReplicas = new JPanel(new BorderLayout(15, 15));
         panelReplicas.setBackground(Color.WHITE); // Fondo blanco
 
-        // Crear panel superior con estadísticas de cada réplica
-        JPanel panelEstadisticasReplicas = crearPanelEstadisticasReplicas();
-        panelReplicas.add(panelEstadisticasReplicas, BorderLayout.NORTH); // Estadísticas arriba
+        // NUEVA FUNCIONALIDAD: Generar datos de réplicas una sola vez
+        double[][] costosReplicas = new double[5][tamanoRecomendado];
+        for (int replica = 0; replica < 5; replica++) {
+            costosReplicas[replica] = simularReplicaCompleta();
+        }
 
-        // Crear panel central con tabla comparativa de réplicas
-        JPanel panelTablaReplicas = crearTablaReplicas();
-        panelReplicas.add(panelTablaReplicas, BorderLayout.CENTER); // Tabla en el centro
+        // Crear panel superior con estadísticas de cada réplica
+        JPanel panelEstadisticasReplicas = crearPanelEstadisticasReplicasConDatos(costosReplicas);
+        panelReplicas.add(panelEstadisticasReplicas, BorderLayout.NORTH);
+
+        // NUEVA FUNCIONALIDAD: Crear gráfica de réplicas
+        JPanel panelGraficaReplicas = crearPanelGraficaReplicas(costosReplicas);
+        panelReplicas.add(panelGraficaReplicas, BorderLayout.CENTER);
+
+        // Crear panel inferior con tabla comparativa de réplicas
+        JPanel panelTablaReplicas = crearTablaReplicasConDatos(costosReplicas);
+        panelReplicas.add(panelTablaReplicas, BorderLayout.SOUTH);
 
         // Agregar nueva pestaña al sistema de pestañas
         tabbedPane.addTab("5 Réplicas", panelReplicas);
-        tabbedPane.setSelectedIndex(tabbedPane.getTabCount() - 1); // Seleccionar la nueva pestaña
+        tabbedPane.setSelectedIndex(tabbedPane.getTabCount() - 1);
+    }
+
+    // ========================== NUEVOS MÉTODOS PARA GRÁFICA DE RÉPLICAS ==========================
+
+    /**
+     * Crea el panel que contiene la gráfica de líneas con las 5 réplicas
+     * @param costosReplicas Matriz con costos de las 5 réplicas
+     * @return Panel con la gráfica de réplicas
+     */
+    private JPanel crearPanelGraficaReplicas(double[][] costosReplicas) {
+        // Crear gráfica de líneas para las réplicas
+        JFreeChart chartReplicas = crearGraficaLineasReplicas(costosReplicas);
+
+        // Crear panel para la gráfica
+        ChartPanel chartPanel = new ChartPanel(chartReplicas);
+        chartPanel.setPreferredSize(new Dimension(1200, 400));
+        chartPanel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        chartPanel.setBackground(Color.WHITE);
+
+        // Crear botón para ver gráfica en grande
+        JButton botonVerGrafica = new JButton("Ver Gráfica");
+        botonVerGrafica.setFont(FUENTE_GENERAL);
+        botonVerGrafica.setBackground(COLOR_PRIMARIO);
+        botonVerGrafica.setForeground(Color.WHITE);
+        botonVerGrafica.setFocusPainted(false);
+        botonVerGrafica.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        // Panel para el botón (alineado a la derecha)
+        JPanel panelBoton = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
+        panelBoton.setBackground(Color.WHITE);
+        panelBoton.add(botonVerGrafica);
+
+        // Crear panel contenedor con borde
+        JPanel panelContenedor = new JPanel(new BorderLayout());
+        panelContenedor.setBorder(BorderFactory.createTitledBorder(null, "Evolución del Costo Promedio por Réplica",
+            javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.TOP,
+            FUENTE_TITULO, COLOR_PRIMARIO));
+        panelContenedor.setBackground(Color.WHITE);
+        panelContenedor.add(chartPanel, BorderLayout.CENTER);
+        panelContenedor.add(panelBoton, BorderLayout.SOUTH);
+
+        // Agregar acción al botón
+        botonVerGrafica.addActionListener(e -> mostrarGraficaEnGrande(chartReplicas));
+
+        return panelContenedor;
     }
 
     /**
-     * Crea la tabla que muestra el promedio acumulado de las 5 réplicas
-     * @return Panel conteniendo la tabla de réplicas
+     * Muestra la gráfica de réplicas en una ventana independiente más grande
+     * @param chart Gráfica a mostrar en grande
      */
-    private JPanel crearTablaReplicas() {
-        // Definir columnas: Día + 5 réplicas
+    private void mostrarGraficaEnGrande(JFreeChart chart) {
+        // Crear nueva ventana para la gráfica grande
+        JFrame frameGrafica = new JFrame("Gráfica de Réplicas - Vista Ampliada");
+
+        // Crear panel de la gráfica con tamaño más grande
+        ChartPanel chartPanelGrande = new ChartPanel(chart);
+        chartPanelGrande.setPreferredSize(new Dimension(1000, 600));
+        chartPanelGrande.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        chartPanelGrande.setBackground(Color.WHITE);
+
+        // Configurar opciones del ChartPanel
+        chartPanelGrande.setMouseWheelEnabled(true); // Zoom con rueda del ratón
+        chartPanelGrande.setMouseZoomable(true); // Zoom con ratón
+        chartPanelGrande.setDomainZoomable(true); // Zoom horizontal
+        chartPanelGrande.setRangeZoomable(true); // Zoom vertical
+
+        // Panel para botones de control
+        JPanel panelControles = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
+        panelControles.setBackground(Color.WHITE);
+
+        // Botón para resetear zoom
+        JButton botonResetZoom = new JButton("Resetear Zoom");
+        botonResetZoom.setFont(FUENTE_GENERAL);
+        botonResetZoom.addActionListener(e -> chartPanelGrande.restoreAutoBounds());
+
+        // Botón para cerrar ventana
+        JButton botonCerrar = new JButton("Cerrar");
+        botonCerrar.setFont(FUENTE_GENERAL);
+        botonCerrar.setBackground(new Color(220, 53, 69)); // Color rojo
+        botonCerrar.setForeground(Color.WHITE);
+        botonCerrar.setFocusPainted(false);
+        botonCerrar.addActionListener(e -> frameGrafica.dispose());
+
+        // Aplicar estilos a los botones
+        JButton[] botones = {botonResetZoom, botonCerrar};
+        for (JButton boton : botones) {
+            boton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            boton.setFocusPainted(false);
+        }
+
+        panelControles.add(botonResetZoom);
+        panelControles.add(botonCerrar);
+
+        // Panel principal con la gráfica y controles
+        JPanel panelPrincipal = new JPanel(new BorderLayout(10, 10));
+        panelPrincipal.setBorder(new EmptyBorder(15, 15, 15, 15));
+        panelPrincipal.setBackground(Color.WHITE);
+        panelPrincipal.add(chartPanelGrande, BorderLayout.CENTER);
+        panelPrincipal.add(panelControles, BorderLayout.SOUTH);
+
+        // Configurar la ventana
+        frameGrafica.setContentPane(panelPrincipal);
+        frameGrafica.setSize(1100, 750);
+        frameGrafica.setLocationRelativeTo(null); // Centrar en pantalla
+        frameGrafica.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); // Solo cerrar esta ventana
+
+        // Hacer visible la ventana
+        frameGrafica.setVisible(true);
+
+        // Opcional: Traer ventana al frente
+        frameGrafica.toFront();
+        frameGrafica.requestFocus();
+    }
+
+    /**
+     * Crea la gráfica de líneas que muestra la evolución del costo promedio de cada réplica
+     * @param costosReplicas Matriz con costos de las 5 réplicas
+     * @return Gráfica de líneas configurada
+     */
+    private JFreeChart crearGraficaLineasReplicas(double[][] costosReplicas) {
+        // Crear dataset para múltiples series
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+
+        // Colores para cada réplica
+        Color[] coloresReplicas = {
+            new Color(255, 99, 132),   // Rojo/Rosa
+            new Color(54, 162, 235),   // Azul
+            new Color(255, 205, 86),   // Amarillo
+            new Color(75, 192, 192),   // Verde/Turquesa
+            new Color(153, 102, 255)   // Púrpura
+        };
+
+        // Para cada réplica, calcular promedios acumulados y agregar al dataset
+        for (int replica = 0; replica < 5; replica++) {
+            String serieNombre = "Réplica " + (replica + 1);
+
+            for (int dia = 0; dia < tamanoRecomendado; dia++) {
+                // Calcular promedio acumulado hasta el día actual
+                double sumaAcumulada = 0;
+                for (int i = 0; i <= dia; i++) {
+                    sumaAcumulada += costosReplicas[replica][i];
+                }
+                double promedioAcumulado = sumaAcumulada / (dia + 1);
+
+                // Agregar punto al dataset
+                dataset.addValue(promedioAcumulado, serieNombre, Integer.toString(dia + 1));
+            }
+        }
+
+        // Crear gráfica de líneas
+        JFreeChart chart = ChartFactory.createLineChart(
+            "Evolución del Costo Promedio Acumulado por Réplica",
+            "Día",
+            "Costo Promedio Acumulado ($)",
+            dataset,
+            PlotOrientation.VERTICAL,
+            true, // Mostrar leyenda
+            true, // Tooltips
+            false // URLs
+        );
+
+        // Configurar apariencia básica
+        configurarAparienciaGrafica(chart, "Evolución del Costo Promedio Acumulado por Réplica");
+
+        // Personalizar colores de las líneas
+        org.jfree.chart.plot.CategoryPlot plot = chart.getCategoryPlot();
+        org.jfree.chart.renderer.category.LineAndShapeRenderer renderer =
+            (org.jfree.chart.renderer.category.LineAndShapeRenderer) plot.getRenderer();
+
+        // Configurar cada serie con su color específico
+        for (int i = 0; i < 5; i++) {
+            renderer.setSeriesPaint(i, coloresReplicas[i]);
+            renderer.setSeriesStroke(i, new BasicStroke(2.0f)); // Líneas más gruesas
+            renderer.setSeriesShapesVisible(i, false); // Sin puntos en las líneas
+        }
+
+        // Configurar fondo del plot
+        plot.setBackgroundPaint(Color.WHITE);
+        plot.setRangeGridlinePaint(Color.LIGHT_GRAY);
+        plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
+
+        return chart;
+    }
+
+    /**
+     * Crea el panel con estadísticas usando datos ya generados
+     * @param costosReplicas Matriz con costos de las réplicas
+     * @return Panel con estadísticas
+     */
+    private JPanel crearPanelEstadisticasReplicasConDatos(double[][] costosReplicas) {
+        JPanel panel = new JPanel(new GridLayout(1, 5, 15, 15));
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+        // Calcular estadísticas para cada réplica usando los datos ya generados
+        for (int i = 0; i < 5; i++) {
+            EstadisticasSimulacion stats = calcularEstadisticas(costosReplicas[i]);
+            JPanel panelReplica = crearPanelReplicaIndividual(i + 1, stats);
+            panel.add(panelReplica);
+        }
+
+        return panel;
+    }
+
+    /**
+     * Crea la tabla usando datos ya generados
+     * @param costosReplicas Matriz con costos de las réplicas
+     * @return Panel con la tabla
+     */
+    private JPanel crearTablaReplicasConDatos(double[][] costosReplicas) {
         String[] columnasReplicas = {
             "Día",
             "Costo promedio ($) Replica 1", "Costo promedio ($) Replica 2",
@@ -603,26 +817,75 @@ public class SimulacionCompleta extends JFrame {
             "Costo promedio ($) Replica 5"
         };
 
-        // Crear modelo y tabla para las réplicas
         DefaultTableModel modelReplicas = new DefaultTableModel(columnasReplicas, 0);
         JTable tablaReplicas = new JTable(modelReplicas);
 
-        // Configurar estilos básicos de la tabla
         configurarTablaReplicas(tablaReplicas, columnasReplicas);
 
-        // Generar y llenar datos de las réplicas
-        generarDatosReplicas(modelReplicas);
+        // Llenar tabla con datos ya generados
+        llenarTablaConPromediosAcumulados(modelReplicas, costosReplicas);
 
-        // Crear panel de desplazamiento
         JScrollPane scrollReplicas = new JScrollPane(tablaReplicas);
         scrollReplicas.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        scrollReplicas.setPreferredSize(new Dimension(1200, 200)); // Altura reducida
 
-        // Encapsular en panel con fondo blanco
         JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(BorderFactory.createTitledBorder(null, "Tabla de Promedios Acumulados",
+            javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.TOP,
+            FUENTE_TITULO, COLOR_PRIMARIO));
         panel.add(scrollReplicas, BorderLayout.CENTER);
         panel.setBackground(Color.WHITE);
 
         return panel;
+    }
+
+    /**
+     * Simula una réplica completa de forma independiente
+     * @return Array con costos totales de cada día de la réplica
+     */
+    private double[] simularReplicaCompleta() {
+        double[] costos = new double[tamanoRecomendado]; // Array para almacenar costos
+        int inventarioFinal = 0; // Inventario inicial cero
+        NormalDistribution dist = new NormalDistribution(mediaDemanda, desviacionDemanda); // Distribución de demanda
+        Random random = new Random(); // Nuevo generador para independencia
+
+        // Simular cada día de la réplica
+        for (int dia = 0; dia < tamanoRecomendado; dia++) {
+            ResultadoSimulacion resultado = simularDia(inventarioFinal, dist, random); // Simular día
+            costos[dia] = resultado.costoTotal; // Guardar costo total
+            inventarioFinal = resultado.inventarioFinal; // Actualizar inventario para siguiente día
+        }
+
+        return costos; // Retornar array de costos de la réplica
+    }
+
+    /**
+     * Llena la tabla con promedios acumulados de cada réplica
+     * @param modelReplicas Modelo donde insertar los datos
+     * @param costosReplicas Matriz con costos de todas las réplicas
+     */
+    private void llenarTablaConPromediosAcumulados(DefaultTableModel modelReplicas, double[][] costosReplicas) {
+        // Para cada día, calcular el promedio acumulado de cada réplica
+        for (int dia = 0; dia < tamanoRecomendado; dia++) {
+            Object[] fila = new Object[6]; // Array para la fila: 1 día + 5 réplicas
+            fila[0] = dia + 1; // Número de día (base 1)
+
+            // Calcular promedio acumulado para cada réplica hasta el día actual
+            for (int replica = 0; replica < 5; replica++) {
+                double sumaAcumulada = 0; // Suma desde día 1 hasta día actual
+
+                // Sumar costos desde el primer día hasta el día actual
+                for (int i = 0; i <= dia; i++) {
+                    sumaAcumulada += costosReplicas[replica][i];
+                }
+
+                // Calcular promedio acumulado: suma total / número de días transcurridos
+                double promedioAcumulado = sumaAcumulada / (dia + 1);
+                fila[replica + 1] = promedioAcumulado; // Guardar en fila (columnas 1-5)
+            }
+
+            modelReplicas.addRow(fila); // Agregar fila completa a la tabla
+        }
     }
 
     /**
@@ -704,110 +967,6 @@ public class SimulacionCompleta extends JFrame {
                 }
             }
         });
-    }
-
-    /**
-     * Genera los datos de las 5 réplicas independientes y llena la tabla
-     * @param modelReplicas Modelo de tabla donde insertar los datos
-     */
-    private void generarDatosReplicas(DefaultTableModel modelReplicas) {
-        // Generar matriz de costos: 5 réplicas x tamanoRecomendado días
-        double[][] costosReplicas = new double[5][tamanoRecomendado];
-
-        // Generar cada réplica de forma completamente independiente
-        for (int replica = 0; replica < 5; replica++) {
-            costosReplicas[replica] = simularReplicaCompleta(); // Simular réplica independiente
-        }
-
-        // Llenar tabla: cada fila representa un día, cada columna el promedio acumulado de una réplica
-        llenarTablaConPromediosAcumulados(modelReplicas, costosReplicas);
-    }
-
-    /**
-     * Simula una réplica completa de forma independiente
-     * @return Array con costos totales de cada día de la réplica
-     */
-    private double[] simularReplicaCompleta() {
-        double[] costos = new double[tamanoRecomendado]; // Array para almacenar costos
-        int inventarioFinal = 0; // Inventario inicial cero
-        NormalDistribution dist = new NormalDistribution(mediaDemanda, desviacionDemanda); // Distribución de demanda
-        Random random = new Random(); // Nuevo generador para independencia
-
-        // Simular cada día de la réplica
-        for (int dia = 0; dia < tamanoRecomendado; dia++) {
-            ResultadoSimulacion resultado = simularDia(inventarioFinal, dist, random); // Simular día
-            costos[dia] = resultado.costoTotal; // Guardar costo total
-            inventarioFinal = resultado.inventarioFinal; // Actualizar inventario para siguiente día
-        }
-
-        return costos; // Retornar array de costos de la réplica
-    }
-
-    /**
-     * Llena la tabla con promedios acumulados de cada réplica
-     * @param modelReplicas Modelo donde insertar los datos
-     * @param costosReplicas Matriz con costos de todas las réplicas
-     */
-    private void llenarTablaConPromediosAcumulados(DefaultTableModel modelReplicas, double[][] costosReplicas) {
-        // Para cada día, calcular el promedio acumulado de cada réplica
-        for (int dia = 0; dia < tamanoRecomendado; dia++) {
-            Object[] fila = new Object[6]; // Array para la fila: 1 día + 5 réplicas
-            fila[0] = dia + 1; // Número de día (base 1)
-
-            // Calcular promedio acumulado para cada réplica hasta el día actual
-            for (int replica = 0; replica < 5; replica++) {
-                double sumaAcumulada = 0; // Suma desde día 1 hasta día actual
-
-                // Sumar costos desde el primer día hasta el día actual
-                for (int i = 0; i <= dia; i++) {
-                    sumaAcumulada += costosReplicas[replica][i];
-                }
-
-                // Calcular promedio acumulado: suma total / número de días transcurridos
-                double promedioAcumulado = sumaAcumulada / (dia + 1);
-                fila[replica + 1] = promedioAcumulado; // Guardar en fila (columnas 1-5)
-            }
-
-            modelReplicas.addRow(fila); // Agregar fila completa a la tabla
-        }
-    }
-
-    /**
-     * Crea el panel con estadísticas individuales de cada una de las 5 réplicas
-     * @return Panel con estadísticas de las réplicas
-     */
-    private JPanel crearPanelEstadisticasReplicas() {
-        // Panel contenedor con layout de grilla 1x5
-        JPanel panel = new JPanel(new GridLayout(1, 5, 15, 15));
-        panel.setBackground(Color.WHITE); // Fondo blanco
-        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15)); // Márgenes
-
-        // Generar estadísticas independientes para cada réplica
-        EstadisticasSimulacion[] statsReplicas = generarEstadisticasReplicas();
-
-        // Crear panel individual para cada réplica
-        for (int i = 0; i < 5; i++) {
-            JPanel panelReplica = crearPanelReplicaIndividual(i + 1, statsReplicas[i]);
-            panel.add(panelReplica); // Agregar al panel principal
-        }
-
-        return panel;
-    }
-
-    /**
-     * Genera estadísticas independientes para cada una de las 5 réplicas
-     * @return Array con estadísticas de cada réplica
-     */
-    private EstadisticasSimulacion[] generarEstadisticasReplicas() {
-        EstadisticasSimulacion[] statsReplicas = new EstadisticasSimulacion[5];
-
-        // Generar cada réplica de forma completamente independiente
-        for (int i = 0; i < 5; i++) {
-            double[] costosTotales = simularReplicaCompleta(); // Simular réplica independiente
-            statsReplicas[i] = calcularEstadisticas(costosTotales); // Calcular sus estadísticas propias
-        }
-
-        return statsReplicas;
     }
 
     /**
