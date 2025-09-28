@@ -21,6 +21,9 @@ public class SimulacionCompleta extends JFrame {
     // Instancia del motor de simulación
     private final MotorSimulacion motorSimulacion;
 
+    // Referencia al panel central actual para reemplazo seguro
+    private JPanel panelCentralActual;
+
     /**
      * Constructor que inicializa la ventana principal con simulación de 365 días
      */
@@ -30,28 +33,79 @@ public class SimulacionCompleta extends JFrame {
         int dias = 365;
         motorSimulacion = new MotorSimulacion();
 
+        // Panel superior para controles
+        JPanel panelControles = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        panelControles.setBorder(new EmptyBorder(10, 10, 10, 10));
+        panelControles.add(new JLabel("Política de producción: "));
+        JComboBox<Integer> comboPolitica = new JComboBox<>();
+        for (int op : Constantes.OPCIONES_POLITICA) {
+            comboPolitica.addItem(op);
+        }
+        comboPolitica.setSelectedItem(Constantes.POLITICA_PRODUCCION);
+        panelControles.add(comboPolitica);
+
         configurarTabla();
 
         // Ejecutar simulación completa de 365 días
         double[] costosTotales = motorSimulacion.generarSimulacionYllenarTabla(dias, model);
-
-        // Realizar cálculos estadísticos y pruebas de normalidad
         motorSimulacion.calcularEstadisticasYPruebas(costosTotales);
-
-        // Crear panel con resumen estadístico
         double[] minMax = CreadorPaneles.getMinMaxCosto(model);
         JPanel resumenPanel = CreadorPaneles.crearResumenEstadisticoPanel(true,
             motorSimulacion.getPromedio(), motorSimulacion.getDesviacion(),
             minMax[0], minMax[1], motorSimulacion.getValorAd(), motorSimulacion.getPValue(),
             motorSimulacion.isEsNormal(), motorSimulacion.getTamanoRecomendado());
-
-        // Crear botón para generar simulación con tamaño recomendado
         JButton botonNuevaTabla = new JButton("Generar tabla tamaño recomendado");
         botonNuevaTabla.setEnabled(motorSimulacion.isEsNormal());
         resumenPanel.add(botonNuevaTabla);
 
-        // Configurar la interfaz principal de la ventana
-        configurarInterfazPrincipal(costosTotales, resumenPanel);
+        // Panel de gráficas
+        JPanel graficasPanel = GeneradorGraficas.crearPanelGraficas(costosTotales,
+            motorSimulacion.getPromedio(), motorSimulacion.getDesviacion());
+
+        // Panel principal
+        JScrollPane scrollPaneTabla = new JScrollPane(tabla);
+        scrollPaneTabla.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        JPanel mainPanel = CreadorPaneles.crearPanelPrincipal(graficasPanel, scrollPaneTabla, resumenPanel);
+        JPanel panelConControles = new JPanel(new BorderLayout());
+        panelConControles.add(panelControles, BorderLayout.NORTH);
+        panelConControles.add(mainPanel, BorderLayout.CENTER);
+        this.panelCentralActual = mainPanel; // Guardar referencia al panel central actual
+        setContentPane(panelConControles);
+        setSize(1400, 1000);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+
+        // Acción al cambiar la política
+        comboPolitica.addActionListener(e -> {
+            int nuevaPolitica = (int) comboPolitica.getSelectedItem();
+            Constantes.setPoliticaProduccion(nuevaPolitica);
+            // Volver a ejecutar la simulación con la nueva política
+            model.setRowCount(0);
+            double[] nuevosCostos = motorSimulacion.generarSimulacionYllenarTabla(dias, model);
+            motorSimulacion.calcularEstadisticasYPruebas(nuevosCostos);
+            double[] minMax2 = CreadorPaneles.getMinMaxCosto(model);
+            JPanel nuevoResumen = CreadorPaneles.crearResumenEstadisticoPanel(true,
+                motorSimulacion.getPromedio(), motorSimulacion.getDesviacion(),
+                minMax2[0], minMax2[1], motorSimulacion.getValorAd(), motorSimulacion.getPValue(),
+                motorSimulacion.isEsNormal(), motorSimulacion.getTamanoRecomendado());
+            JButton nuevoBoton = new JButton("Generar tabla tamaño recomendado");
+            nuevoBoton.setEnabled(motorSimulacion.isEsNormal());
+            nuevoResumen.add(nuevoBoton);
+            JPanel nuevasGraficas = GeneradorGraficas.crearPanelGraficas(nuevosCostos,
+                motorSimulacion.getPromedio(), motorSimulacion.getDesviacion());
+            JScrollPane nuevoScroll = new JScrollPane(tabla);
+            nuevoScroll.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+            JPanel nuevoMainPanel = CreadorPaneles.crearPanelPrincipal(nuevasGraficas, nuevoScroll, nuevoResumen);
+            // Remover el panel central actual y agregar el nuevo
+            panelConControles.remove(panelCentralActual);
+            panelConControles.add(nuevoMainPanel, BorderLayout.CENTER);
+            panelConControles.revalidate();
+            panelConControles.repaint();
+            // Actualizar referencia
+            panelCentralActual = nuevoMainPanel;
+            // Asignar acción al nuevo botón
+            nuevoBoton.addActionListener(this::generarTablaRecomendada);
+        });
 
         // Asignar acción al botón
         botonNuevaTabla.addActionListener(this::generarTablaRecomendada);

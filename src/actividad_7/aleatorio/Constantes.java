@@ -10,11 +10,14 @@ public class Constantes {
     // ========================== PARÁMETROS DEL SISTEMA ==========================
     public static final double ERROR_PERMITIDO = 500;
     public static final double VALOR_T = 1.9665;
-    public static final int POLITICA_PRODUCCION = 60;
+    public static int POLITICA_PRODUCCION = 60; // Cambiado a no final para permitir modificación
     public static final double MEDIA_DEMANDA = 80;
     public static final double DESVIACION_DEMANDA = 10;
     public static final double COSTO_FALTANTE_UNITARIO = 800;
     public static final double COSTO_INVENTARIO_UNITARIO = 500;
+
+    // ========================== OPCIONES DE POLÍTICA ==========================
+    public static final int[] OPCIONES_POLITICA = {60, 70, 80};
 
     // ========================== CONFIGURACIÓN DE TABLA ==========================
     public static final String[] COLUMNAS = {
@@ -50,4 +53,11 @@ public class Constantes {
         new Color(75, 192, 192),   // Verde/Turquesa
         new Color(153, 102, 255)   // Púrpura
     };
+
+    /**
+     * Método para cambiar la política de producción
+     */
+    public static void setPoliticaProduccion(int nuevaPolitica) {
+        POLITICA_PRODUCCION = nuevaPolitica;
+    }
 }
