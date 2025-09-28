@@ -373,68 +373,8 @@ public class SimulacionCompleta extends JFrame {
         tabbedPane.setSelectedIndex(tabbedPane.getTabCount() - 1);
     }
 
-    private JPanel crearPanelEstadisticasReplicas() {
-        JPanel panel = new JPanel(new GridLayout(1, 5, 15, 15));
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-
-        Font fuenteTitulo = new Font("Segoe UI Semibold", Font.BOLD, 16);
-        Font fuenteValor = new Font("Segoe UI", Font.BOLD, 14);
-
-        // Generar estadísticas para cada réplica
-        EstadisticasSimulacion[] statsReplicas = new EstadisticasSimulacion[5];
-        for (int i = 0; i < 5; i++) {
-            double[] costosTotales = new double[tamanoRecomendado];
-            // Simular cada réplica
-            int inventarioFinal = 0;
-            NormalDistribution dist = new NormalDistribution(mediaDemanda, desviacionDemanda);
-            Random random = new Random();
-
-            for (int dia = 0; dia < tamanoRecomendado; dia++) {
-                ResultadoSimulacion resultado = simularDia(inventarioFinal, dist, random);
-                costosTotales[dia] = resultado.costoTotal;
-                inventarioFinal = resultado.inventarioFinal;
-            }
-
-            statsReplicas[i] = calcularEstadisticas(costosTotales);
-        }
-
-        // Crear paneles para cada réplica
-        for (int i = 0; i < 5; i++) {
-            JPanel panelReplica = new JPanel();
-            panelReplica.setLayout(new BoxLayout(panelReplica, BoxLayout.Y_AXIS));
-            panelReplica.setBorder(BorderFactory.createTitledBorder(null, "Replica " + (i + 1),
-                javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.TOP,
-                fuenteTitulo, COLOR_PRIMARIO));
-            panelReplica.setBackground(new Color(248, 250, 255));
-
-            // Crear labels centrados
-            JLabel[] labels = {
-                new JLabel("Promedio", SwingConstants.CENTER),
-                new JLabel(String.format("$%,.2f", statsReplicas[i].promedio), SwingConstants.CENTER),
-                new JLabel("Desviación", SwingConstants.CENTER),
-                new JLabel(String.format("$%,.2f", statsReplicas[i].desviacion), SwingConstants.CENTER),
-                new JLabel("Min", SwingConstants.CENTER),
-                new JLabel(String.format("$%,.2f", statsReplicas[i].minimo), SwingConstants.CENTER),
-                new JLabel("Max", SwingConstants.CENTER),
-                new JLabel(String.format("$%,.2f", statsReplicas[i].maximo), SwingConstants.CENTER)
-            };
-
-            for (int j = 0; j < labels.length; j++) {
-                if (j % 2 == 1) labels[j].setFont(fuenteValor);
-                labels[j].setAlignmentX(Component.CENTER_ALIGNMENT);
-                panelReplica.add(labels[j]);
-                if (j < labels.length - 1) panelReplica.add(Box.createVerticalStrut(3));
-            }
-
-            panel.add(panelReplica);
-        }
-
-        return panel;
-    }
-
     private JPanel crearTablaReplicas(Font fuenteGeneral, Font fuenteHeader) {
-        // Crear columnas: Día, Costo promedio Replica 1, Costo promedio Replica 2, etc.
+        // Crear columnas: Día, Replica 1, Replica 2, etc., y Promedio acumulado
         String[] columnasReplicas = {"Día", "Costo promedio ($) Replica 1", "Costo promedio ($) Replica 2",
                                    "Costo promedio ($) Replica 3", "Costo promedio ($) Replica 4",
                                    "Costo promedio ($) Replica 5"};
@@ -464,12 +404,18 @@ public class SimulacionCompleta extends JFrame {
             tablaReplicas.getColumnModel().getColumn(i).setCellRenderer(moneyRenderer);
         }
 
-        // Configurar colores alternados
+        // Configurar colores alternados con fondo amarillo para columnas de promedio
         tablaReplicas.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable tbl, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 Component comp = super.getTableCellRendererComponent(tbl, value, isSelected, hasFocus, row, column);
-                if (!isSelected) comp.setBackground(row % 2 == 0 ? COLOR_FILA_PAR : COLOR_FILA_IMPAR);
+                if (!isSelected) {
+                    if (column > 0) { // Todas las columnas de réplicas con fondo amarillo claro
+                        comp.setBackground(new Color(255, 255, 200)); // Amarillo claro
+                    } else {
+                        comp.setBackground(row % 2 == 0 ? COLOR_FILA_PAR : COLOR_FILA_IMPAR);
+                    }
+                }
 
                 // Aplicar formato según columna
                 if (column == 0) {
@@ -499,13 +445,13 @@ public class SimulacionCompleta extends JFrame {
     }
 
     private void generarDatosReplicas(DefaultTableModel modelReplicas) {
-        // Generar 5 réplicas
+        // Generar 5 réplicas independientes - matriz donde cada fila es una réplica
         double[][] costosReplicas = new double[5][tamanoRecomendado];
 
         for (int replica = 0; replica < 5; replica++) {
             int inventarioFinal = 0;
             NormalDistribution dist = new NormalDistribution(mediaDemanda, desviacionDemanda);
-            Random random = new Random();
+            Random random = new Random(); // Cada réplica con números aleatorios diferentes
 
             for (int dia = 0; dia < tamanoRecomendado; dia++) {
                 ResultadoSimulacion resultado = simularDia(inventarioFinal, dist, random);
@@ -514,23 +460,86 @@ public class SimulacionCompleta extends JFrame {
             }
         }
 
-        // Llenar tabla con costos promedio acumulados
+        // Llenar tabla: cada fila es un día, cada columna es el promedio acumulado de esa réplica
         for (int dia = 0; dia < tamanoRecomendado; dia++) {
             Object[] fila = new Object[6]; // 1 día + 5 réplicas
             fila[0] = dia + 1; // Número de día
 
+            // Para cada réplica, calcular el promedio acumulado desde el día 1 hasta el día actual
             for (int replica = 0; replica < 5; replica++) {
-                // Calcular promedio acumulado desde el día 1 hasta el día actual
-                double suma = 0;
+                double sumaAcumulada = 0;
+                // Sumar desde el día 0 hasta el día actual (dia)
                 for (int i = 0; i <= dia; i++) {
-                    suma += costosReplicas[replica][i];
+                    sumaAcumulada += costosReplicas[replica][i];
                 }
-                double promedioAcumulado = suma / (dia + 1);
+                // Calcular promedio acumulado: suma de todos los días hasta ahora / número de días
+                double promedioAcumulado = sumaAcumulada / (dia + 1);
                 fila[replica + 1] = promedioAcumulado;
             }
 
             modelReplicas.addRow(fila);
         }
+    }
+
+    private JPanel crearPanelEstadisticasReplicas() {
+        JPanel panel = new JPanel(new GridLayout(1, 5, 15, 15));
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+        Font fuenteTitulo = new Font("Segoe UI Semibold", Font.BOLD, 16);
+        Font fuenteValor = new Font("Segoe UI", Font.BOLD, 14);
+
+        // Generar estadísticas INDEPENDIENTES para cada réplica
+        EstadisticasSimulacion[] statsReplicas = new EstadisticasSimulacion[5];
+        for (int i = 0; i < 5; i++) {
+            double[] costosTotales = new double[tamanoRecomendado];
+            // Simular cada réplica de forma INDEPENDIENTE
+            int inventarioFinal = 0;
+            NormalDistribution dist = new NormalDistribution(mediaDemanda, desviacionDemanda);
+            Random random = new Random(); // Cada réplica con semilla diferente
+
+            for (int dia = 0; dia < tamanoRecomendado; dia++) {
+                ResultadoSimulacion resultado = simularDia(inventarioFinal, dist, random);
+                costosTotales[dia] = resultado.costoTotal;
+                inventarioFinal = resultado.inventarioFinal;
+            }
+
+            // Calcular estadísticas propias de esta réplica
+            statsReplicas[i] = calcularEstadisticas(costosTotales);
+        }
+
+        // Crear paneles para cada réplica con SUS PROPIAS estadísticas
+        for (int i = 0; i < 5; i++) {
+            JPanel panelReplica = new JPanel();
+            panelReplica.setLayout(new BoxLayout(panelReplica, BoxLayout.Y_AXIS));
+            panelReplica.setBorder(BorderFactory.createTitledBorder(null, "Replica " + (i + 1),
+                javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.TOP,
+                fuenteTitulo, COLOR_PRIMARIO));
+            panelReplica.setBackground(new Color(248, 250, 255));
+
+            // Crear labels centrados con las estadísticas ESPECÍFICAS de esta réplica
+            JLabel[] labels = {
+                new JLabel("Promedio", SwingConstants.CENTER),
+                new JLabel(String.format("$%,.2f", statsReplicas[i].promedio), SwingConstants.CENTER),
+                new JLabel("Desviación", SwingConstants.CENTER),
+                new JLabel(String.format("$%,.2f", statsReplicas[i].desviacion), SwingConstants.CENTER),
+                new JLabel("Min", SwingConstants.CENTER),
+                new JLabel(String.format("$%,.2f", statsReplicas[i].minimo), SwingConstants.CENTER),
+                new JLabel("Max", SwingConstants.CENTER),
+                new JLabel(String.format("$%,.2f", statsReplicas[i].maximo), SwingConstants.CENTER)
+            };
+
+            for (int j = 0; j < labels.length; j++) {
+                if (j % 2 == 1) labels[j].setFont(fuenteValor);
+                labels[j].setAlignmentX(Component.CENTER_ALIGNMENT);
+                panelReplica.add(labels[j]);
+                if (j < labels.length - 1) panelReplica.add(Box.createVerticalStrut(3));
+            }
+
+            panel.add(panelReplica);
+        }
+
+        return panel;
     }
 
     private JFreeChart crearEvolucionGrafica(double[] costosTotales) {
