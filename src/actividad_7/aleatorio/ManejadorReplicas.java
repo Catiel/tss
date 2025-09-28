@@ -32,30 +32,238 @@ public class ManejadorReplicas {
             }
         }
 
-        JPanel panelReplicas = new JPanel(new BorderLayout(15, 15));
-        panelReplicas.setBackground(Color.WHITE);
-
         // Generar datos de réplicas una sola vez
         double[][] costosReplicas = new double[5][tamanoRecomendado];
         for (int replica = 0; replica < 5; replica++) {
             costosReplicas[replica] = motorSimulacion.simularReplicaCompleta(tamanoRecomendado);
         }
 
-        // Crear panel superior con estadísticas de cada réplica
-        JPanel panelEstadisticasReplicas = crearPanelEstadisticasReplicasConDatos(costosReplicas);
-        panelReplicas.add(panelEstadisticasReplicas, BorderLayout.NORTH);
-
-        // Crear gráfica de réplicas
-        JPanel panelGraficaReplicas = crearPanelGraficaReplicas(costosReplicas);
-        panelReplicas.add(panelGraficaReplicas, BorderLayout.CENTER);
-
-        // Crear panel inferior con tabla comparativa de réplicas
-        JPanel panelTablaReplicas = crearTablaReplicasConDatos(costosReplicas);
-        panelReplicas.add(panelTablaReplicas, BorderLayout.SOUTH);
+        // Crear panel principal con scroll
+        JPanel contenidoPrincipal = crearContenidoCompleto(costosReplicas);
+        JScrollPane scrollPrincipal = new JScrollPane(contenidoPrincipal);
+        scrollPrincipal.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPrincipal.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollPrincipal.getVerticalScrollBar().setUnitIncrement(16);
 
         // Agregar nueva pestaña al sistema de pestañas
-        tabbedPane.addTab("5 Réplicas", panelReplicas);
+        tabbedPane.addTab("5 Réplicas", scrollPrincipal);
         tabbedPane.setSelectedIndex(tabbedPane.getTabCount() - 1);
+    }
+
+    /**
+     * Crea todo el contenido de la pestaña de réplicas organizado verticalmente
+     */
+    private JPanel crearContenidoCompleto(double[][] costosReplicas) {
+        JPanel panelCompleto = new JPanel();
+        panelCompleto.setLayout(new BoxLayout(panelCompleto, BoxLayout.Y_AXIS));
+        panelCompleto.setBackground(Color.WHITE);
+        panelCompleto.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+        // 1. Panel con estadísticas individuales de cada réplica
+        JPanel panelEstadisticasIndividuales = crearPanelEstadisticasReplicasConDatos(costosReplicas);
+        panelCompleto.add(panelEstadisticasIndividuales);
+        panelCompleto.add(Box.createVerticalStrut(15));
+
+        // 2. Panel con resumen estadístico
+        JPanel panelResumen = crearPanelResumenEstadistico(costosReplicas);
+        panelCompleto.add(panelResumen);
+        panelCompleto.add(Box.createVerticalStrut(15));
+
+        // 3. Panel con gráfica
+        JPanel panelGrafica = crearPanelGraficaReplicas(costosReplicas);
+        panelCompleto.add(panelGrafica);
+        panelCompleto.add(Box.createVerticalStrut(15));
+
+        // 4. Panel con tabla de promedios acumulados
+        JPanel panelTabla = crearTablaReplicasConDatos(costosReplicas);
+        panelCompleto.add(panelTabla);
+
+        return panelCompleto;
+    }
+
+    /**
+     * Crea el panel con resumen estadístico de las 5 réplicas
+     */
+    private JPanel crearPanelResumenEstadistico(double[][] costosReplicas) {
+        // Calcular promedio final de cada réplica
+        double[] promediosFinales = new double[5];
+        for (int replica = 0; replica < 5; replica++) {
+            double suma = 0;
+            for (int dia = 0; dia < tamanoRecomendado; dia++) {
+                suma += costosReplicas[replica][dia];
+            }
+            promediosFinales[replica] = suma / tamanoRecomendado;
+        }
+
+        // Calcular estadísticas de los promedios de las réplicas
+        double sumaPromedios = 0;
+        for (double promedio : promediosFinales) {
+            sumaPromedios += promedio;
+        }
+        double promedioGeneral = sumaPromedios / 5;
+
+        // Calcular desviación estándar de los promedios (usando fórmula de muestra n-1)
+        double sumaCuadradosDesviacion = 0;
+        for (double promedio : promediosFinales) {
+            sumaCuadradosDesviacion += Math.pow(promedio - promedioGeneral, 2);
+        }
+        double desviacionEstandarPromedios = Math.sqrt(sumaCuadradosDesviacion / 4); // n-1 = 4
+
+        // Calcular intervalos de confianza (95%, t con 4 grados de libertad)
+        double valorT = 2.776; // t(0.025, 4) para 95% confianza con 4 grados de libertad
+        double errorEstandar = desviacionEstandarPromedios / Math.sqrt(5);
+        double margenError = errorEstandar * valorT;
+
+        double intervaloInferior = promedioGeneral - margenError;
+        double intervaloSuperior = promedioGeneral + margenError;
+
+        // Panel principal del resumen
+        JPanel panelResumen = new JPanel(new BorderLayout(15, 10));
+        panelResumen.setBackground(Color.WHITE);
+        panelResumen.setBorder(BorderFactory.createTitledBorder(null, "Resumen Estadístico de Réplicas",
+            javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.TOP,
+            Constantes.FUENTE_TITULO, Constantes.COLOR_PRIMARIO));
+
+        // Panel horizontal que contiene ambas tablas
+        JPanel panelTablas = new JPanel(new GridLayout(1, 2, 20, 0));
+        panelTablas.setBackground(Color.WHITE);
+
+        // Tabla izquierda: Promedios de réplicas
+        JPanel panelTablaPromedios = crearTablaPromedios(promediosFinales, promedioGeneral, desviacionEstandarPromedios);
+        panelTablas.add(panelTablaPromedios);
+
+        // Tabla derecha: Intervalos de confianza
+        JPanel panelTablaIntervalos = crearTablaIntervalos(intervaloInferior, intervaloSuperior);
+        panelTablas.add(panelTablaIntervalos);
+
+        panelResumen.add(panelTablas, BorderLayout.CENTER);
+        return panelResumen;
+    }
+
+    /**
+     * Crea la tabla con promedios de cada réplica
+     */
+    private JPanel crearTablaPromedios(double[] promediosFinales, double promedioGeneral, double desviacion) {
+        String[] columnas = {"", "Promedios"};
+        Object[][] datos = {
+            {"replica 1", String.format("$%,.2f", promediosFinales[0])},
+            {"replica 2", String.format("$%,.2f", promediosFinales[1])},
+            {"replica 3", String.format("$%,.2f", promediosFinales[2])},
+            {"replica 4", String.format("$%,.2f", promediosFinales[3])},
+            {"replica 5", String.format("$%,.2f", promediosFinales[4])},
+            {"promedio", String.format("$%,.2f", promedioGeneral)},
+            {"desviación", String.format("$%,.2f", desviacion)}
+        };
+
+        DefaultTableModel modelo = new DefaultTableModel(datos, columnas) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
+        JTable tabla = new JTable(modelo);
+        tabla.setFont(Constantes.FUENTE_GENERAL);
+        tabla.setRowHeight(25);
+        tabla.setGridColor(Color.LIGHT_GRAY);
+        tabla.setShowGrid(true);
+        tabla.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+
+        // Configurar header con fondo amarillo
+        tabla.getTableHeader().setBackground(new Color(255, 255, 0));
+        tabla.getTableHeader().setForeground(Color.BLACK);
+        tabla.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
+
+        // Renderizador personalizado
+        tabla.setDefaultRenderer(Object.class, new javax.swing.table.DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                    boolean hasFocus, int row, int column) {
+                Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+                // Fondo amarillo claro para promedio y desviación
+                if (row == 5 || row == 6) {
+                    comp.setBackground(new Color(255, 255, 200));
+                } else {
+                    comp.setBackground(Color.WHITE);
+                }
+
+                // Alineación
+                if (column == 1) {
+                    setHorizontalAlignment(SwingConstants.RIGHT);
+                } else {
+                    setHorizontalAlignment(SwingConstants.LEFT);
+                }
+
+                return comp;
+            }
+        });
+
+        JScrollPane scroll = new JScrollPane(tabla);
+        scroll.setPreferredSize(new Dimension(250, 190));
+
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.add(scroll, BorderLayout.CENTER);
+        panel.setBackground(Color.WHITE);
+
+        return panel;
+    }
+
+    /**
+     * Crea la tabla con intervalos de confianza
+     */
+    private JPanel crearTablaIntervalos(double intervaloInferior, double intervaloSuperior) {
+        String[] columnas = {"intervalos de confianza", ""};
+        Object[][] datos = {
+            {"inferior", String.format("$%,.2f", intervaloInferior)},
+            {"superior", String.format("$%,.2f", intervaloSuperior)}
+        };
+
+        DefaultTableModel modelo = new DefaultTableModel(datos, columnas) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
+        JTable tabla = new JTable(modelo);
+        tabla.setFont(Constantes.FUENTE_GENERAL);
+        tabla.setRowHeight(25);
+        tabla.setGridColor(Color.LIGHT_GRAY);
+        tabla.setShowGrid(true);
+        tabla.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+
+        // Configurar header
+        tabla.getTableHeader().setBackground(Color.WHITE);
+        tabla.getTableHeader().setForeground(Color.BLACK);
+        tabla.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
+
+        // Renderizador para alineación
+        tabla.setDefaultRenderer(Object.class, new javax.swing.table.DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                    boolean hasFocus, int row, int column) {
+                Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                comp.setBackground(Color.WHITE);
+
+                if (column == 1) {
+                    setHorizontalAlignment(SwingConstants.RIGHT);
+                } else {
+                    setHorizontalAlignment(SwingConstants.LEFT);
+                }
+
+                return comp;
+            }
+        });
+
+        JScrollPane scroll = new JScrollPane(tabla);
+        scroll.setPreferredSize(new Dimension(300, 90));
+
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.add(scroll, BorderLayout.CENTER);
+        panel.setBackground(Color.WHITE);
+
+        return panel;
     }
 
     /**
@@ -99,7 +307,9 @@ public class ManejadorReplicas {
     private JPanel crearPanelEstadisticasReplicasConDatos(double[][] costosReplicas) {
         JPanel panel = new JPanel(new GridLayout(1, 5, 15, 15));
         panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        panel.setBorder(BorderFactory.createTitledBorder(null, "Estadísticas Individuales por Réplica",
+            javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.TOP,
+            Constantes.FUENTE_TITULO, Constantes.COLOR_PRIMARIO));
 
         for (int i = 0; i < 5; i++) {
             ModelosDeDatos.EstadisticasSimulacion stats = motorSimulacion.calcularEstadisticas(costosReplicas[i]);
@@ -130,7 +340,7 @@ public class ManejadorReplicas {
 
         JScrollPane scrollReplicas = new JScrollPane(tablaReplicas);
         scrollReplicas.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        scrollReplicas.setPreferredSize(new Dimension(1200, 200));
+        scrollReplicas.setPreferredSize(new Dimension(1200, 300));
 
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createTitledBorder(null, "Tabla de Promedios Acumulados",
