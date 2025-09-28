@@ -52,10 +52,17 @@ public class SimulacionCompleta extends JFrame {
     // ========================== CONSTANTES DE DISEÑO ==========================
 
     // Definición de columnas de la tabla principal
-    private static final String[] COLUMNAS = {"Día", "Inventario inicial (Uds)", "Política de producción (Uds)", "Total disponible (Uds)", "Rn", "Demanda (uds)", "Ventas (Uds)", "Ventas perdidas (uds)", "Inventario final (Uds)", "Costo faltante ($)", "Costo de inventarios ($)", "Costo total ($)"};
+    private static final String[] COLUMNAS = {
+        "Día", "Inventario inicial (Uds)", "Política de producción (Uds)",
+        "Total disponible (Uds)", "Rn", "Demanda (uds)", "Ventas (Uds)",
+        "Ventas perdidas (uds)", "Inventario final (Uds)", "Costo faltante ($)",
+        "Costo de inventarios ($)", "Costo total ($)"
+    };
 
     // Anchos preferidos para cada columna de la tabla
-    private static final int[] ANCHOS_COLUMNAS = {50, 140, 150, 140, 70, 100, 100, 120, 130, 150, 170, 150};
+    private static final int[] ANCHOS_COLUMNAS = {
+        50, 140, 150, 140, 70, 100, 100, 120, 130, 150, 170, 150
+    };
 
     // Colores del tema visual de la aplicación
     private static final Color COLOR_PRIMARIO = new Color(30, 144, 255); // Azul principal
@@ -90,7 +97,8 @@ public class SimulacionCompleta extends JFrame {
         calcularEstadisticasYPruebas(costosTotales);
 
         // Crear panel con resumen estadístico y datos de normalidad
-        JPanel resumenPanel = crearResumenEstadisticoPanel(true, promedio, desviacion, getMinMaxCosto(model)[0], getMinMaxCosto(model)[1]);
+        JPanel resumenPanel = crearResumenEstadisticoPanel(true, promedio, desviacion,
+            getMinMaxCosto(model)[0], getMinMaxCosto(model)[1]);
 
         // Crear botón para generar simulación con tamaño recomendado
         JButton botonNuevaTabla = new JButton("Generar tabla tamaño recomendado");
@@ -117,7 +125,6 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Aplica todos los estilos visuales a una tabla dada
-     *
      * @param tabla La tabla a la que aplicar estilos
      */
     private void configurarEstilosTabla(JTable tabla) {
@@ -135,7 +142,6 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Configura los estilos del encabezado de la tabla
-     *
      * @param tabla La tabla cuyo encabezado configurar
      */
     private void configurarEncabezadoTabla(JTable tabla) {
@@ -148,7 +154,6 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Configura anchos de columnas y renderizadores específicos para cada tipo de dato
-     *
      * @param tabla La tabla a configurar
      */
     private void configurarRenderizadoresYAnchos(JTable tabla) {
@@ -175,13 +180,13 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Aplica colores alternados a las filas de la tabla
-     *
      * @param tabla La tabla a la que aplicar colores alternados
      */
     private void configurarColoresAlternados(JTable tabla) {
         tabla.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
-            public Component getTableCellRendererComponent(JTable tbl, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            public Component getTableCellRendererComponent(JTable tbl, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
                 // Obtener componente base del renderizador
                 Component comp = super.getTableCellRendererComponent(tbl, value, isSelected, hasFocus, row, column);
 
@@ -197,7 +202,6 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Crea un renderizador especializado para valores monetarios
-     *
      * @return Renderizador que formatea números como moneda
      */
     private DefaultTableCellRenderer crearRenderizadorMoneda() {
@@ -221,9 +225,8 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Configura el layout y componentes principales de la ventana
-     *
      * @param costosTotales Array de costos para generar gráficas
-     * @param resumenPanel  Panel con información estadística
+     * @param resumenPanel Panel con información estadística
      */
     private void configurarInterfazPrincipal(double[] costosTotales, JPanel resumenPanel) {
         // Crear panel de desplazamiento para la tabla
@@ -252,10 +255,9 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Crea el panel que contiene las dos gráficas principales
-     *
      * @param costosTotales Datos para la gráfica de evolución
-     * @param promedio      Media para la gráfica de probabilidad normal
-     * @param desviacion    Desviación estándar para la gráfica de probabilidad normal
+     * @param promedio Media para la gráfica de probabilidad normal
+     * @param desviacion Desviación estándar para la gráfica de probabilidad normal
      * @return Panel con ambas gráficas
      */
     private JPanel crearPanelGraficas(double[] costosTotales, double promedio, double desviacion) {
@@ -273,7 +275,9 @@ public class SimulacionCompleta extends JFrame {
         graficasPanel.add(chartPanel2); // Agregar segunda gráfica
 
         // Configurar borde y título del panel
-        graficasPanel.setBorder(BorderFactory.createTitledBorder(null, "Gráficas", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.TOP, FUENTE_TITULO, COLOR_PRIMARIO));
+        graficasPanel.setBorder(BorderFactory.createTitledBorder(null, "Gráficas",
+            javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.TOP,
+            FUENTE_TITULO, COLOR_PRIMARIO));
         graficasPanel.setBackground(Color.WHITE); // Fondo blanco
 
         return graficasPanel;
@@ -281,7 +285,6 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Configura un ChartPanel con las propiedades estándar
-     *
      * @param chart La gráfica a encapsular
      * @return ChartPanel configurado
      */
@@ -297,8 +300,7 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Ejecuta la simulación completa y llena la tabla con los resultados
-     *
-     * @param dias        Número de días a simular
+     * @param dias Número de días a simular
      * @param modeloTabla Modelo de la tabla donde mostrar resultados
      * @return Array con los costos totales de cada día
      */
@@ -317,18 +319,19 @@ public class SimulacionCompleta extends JFrame {
             inventarioFinal = resultado.inventarioFinal; // El inventario final se convierte en inicial del siguiente día
 
             // Crear fila para mostrar en la tabla
-            Object[] fila = {dia, // Número de día
-                    resultado.inventarioInicial, // Inventario al inicio del día
-                    politicaProduccion, // Producción fija diaria
-                    resultado.totalDisponible, // Inventario inicial + producción
-                    String.format("%.4f", resultado.rn), // Número aleatorio con 4 decimales
-                    resultado.demanda, // Demanda generada
-                    resultado.ventas, // Unidades vendidas (min entre demanda y disponible)
-                    resultado.ventasPerdidas, // Demanda no satisfecha
-                    resultado.inventarioFinal, // Inventario al final del día
-                    resultado.costoFaltante, // Costo por ventas perdidas
-                    resultado.costoInventario, // Costo por mantener inventario
-                    resultado.costoTotal // Suma de ambos costos
+            Object[] fila = {
+                dia, // Número de día
+                resultado.inventarioInicial, // Inventario al inicio del día
+                politicaProduccion, // Producción fija diaria
+                resultado.totalDisponible, // Inventario inicial + producción
+                String.format("%.4f", resultado.rn), // Número aleatorio con 4 decimales
+                resultado.demanda, // Demanda generada
+                resultado.ventas, // Unidades vendidas (min entre demanda y disponible)
+                resultado.ventasPerdidas, // Demanda no satisfecha
+                resultado.inventarioFinal, // Inventario al final del día
+                resultado.costoFaltante, // Costo por ventas perdidas
+                resultado.costoInventario, // Costo por mantener inventario
+                resultado.costoTotal // Suma de ambos costos
             };
             modeloTabla.addRow(fila); // Agregar fila a la tabla
         }
@@ -337,10 +340,9 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Simula las operaciones de un día específico
-     *
      * @param inventarioFinalAnterior Inventario que quedó del día anterior
-     * @param dist                    Distribución de probabilidad para la demanda
-     * @param random                  Generador de números aleatorios
+     * @param dist Distribución de probabilidad para la demanda
+     * @param random Generador de números aleatorios
      * @return Objeto con todos los resultados del día simulado
      */
     private ResultadoSimulacion simularDia(int inventarioFinalAnterior, NormalDistribution dist, Random random) {
@@ -369,7 +371,6 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Calcula estadísticas descriptivas de un array de datos
-     *
      * @param costosTotales Array de valores a analizar
      * @return Objeto con todas las estadísticas calculadas
      */
@@ -394,7 +395,6 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Ejecuta cálculos estadísticos y pruebas de normalidad sobre los datos
-     *
      * @param costosTotales Array de costos totales para analizar
      */
     private void calcularEstadisticasYPruebas(double[] costosTotales) {
@@ -404,7 +404,8 @@ public class SimulacionCompleta extends JFrame {
         desviacion = stats.desviacion; // Guardar desviación estándar global
 
         // Prueba de normalidad Kolmogorov-Smirnov
-        pValue = new KolmogorovSmirnovTest().kolmogorovSmirnovTest(new NormalDistribution(promedio, desviacion), costosTotales, false);
+        pValue = new KolmogorovSmirnovTest().kolmogorovSmirnovTest(
+            new NormalDistribution(promedio, desviacion), costosTotales, false);
 
         // Determinar si los datos siguen distribución normal (α = 0.05)
         esNormal = pValue > 0.05;
@@ -420,15 +421,15 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Crea el panel con resumen estadístico y información de normalidad
-     *
      * @param incluirTamano Si incluir información de tamaño recomendado
-     * @param promedio      Media de los datos
-     * @param desviacion    Desviación estándar
-     * @param minimo        Valor mínimo
-     * @param maximo        Valor máximo
+     * @param promedio Media de los datos
+     * @param desviacion Desviación estándar
+     * @param minimo Valor mínimo
+     * @param maximo Valor máximo
      * @return Panel configurado con toda la información
      */
-    private JPanel crearResumenEstadisticoPanel(boolean incluirTamano, double promedio, double desviacion, double minimo, double maximo) {
+    private JPanel crearResumenEstadisticoPanel(boolean incluirTamano, double promedio,
+            double desviacion, double minimo, double maximo) {
 
         // Crear panel con layout horizontal centrado
         JPanel resumenPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
@@ -437,7 +438,9 @@ public class SimulacionCompleta extends JFrame {
         String titulo = incluirTamano ? "Resumen Estadístico y Normalidad" : "Resumen Estadístico";
 
         // Configurar borde con título
-        resumenPanel.setBorder(BorderFactory.createTitledBorder(null, titulo, javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.TOP, FUENTE_TITULO, COLOR_PRIMARIO));
+        resumenPanel.setBorder(BorderFactory.createTitledBorder(null, titulo,
+            javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.TOP,
+            FUENTE_TITULO, COLOR_PRIMARIO));
         resumenPanel.setBackground(Color.WHITE);
 
         // Agregar estadísticas básicas (siempre presentes)
@@ -464,7 +467,6 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Crea una etiqueta con formato estándar para el resumen
-     *
      * @param texto Texto a mostrar en la etiqueta
      * @return JLabel configurado con estilos estándar
      */
@@ -477,7 +479,6 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Obtiene los valores mínimo y máximo de la columna de costo total
-     *
      * @param modelo Modelo de tabla del cual extraer los valores
      * @return Array con [mínimo, máximo]
      */
@@ -500,7 +501,6 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Maneja la acción de generar una nueva tabla con el tamaño recomendado
-     *
      * @param e Evento de acción del botón
      */
     private void generarTablaRecomendada(ActionEvent e) {
@@ -524,7 +524,8 @@ public class SimulacionCompleta extends JFrame {
         EstadisticasSimulacion statsNueva = calcularEstadisticas(costosTotalesNueva);
 
         // Crear panel de resumen para la nueva simulación
-        JPanel resumenPanelNueva = crearResumenEstadisticoPanel(false, statsNueva.promedio, statsNueva.desviacion, statsNueva.minimo, statsNueva.maximo);
+        JPanel resumenPanelNueva = crearResumenEstadisticoPanel(false,
+            statsNueva.promedio, statsNueva.desviacion, statsNueva.minimo, statsNueva.maximo);
 
         // Crear botón para generar 5 réplicas
         JButton botonReplicas = new JButton("Generar 5 réplicas");
@@ -532,7 +533,8 @@ public class SimulacionCompleta extends JFrame {
         resumenPanelNueva.add(botonReplicas); // Agregar botón al panel de resumen
 
         // Crear panel de gráficas para la nueva simulación
-        JPanel graficasPanelNueva = crearPanelGraficas(costosTotalesNueva, statsNueva.promedio, statsNueva.desviacion);
+        JPanel graficasPanelNueva = crearPanelGraficas(costosTotalesNueva,
+            statsNueva.promedio, statsNueva.desviacion);
 
         // Crear sistema de pestañas para organizar contenido
         JTabbedPane tabbedPane = new JTabbedPane();
@@ -560,7 +562,6 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Genera 5 réplicas independientes y las muestra en una nueva pestaña
-     *
      * @param tabbedPane Panel de pestañas donde agregar la nueva pestaña de réplicas
      */
     private void generarReplicas(JTabbedPane tabbedPane) {
@@ -591,12 +592,16 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Crea la tabla que muestra el promedio acumulado de las 5 réplicas
-     *
      * @return Panel conteniendo la tabla de réplicas
      */
     private JPanel crearTablaReplicas() {
         // Definir columnas: Día + 5 réplicas
-        String[] columnasReplicas = {"Día", "Costo promedio ($) Replica 1", "Costo promedio ($) Replica 2", "Costo promedio ($) Replica 3", "Costo promedio ($) Replica 4", "Costo promedio ($) Replica 5"};
+        String[] columnasReplicas = {
+            "Día",
+            "Costo promedio ($) Replica 1", "Costo promedio ($) Replica 2",
+            "Costo promedio ($) Replica 3", "Costo promedio ($) Replica 4",
+            "Costo promedio ($) Replica 5"
+        };
 
         // Crear modelo y tabla para las réplicas
         DefaultTableModel modelReplicas = new DefaultTableModel(columnasReplicas, 0);
@@ -622,8 +627,7 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Configura los estilos específicos de la tabla de réplicas
-     *
-     * @param tablaReplicas    Tabla a configurar
+     * @param tablaReplicas Tabla a configurar
      * @param columnasReplicas Array con nombres de columnas
      */
     private void configurarTablaReplicas(JTable tablaReplicas, String[] columnasReplicas) {
@@ -646,9 +650,8 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Configura renderizadores específicos para la tabla de réplicas
-     *
      * @param tablaReplicas Tabla a configurar
-     * @param numColumnas   Número total de columnas
+     * @param numColumnas Número total de columnas
      */
     private void configurarRenderizadoresReplicas(JTable tablaReplicas, int numColumnas) {
         // Renderizador para centrar la columna de días
@@ -665,7 +668,8 @@ public class SimulacionCompleta extends JFrame {
         // Renderizador personalizado para colores de fondo
         tablaReplicas.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
-            public Component getTableCellRendererComponent(JTable tbl, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            public Component getTableCellRendererComponent(JTable tbl, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
                 // Obtener componente base
                 Component comp = super.getTableCellRendererComponent(tbl, value, isSelected, hasFocus, row, column);
 
@@ -704,7 +708,6 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Genera los datos de las 5 réplicas independientes y llena la tabla
-     *
      * @param modelReplicas Modelo de tabla donde insertar los datos
      */
     private void generarDatosReplicas(DefaultTableModel modelReplicas) {
@@ -722,7 +725,6 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Simula una réplica completa de forma independiente
-     *
      * @return Array con costos totales de cada día de la réplica
      */
     private double[] simularReplicaCompleta() {
@@ -743,8 +745,7 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Llena la tabla con promedios acumulados de cada réplica
-     *
-     * @param modelReplicas  Modelo donde insertar los datos
+     * @param modelReplicas Modelo donde insertar los datos
      * @param costosReplicas Matriz con costos de todas las réplicas
      */
     private void llenarTablaConPromediosAcumulados(DefaultTableModel modelReplicas, double[][] costosReplicas) {
@@ -762,7 +763,7 @@ public class SimulacionCompleta extends JFrame {
                     sumaAcumulada += costosReplicas[replica][i];
                 }
 
-                // Calcular promedio: suma total / número de días transcurridos
+                // Calcular promedio acumulado: suma total / número de días transcurridos
                 double promedioAcumulado = sumaAcumulada / (dia + 1);
                 fila[replica + 1] = promedioAcumulado; // Guardar en fila (columnas 1-5)
             }
@@ -773,7 +774,6 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Crea el panel con estadísticas individuales de cada una de las 5 réplicas
-     *
      * @return Panel con estadísticas de las réplicas
      */
     private JPanel crearPanelEstadisticasReplicas() {
@@ -796,7 +796,6 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Genera estadísticas independientes para cada una de las 5 réplicas
-     *
      * @return Array con estadísticas de cada réplica
      */
     private EstadisticasSimulacion[] generarEstadisticasReplicas() {
@@ -813,9 +812,8 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Crea el panel individual con estadísticas de una réplica específica
-     *
      * @param numeroReplica Número de la réplica (1-5)
-     * @param stats         Estadísticas calculadas de la réplica
+     * @param stats Estadísticas calculadas de la réplica
      * @return Panel configurado con información de la réplica
      */
     private JPanel crearPanelReplicaIndividual(int numeroReplica, EstadisticasSimulacion stats) {
@@ -824,7 +822,9 @@ public class SimulacionCompleta extends JFrame {
         panelReplica.setLayout(new BoxLayout(panelReplica, BoxLayout.Y_AXIS));
 
         // Configurar borde con título
-        panelReplica.setBorder(BorderFactory.createTitledBorder(null, "Replica " + numeroReplica, javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.TOP, FUENTE_REPLICA, COLOR_PRIMARIO));
+        panelReplica.setBorder(BorderFactory.createTitledBorder(null, "Replica " + numeroReplica,
+            javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.TOP,
+            FUENTE_REPLICA, COLOR_PRIMARIO));
         panelReplica.setBackground(COLOR_PANEL_REPLICA); // Fondo azul muy claro
 
         // Crear array de etiquetas con estadísticas
@@ -844,13 +844,21 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Crea las etiquetas con estadísticas formateadas para una réplica
-     *
      * @param stats Estadísticas de la réplica
      * @return Array de etiquetas configuradas
      */
     private JLabel[] crearEtiquetasEstadisticas(EstadisticasSimulacion stats) {
         // Array de etiquetas: título y valor para cada estadística
-        JLabel[] labels = {new JLabel("Promedio", SwingConstants.CENTER), new JLabel(String.format("$%,.2f", stats.promedio), SwingConstants.CENTER), new JLabel("Desviación", SwingConstants.CENTER), new JLabel(String.format("$%,.2f", stats.desviacion), SwingConstants.CENTER), new JLabel("Min", SwingConstants.CENTER), new JLabel(String.format("$%,.2f", stats.minimo), SwingConstants.CENTER), new JLabel("Max", SwingConstants.CENTER), new JLabel(String.format("$%,.2f", stats.maximo), SwingConstants.CENTER)};
+        JLabel[] labels = {
+            new JLabel("Promedio", SwingConstants.CENTER),
+            new JLabel(String.format("$%,.2f", stats.promedio), SwingConstants.CENTER),
+            new JLabel("Desviación", SwingConstants.CENTER),
+            new JLabel(String.format("$%,.2f", stats.desviacion), SwingConstants.CENTER),
+            new JLabel("Min", SwingConstants.CENTER),
+            new JLabel(String.format("$%,.2f", stats.minimo), SwingConstants.CENTER),
+            new JLabel("Max", SwingConstants.CENTER),
+            new JLabel(String.format("$%,.2f", stats.maximo), SwingConstants.CENTER)
+        };
 
         // Aplicar fuente en negrita a los valores (índices impares)
         for (int j = 0; j < labels.length; j++) {
@@ -866,7 +874,6 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Crea la gráfica de evolución temporal de costos totales
-     *
      * @param costosTotales Array con costos de cada día
      * @return Gráfica configurada
      */
@@ -880,14 +887,15 @@ public class SimulacionCompleta extends JFrame {
         }
 
         // Crear gráfica de líneas
-        JFreeChart chart = ChartFactory.createLineChart("Evolución del Costo total ($) por Día", // Título
-                "Día", // Etiqueta eje X
-                "Costo total ($)", // Etiqueta eje Y
-                dataset, // Datos
-                PlotOrientation.VERTICAL, // Orientación vertical
-                false, // Sin leyenda
-                true, // Tooltips habilitados
-                false // URLs deshabilitadas
+        JFreeChart chart = ChartFactory.createLineChart(
+            "Evolución del Costo total ($) por Día", // Título
+            "Día", // Etiqueta eje X
+            "Costo total ($)", // Etiqueta eje Y
+            dataset, // Datos
+            PlotOrientation.VERTICAL, // Orientación vertical
+            false, // Sin leyenda
+            true, // Tooltips habilitados
+            false // URLs deshabilitadas
         );
 
         // Configurar apariencia
@@ -898,9 +906,8 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Crea la gráfica Q-Q plot para verificar normalidad
-     *
-     * @param data   Datos observados a analizar
-     * @param mean   Media de los datos
+     * @param data Datos observados a analizar
+     * @param mean Media de los datos
      * @param stdDev Desviación estándar de los datos
      * @return Gráfica de probabilidad normal
      */
@@ -929,14 +936,15 @@ public class SimulacionCompleta extends JFrame {
         dataset.addSeries(serieTeoricos); // Serie de línea teórica
 
         // Crear gráfica de dispersión
-        JFreeChart chart = ChartFactory.createScatterPlot("Gráfica Probabilidad Normal - Costo total", // Título
-                "Cuantiles teóricos (Normal)", // Etiqueta eje X
-                "Datos observados (Costo total)", // Etiqueta eje Y
-                dataset, // Datos
-                PlotOrientation.VERTICAL, // Orientación vertical
-                true, // Mostrar leyenda
-                true, // Tooltips habilitados
-                false // URLs deshabilitadas
+        JFreeChart chart = ChartFactory.createScatterPlot(
+            "Gráfica Probabilidad Normal - Costo total", // Título
+            "Cuantiles teóricos (Normal)", // Etiqueta eje X
+            "Datos observados (Costo total)", // Etiqueta eje Y
+            dataset, // Datos
+            PlotOrientation.VERTICAL, // Orientación vertical
+            true, // Mostrar leyenda
+            true, // Tooltips habilitados
+            false // URLs deshabilitadas
         );
 
         // Configurar apariencia
@@ -947,8 +955,7 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Configura la apariencia visual común de las gráficas
-     *
-     * @param chart  Gráfica a configurar
+     * @param chart Gráfica a configurar
      * @param titulo Título a aplicar
      */
     private void configurarAparienciaGrafica(JFreeChart chart, String titulo) {
@@ -995,7 +1002,6 @@ public class SimulacionCompleta extends JFrame {
 
     /**
      * Punto de entrada de la aplicación
-     *
      * @param args Argumentos de línea de comandos (no utilizados)
      */
     public static void main(String[] args) {
