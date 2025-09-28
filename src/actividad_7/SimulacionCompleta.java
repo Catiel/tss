@@ -39,18 +39,54 @@ public class SimulacionCompleta extends JFrame {
     private double pValue;
     private double valorAd;
 
+    // Constantes para evitar valores mágicos
+    private static final String[] COLUMNAS = {"Día", "Inventario inicial (Uds)", "Política de producción (Uds)",
+        "Total disponible (Uds)", "Rn", "Demanda (uds)", "Ventas (Uds)", "Ventas perdidas (uds)",
+        "Inventario final (Uds)", "Costo faltante ($)", "Costo de inventarios ($)", "Costo total ($)"};
+    private static final int[] ANCHOS_COLUMNAS = {50, 140, 150, 140, 70, 100, 100, 120, 130, 150, 170, 150};
+    private static final Color COLOR_PRIMARIO = new Color(30, 144, 255);
+    private static final Color COLOR_FILA_PAR = Color.WHITE;
+    private static final Color COLOR_FILA_IMPAR = new Color(235, 245, 255);
+
     public SimulacionCompleta() {
         super("Simulación de Inventario - Análisis Completo");
-        Font fuenteGeneral = new Font("Segoe UI", Font.PLAIN, 14);
-        Font fuenteTitulo = new Font("Segoe UI Semibold", Font.BOLD, 18);
-        Font fuenteHeader = new Font("Segoe UI", Font.BOLD, 15);
 
         int dias = 365;
 
-        String[] columnas = {"Día", "Inventario inicial (Uds)", "Política de producción (Uds)", "Total disponible (Uds)", "Rn", "Demanda (uds)", "Ventas (Uds)", "Ventas perdidas (uds)", "Inventario final (Uds)", "Costo faltante ($)", "Costo de inventarios ($)", "Costo total ($)"};
+        // Configurar tabla principal
+        configurarTabla();
 
-        model = new DefaultTableModel(columnas, 0);
+        // Simulación original con 365 días
+        double[] costosTotales = generarSimulacionYllenarTabla(dias, model);
+
+        // Cálculo estadístico
+        calcularEstadisticasYPruebas(costosTotales);
+
+        JPanel resumenPanel = crearResumenEstadisticoPanel(true, promedio, desviacion,
+            getMinMaxCosto(model)[0], getMinMaxCosto(model)[1]);
+
+        // Botón para generar tabla tamaño recomendado
+        JButton botonNuevaTabla = new JButton("Generar tabla tamaño recomendado");
+        botonNuevaTabla.setEnabled(esNormal);
+        resumenPanel.add(botonNuevaTabla);
+
+        // Configurar UI principal
+        configurarInterfazPrincipal(costosTotales, resumenPanel);
+
+        // Acción botón
+        botonNuevaTabla.addActionListener(this::generarTablaRecomendada);
+    }
+
+    private void configurarTabla() {
+        Font fuenteGeneral = new Font("Segoe UI", Font.PLAIN, 14);
+        Font fuenteHeader = new Font("Segoe UI", Font.BOLD, 15);
+
+        model = new DefaultTableModel(COLUMNAS, 0);
         tabla = new JTable(model);
+        configurarEstilosTabla(tabla, fuenteGeneral, fuenteHeader);
+    }
+
+    private void configurarEstilosTabla(JTable tabla, Font fuenteGeneral, Font fuenteHeader) {
         tabla.setFont(fuenteGeneral);
         tabla.setRowHeight(28);
         tabla.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
@@ -58,15 +94,40 @@ public class SimulacionCompleta extends JFrame {
         tabla.getTableHeader().setReorderingAllowed(false);
 
         JTableHeader header = tabla.getTableHeader();
-        header.setBackground(new Color(30, 144, 255));
+        header.setBackground(COLOR_PRIMARIO);
         header.setForeground(Color.WHITE);
         header.setFont(fuenteHeader);
         header.setPreferredSize(new Dimension(header.getWidth(), 32));
 
+        // Configurar renderizadores y anchos
+        configurarRenderizadoresYAnchos(tabla);
+    }
+
+    private void configurarRenderizadoresYAnchos(JTable tabla) {
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
 
-        DefaultTableCellRenderer moneyRenderer = new DefaultTableCellRenderer() {
+        DefaultTableCellRenderer moneyRenderer = crearRenderizadorMoneda();
+
+        for (int i = 0; i < COLUMNAS.length; i++) {
+            TableColumn col = tabla.getColumnModel().getColumn(i);
+            col.setPreferredWidth(ANCHOS_COLUMNAS[i]);
+            if (i >= 9) col.setCellRenderer(moneyRenderer);
+            else col.setCellRenderer(centerRenderer);
+        }
+
+        tabla.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable tbl, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component comp = super.getTableCellRendererComponent(tbl, value, isSelected, hasFocus, row, column);
+                if (!isSelected) comp.setBackground(row % 2 == 0 ? COLOR_FILA_PAR : COLOR_FILA_IMPAR);
+                return comp;
+            }
+        });
+    }
+
+    private DefaultTableCellRenderer crearRenderizadorMoneda() {
+        return new DefaultTableCellRenderer() {
             @Override
             public void setValue(Object value) {
                 if (value instanceof Number) {
@@ -80,59 +141,16 @@ public class SimulacionCompleta extends JFrame {
                 }
             }
         };
+    }
 
-        int[] anchos = {50, 140, 150, 140, 70, 100, 100, 120, 130, 150, 170, 150};
-        for (int i = 0; i < columnas.length; i++) {
-            TableColumn col = tabla.getColumnModel().getColumn(i);
-            col.setPreferredWidth(anchos[i]);
-            if (i >= 9) col.setCellRenderer(moneyRenderer);
-            else col.setCellRenderer(centerRenderer);
-        }
-
-        tabla.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable tbl, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                Component comp = super.getTableCellRendererComponent(tbl, value, isSelected, hasFocus, row, column);
-                if (!isSelected) comp.setBackground(row % 2 == 0 ? Color.WHITE : new Color(235, 245, 255));
-                return comp;
-            }
-        });
+    private void configurarInterfazPrincipal(double[] costosTotales, JPanel resumenPanel) {
+        Font fuenteTitulo = new Font("Segoe UI Semibold", Font.BOLD, 18);
 
         JScrollPane scrollPaneTabla = new JScrollPane(tabla);
         scrollPaneTabla.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Simulación original con 365 días
-        double[] costosTotales = generarSimulacionYllenarTabla(dias);
-
-        // Cálculo estadístico
-        calcularEstadisticasYPruebas(costosTotales);
-
-        JPanel resumenPanel = crearResumenEstadisticoPanel(true);
-
-        // Botón para generar tabla tamaño recomendado
-        JButton botonNuevaTabla = new JButton("Generar tabla tamaño recomendado");
-        botonNuevaTabla.setEnabled(esNormal);
-        resumenPanel.add(botonNuevaTabla);
-
         // Gráficos: evolución y probabilidad normal
-        JFreeChart chart1 = crearEvolucionGrafica(costosTotales);
-        JFreeChart chart2 = createNormalProbabilityPlot(costosTotales, promedio, desviacion);
-
-        ChartPanel chartPanel1 = new ChartPanel(chart1);
-        chartPanel1.setPreferredSize(new Dimension(1200, 300));
-        chartPanel1.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
-        chartPanel1.setBackground(Color.WHITE);
-
-        ChartPanel chartPanel2 = new ChartPanel(chart2);
-        chartPanel2.setPreferredSize(new Dimension(1200, 300));
-        chartPanel2.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
-        chartPanel2.setBackground(Color.WHITE);
-
-        JPanel graficasPanel = new JPanel(new GridLayout(1, 2, 15, 15));
-        graficasPanel.add(chartPanel1);
-        graficasPanel.add(chartPanel2);
-        graficasPanel.setBorder(BorderFactory.createTitledBorder(null, "Gráficas", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.TOP, fuenteTitulo, new Color(30, 144, 255)));
-        graficasPanel.setBackground(Color.WHITE);
+        JPanel graficasPanel = crearPanelGraficas(costosTotales, promedio, desviacion, fuenteTitulo);
 
         // Layout principal
         JPanel mainPanel = new JPanel(new BorderLayout(20, 20));
@@ -144,67 +162,115 @@ public class SimulacionCompleta extends JFrame {
         mainPanel.add(resumenPanel, BorderLayout.SOUTH);
 
         setContentPane(mainPanel);
-
         setSize(1400, 1000);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-
-        // Acción botón
-        botonNuevaTabla.addActionListener(this::generarTablaRecomendada);
     }
 
-    private double[] generarSimulacionYllenarTabla(int dias) {
-        model.setRowCount(0);
+    private JPanel crearPanelGraficas(double[] costosTotales, double promedio, double desviacion, Font fuenteTitulo) {
+        JFreeChart chart1 = crearEvolucionGrafica(costosTotales);
+        JFreeChart chart2 = createNormalProbabilityPlot(costosTotales, promedio, desviacion);
+
+        ChartPanel chartPanel1 = crearChartPanel(chart1);
+        ChartPanel chartPanel2 = crearChartPanel(chart2);
+
+        JPanel graficasPanel = new JPanel(new GridLayout(1, 2, 15, 15));
+        graficasPanel.add(chartPanel1);
+        graficasPanel.add(chartPanel2);
+        graficasPanel.setBorder(BorderFactory.createTitledBorder(null, "Gráficas",
+            javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.TOP,
+            fuenteTitulo, COLOR_PRIMARIO));
+        graficasPanel.setBackground(Color.WHITE);
+
+        return graficasPanel;
+    }
+
+    private ChartPanel crearChartPanel(JFreeChart chart) {
+        ChartPanel chartPanel = new ChartPanel(chart);
+        chartPanel.setPreferredSize(new Dimension(1200, 300));
+        chartPanel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        chartPanel.setBackground(Color.WHITE);
+        return chartPanel;
+    }
+
+    private double[] generarSimulacionYllenarTabla(int dias, DefaultTableModel modeloTabla) {
+        modeloTabla.setRowCount(0);
         int inventarioFinal = 0;
         NormalDistribution dist = new NormalDistribution(mediaDemanda, desviacionDemanda);
         Random random = new Random();
         double[] costosTotales = new double[dias];
 
         for (int dia = 1; dia <= dias; dia++) {
-            int inventarioInicial = inventarioFinal;
-            int totalDisponible = inventarioInicial + politicaProduccion;
-            double rn = random.nextDouble();
-            int demanda = (int) Math.round(dist.inverseCumulativeProbability(rn));
-            int ventas = Math.min(demanda, totalDisponible);
-            int ventasPerdidas = Math.max(0, demanda - ventas);
-            inventarioFinal = totalDisponible - ventas;
-            double costoFaltante = ventasPerdidas * costoFaltanteUnitario;
-            double costoInventario = inventarioFinal * costoInventarioUnitario;
-            double costoTotal = costoFaltante + costoInventario;
+            ResultadoSimulacion resultado = simularDia(inventarioFinal, dist, random);
+            costosTotales[dia - 1] = resultado.costoTotal;
+            inventarioFinal = resultado.inventarioFinal;
 
-            costosTotales[dia - 1] = costoTotal;
-
-            Object[] fila = {dia, inventarioInicial, politicaProduccion, totalDisponible, String.format("%.4f", rn), demanda, ventas, ventasPerdidas, inventarioFinal, costoFaltante, costoInventario, costoTotal};
-            model.addRow(fila);
+            Object[] fila = {dia, resultado.inventarioInicial, politicaProduccion, resultado.totalDisponible,
+                String.format("%.4f", resultado.rn), resultado.demanda, resultado.ventas, resultado.ventasPerdidas,
+                resultado.inventarioFinal, resultado.costoFaltante, resultado.costoInventario, resultado.costoTotal};
+            modeloTabla.addRow(fila);
         }
         return costosTotales;
     }
 
+    private ResultadoSimulacion simularDia(int inventarioFinalAnterior, NormalDistribution dist, Random random) {
+        ResultadoSimulacion resultado = new ResultadoSimulacion();
+        resultado.inventarioInicial = inventarioFinalAnterior;
+        resultado.totalDisponible = resultado.inventarioInicial + politicaProduccion;
+        resultado.rn = random.nextDouble();
+        resultado.demanda = (int) Math.round(dist.inverseCumulativeProbability(resultado.rn));
+        resultado.ventas = Math.min(resultado.demanda, resultado.totalDisponible);
+        resultado.ventasPerdidas = Math.max(0, resultado.demanda - resultado.ventas);
+        resultado.inventarioFinal = resultado.totalDisponible - resultado.ventas;
+        resultado.costoFaltante = resultado.ventasPerdidas * costoFaltanteUnitario;
+        resultado.costoInventario = resultado.inventarioFinal * costoInventarioUnitario;
+        resultado.costoTotal = resultado.costoFaltante + resultado.costoInventario;
+        return resultado;
+    }
+
+    private EstadisticasSimulacion calcularEstadisticas(double[] costosTotales) {
+        EstadisticasSimulacion stats = new EstadisticasSimulacion();
+        stats.suma = Arrays.stream(costosTotales).sum();
+        stats.sumaCuadrados = Arrays.stream(costosTotales).map(x -> x * x).sum();
+        stats.promedio = stats.suma / costosTotales.length;
+        stats.varianza = (stats.sumaCuadrados / costosTotales.length) - (stats.promedio * stats.promedio);
+        stats.desviacion = Math.sqrt(stats.varianza);
+        stats.minimo = Arrays.stream(costosTotales).min().orElse(Double.NaN);
+        stats.maximo = Arrays.stream(costosTotales).max().orElse(Double.NaN);
+        return stats;
+    }
+
     private void calcularEstadisticasYPruebas(double[] costosTotales) {
-        double sumaCostoTotal = Arrays.stream(costosTotales).sum();
-        double sumaCuadrados = Arrays.stream(costosTotales).map(x -> x * x).sum();
-        promedio = sumaCostoTotal / costosTotales.length;
-        double varianza = (sumaCuadrados / costosTotales.length) - (promedio * promedio);
-        desviacion = Math.sqrt(varianza);
-        pValue = new KolmogorovSmirnovTest().kolmogorovSmirnovTest(new NormalDistribution(promedio, desviacion), costosTotales, false);
+        EstadisticasSimulacion stats = calcularEstadisticas(costosTotales);
+        promedio = stats.promedio;
+        desviacion = stats.desviacion;
+
+        pValue = new KolmogorovSmirnovTest().kolmogorovSmirnovTest(
+            new NormalDistribution(promedio, desviacion), costosTotales, false);
         esNormal = pValue > 0.05;
         tamanoRecomendado = esNormal ? (int) Math.ceil(Math.pow((desviacion / errorPermitido) * valorT, 2)) : -1;
         valorAd = pValue; // Simulado, para mantener variable
     }
 
-    private JPanel crearResumenEstadisticoPanel(boolean incluirTamano) {
+    private JPanel crearResumenEstadisticoPanel(boolean incluirTamano, double promedio, double desviacion, double minimo, double maximo) {
         JPanel resumenPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
         Font fuenteTitulo = new Font("Segoe UI Semibold", Font.BOLD, 18);
-        resumenPanel.setBorder(BorderFactory.createTitledBorder(null, "Resumen Estadístico y Normalidad", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.TOP, fuenteTitulo, new Color(30, 144, 255)));
+        String titulo = incluirTamano ? "Resumen Estadístico y Normalidad" : "Resumen Estadístico";
+
+        resumenPanel.setBorder(BorderFactory.createTitledBorder(null, titulo,
+            javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.TOP,
+            fuenteTitulo, COLOR_PRIMARIO));
         resumenPanel.setBackground(Color.WHITE);
 
         resumenPanel.add(createSummaryLabel(String.format("Promedio: $%,.2f", promedio)));
         resumenPanel.add(createSummaryLabel(String.format("Desviación: $%,.2f", desviacion)));
-        resumenPanel.add(createSummaryLabel(String.format("Mínimo: $%,.2f", getMinCosto())));
-        resumenPanel.add(createSummaryLabel(String.format("Máximo: $%,.2f", getMaxCosto())));
-        resumenPanel.add(createSummaryLabel(String.format("Valor AD (simulado): %.4f", valorAd)));
-        resumenPanel.add(createSummaryLabel(String.format("p-valor KS: %.4f", pValue)));
+        resumenPanel.add(createSummaryLabel(String.format("Mínimo: $%,.2f", minimo)));
+        resumenPanel.add(createSummaryLabel(String.format("Máximo: $%,.2f", maximo)));
+
         if (incluirTamano) {
+            resumenPanel.add(createSummaryLabel(String.format("Valor AD (simulado): %.4f", valorAd)));
+            resumenPanel.add(createSummaryLabel(String.format("p-valor KS: %.4f", pValue)));
+
             if (esNormal) {
                 resumenPanel.add(createSummaryLabel(String.format("Tamaño recomendado: %d corridas", tamanoRecomendado)));
             } else {
@@ -214,24 +280,17 @@ public class SimulacionCompleta extends JFrame {
         return resumenPanel;
     }
 
-    private double getMinCosto() {
-        int filas = model.getRowCount();
+    private double[] getMinMaxCosto(DefaultTableModel modelo) {
+        int filas = modelo.getRowCount();
         double min = Double.MAX_VALUE;
-        for (int i = 0; i < filas; i++) {
-            double val = (double) model.getValueAt(i, 11);
-            if (val < min) min = val;
-        }
-        return min;
-    }
-
-    private double getMaxCosto() {
-        int filas = model.getRowCount();
         double max = Double.MIN_VALUE;
+
         for (int i = 0; i < filas; i++) {
-            double val = (double) model.getValueAt(i, 11);
+            double val = (double) modelo.getValueAt(i, 11);
+            if (val < min) min = val;
             if (val > max) max = val;
         }
-        return max;
+        return new double[]{min, max};
     }
 
     private void generarTablaRecomendada(ActionEvent e) {
@@ -239,113 +298,29 @@ public class SimulacionCompleta extends JFrame {
 
         JFrame frameNuevaTabla = new JFrame("Simulación tamaño recomendado - " + tamanoRecomendado + " corridas");
         Font fuenteGeneral = new Font("Segoe UI", Font.PLAIN, 14);
+        Font fuenteHeader = new Font("Segoe UI", Font.BOLD, 15);
         Font fuenteTitulo = new Font("Segoe UI Semibold", Font.BOLD, 18);
 
-        String[] columnas = {"Día", "Inventario inicial (Uds)", "Política de producción (Uds)", "Total disponible (Uds)", "Rn", "Demanda (uds)", "Ventas (Uds)", "Ventas perdidas (uds)", "Inventario final (Uds)", "Costo faltante ($)", "Costo de inventarios ($)", "Costo total ($)"};
-        DefaultTableModel nuevoModel = new DefaultTableModel(columnas, 0);
+        // Crear y configurar nueva tabla
+        DefaultTableModel nuevoModel = new DefaultTableModel(COLUMNAS, 0);
         JTable nuevaTabla = new JTable(nuevoModel);
-        nuevaTabla.setFont(fuenteGeneral);
-        nuevaTabla.setRowHeight(28);
-        nuevaTabla.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        nuevaTabla.getTableHeader().setReorderingAllowed(false);
-        nuevaTabla.setFillsViewportHeight(true);
-
-        // Configurar anchos y renderizadores idénticos a la principal
-        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
-        centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
-        DefaultTableCellRenderer moneyRenderer = new DefaultTableCellRenderer() {
-            @Override
-            public void setValue(Object value) {
-                if (value instanceof Number) {
-                    setHorizontalAlignment(SwingConstants.RIGHT);
-                    setText(String.format("$%,.2f", value));
-                } else if (value instanceof String) {
-                    setHorizontalAlignment(SwingConstants.RIGHT);
-                    setText(value.toString());
-                } else {
-                    super.setValue(value);
-                }
-            }
-        };
-        int[] anchos = {50, 140, 150, 140, 70, 100, 100, 120, 130, 150, 170, 150};
-        for (int i = 0; i < columnas.length; i++) {
-            TableColumn col = nuevaTabla.getColumnModel().getColumn(i);
-            col.setPreferredWidth(anchos[i]);
-            if (i >= 9) col.setCellRenderer(moneyRenderer);
-            else col.setCellRenderer(centerRenderer);
-        }
-        nuevaTabla.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable tbl, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                Component comp = super.getTableCellRendererComponent(tbl, value, isSelected, hasFocus, row, column);
-                if (!isSelected) comp.setBackground(row % 2 == 0 ? Color.WHITE : new Color(235, 245, 255));
-                return comp;
-            }
-        });
+        configurarEstilosTabla(nuevaTabla, fuenteGeneral, fuenteHeader);
 
         JScrollPane scroll = new JScrollPane(nuevaTabla);
         scroll.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Simulación tamaño recomendado igual que original
-        int inventarioFinalLocal = 0;
-        NormalDistribution dist = new NormalDistribution(mediaDemanda, desviacionDemanda);
-        Random random = new Random();
-        double[] costosTotalesNueva = new double[tamanoRecomendado];
+        // Generar simulación para tamaño recomendado
+        double[] costosTotalesNueva = generarSimulacionYllenarTabla(tamanoRecomendado, nuevoModel);
+        EstadisticasSimulacion statsNueva = calcularEstadisticas(costosTotalesNueva);
 
-        for (int dia = 1; dia <= tamanoRecomendado; dia++) {
-            int inventarioInicial = inventarioFinalLocal;
-            int totalDisponible = inventarioInicial + politicaProduccion;
-            double rn = random.nextDouble();
-            int demanda = (int) Math.round(dist.inverseCumulativeProbability(rn));
-            int ventas = Math.min(demanda, totalDisponible);
-            int ventasPerdidas = Math.max(0, demanda - ventas);
-            inventarioFinalLocal = totalDisponible - ventas;
-            double costoFaltante = ventasPerdidas * costoFaltanteUnitario;
-            double costoInventario = inventarioFinalLocal * costoInventarioUnitario;
-            double costoTotal = costoFaltante + costoInventario;
+        // Crear paneles de resumen y gráficas
+        JPanel resumenPanelNueva = crearResumenEstadisticoPanel(false, statsNueva.promedio,
+            statsNueva.desviacion, statsNueva.minimo, statsNueva.maximo);
 
-            costosTotalesNueva[dia - 1] = costoTotal;
+        JPanel graficasPanelNueva = crearPanelGraficas(costosTotalesNueva, statsNueva.promedio,
+            statsNueva.desviacion, fuenteTitulo);
 
-            Object[] fila = {dia, inventarioInicial, politicaProduccion, totalDisponible, String.format("%.4f", rn), demanda, ventas, ventasPerdidas, inventarioFinalLocal, costoFaltante, costoInventario, costoTotal};
-            nuevoModel.addRow(fila);
-        }
-
-        double sumaCostoTotalNueva = Arrays.stream(costosTotalesNueva).sum();
-        double sumaCuadradosNueva = Arrays.stream(costosTotalesNueva).map(x -> x * x).sum();
-        double promedioNueva = sumaCostoTotalNueva / costosTotalesNueva.length;
-        double varianzaNueva = (sumaCuadradosNueva / costosTotalesNueva.length) - (promedioNueva * promedioNueva);
-        double desviacionNueva = Math.sqrt(varianzaNueva);
-        double minNuevo = Arrays.stream(costosTotalesNueva).min().orElse(Double.NaN);
-        double maxNuevo = Arrays.stream(costosTotalesNueva).max().orElse(Double.NaN);
-
-        JPanel resumenPanelNueva = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
-        resumenPanelNueva.setBorder(BorderFactory.createTitledBorder(null, "Resumen Estadístico", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.TOP, fuenteTitulo, new Color(30, 144, 255)));
-        resumenPanelNueva.setBackground(Color.WHITE);
-
-        resumenPanelNueva.add(createSummaryLabel(String.format("Promedio: $%,.2f", promedioNueva)));
-        resumenPanelNueva.add(createSummaryLabel(String.format("Desviación: $%,.2f", desviacionNueva)));
-        resumenPanelNueva.add(createSummaryLabel(String.format("Mínimo: $%,.2f", minNuevo)));
-        resumenPanelNueva.add(createSummaryLabel(String.format("Máximo: $%,.2f", maxNuevo)));
-
-        JFreeChart chart1 = crearEvolucionGrafica(costosTotalesNueva);
-        JFreeChart chart2 = createNormalProbabilityPlot(costosTotalesNueva, promedioNueva, desviacionNueva);
-
-        ChartPanel chartPanel1Nueva = new ChartPanel(chart1);
-        chartPanel1Nueva.setPreferredSize(new Dimension(1200, 300));
-        chartPanel1Nueva.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
-        chartPanel1Nueva.setBackground(Color.WHITE);
-
-        ChartPanel chartPanel2Nueva = new ChartPanel(chart2);
-        chartPanel2Nueva.setPreferredSize(new Dimension(1200, 300));
-        chartPanel2Nueva.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
-        chartPanel2Nueva.setBackground(Color.WHITE);
-
-        JPanel graficasPanelNueva = new JPanel(new GridLayout(1, 2, 15, 15));
-        graficasPanelNueva.add(chartPanel1Nueva);
-        graficasPanelNueva.add(chartPanel2Nueva);
-        graficasPanelNueva.setBorder(BorderFactory.createTitledBorder(null, "Gráficas", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.TOP, fuenteTitulo, new Color(30, 144, 255)));
-        graficasPanelNueva.setBackground(Color.WHITE);
-
+        // Configurar ventana
         frameNuevaTabla.setLayout(new BorderLayout(10, 10));
         frameNuevaTabla.add(scroll, BorderLayout.NORTH);
         frameNuevaTabla.add(graficasPanelNueva, BorderLayout.CENTER);
@@ -356,18 +331,19 @@ public class SimulacionCompleta extends JFrame {
         frameNuevaTabla.setVisible(true);
     }
 
-
     private JFreeChart crearEvolucionGrafica(double[] costosTotales) {
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
         for (int i = 0; i < costosTotales.length; i++) {
             dataset.addValue(costosTotales[i], "Costo total", Integer.toString(i + 1));
         }
 
-        JFreeChart chart = ChartFactory.createLineChart("Evolución del Costo total ($) por Día", "Día", "Costo total ($)", dataset, PlotOrientation.VERTICAL, false, true, false);
+        JFreeChart chart = ChartFactory.createLineChart("Evolución del Costo total ($) por Día",
+            "Día", "Costo total ($)", dataset, PlotOrientation.VERTICAL, false, true, false);
 
         chart.setBackgroundPaint(Color.white);
-        TextTitle textTitle = new TextTitle("Evolución del Costo total ($) por Día", new Font("Segoe UI Semibold", Font.BOLD, 18));
-        textTitle.setPaint(new Color(30, 144, 255));
+        TextTitle textTitle = new TextTitle("Evolución del Costo total ($) por Día",
+            new Font("Segoe UI Semibold", Font.BOLD, 18));
+        textTitle.setPaint(COLOR_PRIMARIO);
         chart.setTitle(textTitle);
 
         return chart;
@@ -392,11 +368,13 @@ public class SimulacionCompleta extends JFrame {
         dataset.addSeries(serieObservados);
         dataset.addSeries(serieTeoricos);
 
-        JFreeChart chart = ChartFactory.createScatterPlot("Gráfica Probabilidad Normal - Costo total", "Cuantiles teóricos (Normal)", "Datos observados (Costo total)", dataset, PlotOrientation.VERTICAL, true, true, false);
+        JFreeChart chart = ChartFactory.createScatterPlot("Gráfica Probabilidad Normal - Costo total",
+            "Cuantiles teóricos (Normal)", "Datos observados (Costo total)", dataset,
+            PlotOrientation.VERTICAL, true, true, false);
 
         chart.setBackgroundPaint(Color.WHITE);
         chart.getTitle().setFont(new Font("Segoe UI Semibold", Font.BOLD, 18));
-        chart.getTitle().setPaint(new Color(30, 144, 255));
+        chart.getTitle().setPaint(COLOR_PRIMARIO);
         return chart;
     }
 
@@ -405,6 +383,16 @@ public class SimulacionCompleta extends JFrame {
         label.setFont(new Font("Segoe UI", Font.PLAIN, 16));
         label.setForeground(new Color(50, 50, 50));
         return label;
+    }
+
+    // Clases auxiliares para organizar datos
+    private static class ResultadoSimulacion {
+        int inventarioInicial, totalDisponible, demanda, ventas, ventasPerdidas, inventarioFinal;
+        double rn, costoFaltante, costoInventario, costoTotal;
+    }
+
+    private static class EstadisticasSimulacion {
+        double suma, sumaCuadrados, promedio, varianza, desviacion, minimo, maximo;
     }
 
     public static void main(String[] args) {
