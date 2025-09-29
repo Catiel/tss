@@ -55,7 +55,8 @@ public class SimulacionCompleta extends JFrame {
             minMax[0], minMax[1], motorSimulacion.getValorAd(), motorSimulacion.getPValue(),
             motorSimulacion.isEsNormal(), motorSimulacion.getTamanoRecomendado());
         JButton botonNuevaTabla = new JButton("Generar tabla tamaño recomendado");
-        botonNuevaTabla.setEnabled(motorSimulacion.isEsNormal());
+        // CAMBIO MÍNIMO: Habilitar botón tanto para normales como no normales
+        botonNuevaTabla.setEnabled(motorSimulacion.getTamanoRecomendado() > 0);
         resumenPanel.add(botonNuevaTabla);
 
         // Panel de gráficas
@@ -89,7 +90,8 @@ public class SimulacionCompleta extends JFrame {
                 minMax2[0], minMax2[1], motorSimulacion.getValorAd(), motorSimulacion.getPValue(),
                 motorSimulacion.isEsNormal(), motorSimulacion.getTamanoRecomendado());
             JButton nuevoBoton = new JButton("Generar tabla tamaño recomendado");
-            nuevoBoton.setEnabled(motorSimulacion.isEsNormal());
+            // CAMBIO MÍNIMO: Habilitar botón tanto para normales como no normales
+            nuevoBoton.setEnabled(motorSimulacion.getTamanoRecomendado() > 0);
             nuevoResumen.add(nuevoBoton);
             JPanel nuevasGraficas = GeneradorGraficas.crearPanelGraficas(nuevosCostos,
                 motorSimulacion.getPromedio(), motorSimulacion.getDesviacion());
@@ -142,7 +144,7 @@ public class SimulacionCompleta extends JFrame {
      * Maneja la acción de generar una nueva tabla con el tamaño recomendado
      */
     private void generarTablaRecomendada(ActionEvent e) {
-        if (!motorSimulacion.isEsNormal() || motorSimulacion.getTamanoRecomendado() < 1) return;
+        if (motorSimulacion.getTamanoRecomendado() < 1) return;
 
         JFrame frameNuevaTabla = new JFrame("Simulación tamaño recomendado - " +
             motorSimulacion.getTamanoRecomendado() + " corridas");

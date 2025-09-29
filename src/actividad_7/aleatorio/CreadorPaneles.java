@@ -36,10 +36,11 @@ public class CreadorPaneles {
             resumenPanel.add(crearEtiquetaResumen(String.format("Valor AD (simulado): %.4f", valorAd)));
             resumenPanel.add(crearEtiquetaResumen(String.format("p-valor KS: %.4f", pValue)));
 
+            // CAMBIO MÍNIMO: Mostrar si es normal o no y el tamaño recomendado
             if (esNormal) {
-                resumenPanel.add(crearEtiquetaResumen(String.format("Tamaño recomendado: %d corridas", tamanoRecomendado)));
+                resumenPanel.add(crearEtiquetaResumen(String.format("Tamaño recomendado: %d corridas (Normal)", tamanoRecomendado)));
             } else {
-                resumenPanel.add(crearEtiquetaResumen("No se recomienda tamaño (No normal)"));
+                resumenPanel.add(crearEtiquetaResumen(String.format("Tamaño recomendado: %d corridas (No Normal)", tamanoRecomendado)));
             }
         }
 

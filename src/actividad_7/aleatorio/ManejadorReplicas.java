@@ -83,6 +83,7 @@ public class ManejadorReplicas {
 
     /**
      * Crea el panel con resumen estadístico de las 5 réplicas
+     * MODIFICADO: Solo cambia el cálculo de intervalos para casos NO normales
      */
     private JPanel crearPanelResumenEstadistico(double[][] costosReplicas) {
         // Calcular promedio final de cada réplica
@@ -109,13 +110,23 @@ public class ManejadorReplicas {
         }
         double desviacionEstandarPromedios = Math.sqrt(sumaCuadradosDesviacion / 4); // n-1 = 4
 
-        // Calcular intervalos de confianza (95%, t con 4 grados de libertad)
-        double valorT = 2.776; // t(0.025, 4) para 95% confianza con 4 grados de libertad
-        double errorEstandar = desviacionEstandarPromedios / Math.sqrt(5);
-        double margenError = errorEstandar * valorT;
+        // CAMBIO PRINCIPAL: Calcular intervalos según normalidad
+        double intervaloInferior, intervaloSuperior;
 
-        double intervaloInferior = promedioGeneral - margenError;
-        double intervaloSuperior = promedioGeneral + margenError;
+        if (motorSimulacion.isEsNormal()) {
+            // CASO NORMAL: usar distribución t (código original)
+            double valorT = 2.776; // t(0.025, 4) para 95% confianza con 4 grados de libertad
+            double errorEstandar = desviacionEstandarPromedios / Math.sqrt(5);
+            double margenError = errorEstandar * valorT;
+
+            intervaloInferior = promedioGeneral - margenError;
+            intervaloSuperior = promedioGeneral + margenError;
+        } else {
+            // CASO NO NORMAL: usar la nueva fórmula
+            double[] intervalos = motorSimulacion.calcularIntervalosConfianzaNoNormal(promediosFinales);
+            intervaloInferior = intervalos[0];
+            intervaloSuperior = intervalos[1];
+        }
 
         // Panel principal del resumen
         JPanel panelResumen = new JPanel(new BorderLayout(15, 10));

@@ -129,10 +129,43 @@ public class MotorSimulacion {
         // Determinar si los datos siguen distribución normal (α = 0.05)
         esNormal = pValue > 0.05;
 
-        // Calcular tamaño de muestra recomendado usando fórmula estadística
-        tamanoRecomendado = esNormal ? (int) Math.ceil(Math.pow((desviacion / Constantes.ERROR_PERMITIDO) * Constantes.VALOR_T, 2)) : -1;
+        if (esNormal) {
+            // CASO NORMAL: Usar fórmula existente
+            tamanoRecomendado = (int) Math.ceil(Math.pow((desviacion / Constantes.ERROR_PERMITIDO) * Constantes.VALOR_T, 2));
+        } else {
+            // CASO NO NORMAL: Usar fórmula n = (1/α × s/ε)²
+            double alfa = 0.05;
+            tamanoRecomendado = (int) Math.ceil(Math.pow((1.0/alfa) * (desviacion / Constantes.ERROR_PERMITIDO), 2));
+        }
 
         valorAd = pValue; // Mantener compatibilidad (simulado)
+    }
+
+    /**
+     * Calcula intervalos de confianza para réplicas (casos NO normales)
+     */
+    public double[] calcularIntervalosConfianzaNoNormal(double[] promediosReplicas) {
+        int r = promediosReplicas.length; // Número de réplicas = 5
+        double alfa = 0.05;
+
+        // Calcular promedio de las réplicas
+        double sumaReplicas = Arrays.stream(promediosReplicas).sum();
+        double promedioReplicas = sumaReplicas / r;
+
+        // Calcular desviación estándar de las réplicas
+        double sumaCuadrados = Arrays.stream(promediosReplicas)
+            .map(x -> Math.pow(x - promedioReplicas, 2))
+            .sum();
+        double desviacionReplicas = Math.sqrt(sumaCuadrados / (r - 1));
+
+        // Fórmula NO NORMAL: IC = x̄ ± s/√(rα/2)
+        double denominador = Math.sqrt(r * alfa / 2);
+        double margenError = desviacionReplicas / denominador;
+
+        double intervaloInferior = promedioReplicas - margenError;
+        double intervaloSuperior = promedioReplicas + margenError;
+
+        return new double[]{intervaloInferior, intervaloSuperior};
     }
 
     /**
