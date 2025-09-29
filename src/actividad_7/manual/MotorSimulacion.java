@@ -30,18 +30,19 @@ public class MotorSimulacion {
 
     /**
      * Ejecuta la simulación completa y llena la tabla con los resultados
+     * MODIFICADO: Ahora recibe un array de valores Rn manuales
      */
-    public double[] generarSimulacionYllenarTabla(int dias, DefaultTableModel modeloTabla) {
+    public double[] generarSimulacionYllenarTabla(int dias, DefaultTableModel modeloTabla, double[] valoresRn) {
         modeloTabla.setRowCount(0); // Limpiar tabla existente
         int inventarioFinal = 0; // Inventario inicial es cero al comenzar
         NormalDistribution dist = new NormalDistribution(Constantes.MEDIA_DEMANDA, Constantes.DESVIACION_DEMANDA);
-        Random random = new Random();
         double[] costosTotales = new double[dias];
 
-        // Simular cada día individualmente
+        // Simular cada día individualmente usando los valores Rn proporcionados
         for (int dia = 1; dia <= dias; dia++) {
+            double rnManual = valoresRn[dia - 1]; // Usar valor Rn manual
             // Simular un día y obtener todos los resultados
-            ModelosDeDatos.ResultadoSimulacion resultado = simularDia(inventarioFinal, dist, random);
+            ModelosDeDatos.ResultadoSimulacion resultado = simularDiaConRnManual(inventarioFinal, dist, rnManual);
             costosTotales[dia - 1] = resultado.costoTotal; // Guardar costo total (índice base 0)
             inventarioFinal = resultado.inventarioFinal; // El inventario final se convierte en inicial del siguiente día
 
@@ -66,7 +67,49 @@ public class MotorSimulacion {
     }
 
     /**
-     * Simula las operaciones de un día específico
+     * Versión original del método para mantener compatibilidad con réplicas (usa valores aleatorios)
+     */
+    public double[] generarSimulacionYllenarTabla(int dias, DefaultTableModel modeloTabla) {
+        // Generar valores Rn aleatorios para mantener compatibilidad
+        Random random = new Random();
+        double[] valoresRnAleatorios = new double[dias];
+        for (int i = 0; i < dias; i++) {
+            valoresRnAleatorios[i] = random.nextDouble();
+        }
+        return generarSimulacionYllenarTabla(dias, modeloTabla, valoresRnAleatorios);
+    }
+
+    /**
+     * Simula las operaciones de un día específico usando un valor Rn manual
+     * NUEVO MÉTODO: Simula un día con valor Rn proporcionado manualmente
+     */
+    public ModelosDeDatos.ResultadoSimulacion simularDiaConRnManual(int inventarioFinalAnterior,
+            NormalDistribution dist, double rnManual) {
+        ModelosDeDatos.ResultadoSimulacion resultado = new ModelosDeDatos.ResultadoSimulacion();
+
+        // Valores iniciales del día
+        resultado.inventarioInicial = inventarioFinalAnterior;
+        resultado.totalDisponible = resultado.inventarioInicial + Constantes.POLITICA_PRODUCCION;
+
+        // Usar el valor Rn manual proporcionado
+        resultado.rn = rnManual;
+        resultado.demanda = (int) Math.round(dist.inverseCumulativeProbability(resultado.rn));
+
+        // Cálculos de ventas y faltantes
+        resultado.ventas = Math.min(resultado.demanda, resultado.totalDisponible);
+        resultado.ventasPerdidas = Math.max(0, resultado.demanda - resultado.ventas);
+        resultado.inventarioFinal = resultado.totalDisponible - resultado.ventas;
+
+        // Cálculos de costos
+        resultado.costoFaltante = resultado.ventasPerdidas * Constantes.COSTO_FALTANTE_UNITARIO;
+        resultado.costoInventario = resultado.inventarioFinal * Constantes.COSTO_INVENTARIO_UNITARIO;
+        resultado.costoTotal = resultado.costoFaltante + resultado.costoInventario;
+
+        return resultado;
+    }
+
+    /**
+     * Simula las operaciones de un día específico (versión original con Random)
      */
     public ModelosDeDatos.ResultadoSimulacion simularDia(int inventarioFinalAnterior, NormalDistribution dist, Random random) {
         ModelosDeDatos.ResultadoSimulacion resultado = new ModelosDeDatos.ResultadoSimulacion();

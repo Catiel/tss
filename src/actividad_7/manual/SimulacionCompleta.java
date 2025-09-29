@@ -11,6 +11,7 @@ import java.awt.event.ActionEvent;
 /**
  * Clase principal que simula un sistema de inventario con análisis estadístico completo
  * Incluye análisis de normalidad, cálculo de tamaño de muestra y generación de réplicas
+ * MODIFICADO: Permite entrada manual de valores Rn
  */
 public class SimulacionCompleta extends JFrame {
 
@@ -24,30 +25,28 @@ public class SimulacionCompleta extends JFrame {
     // Referencia al panel central actual para reemplazo seguro
     private JPanel panelCentralActual;
 
+    // NUEVO: Array para almacenar valores Rn manuales
+    private double[] valoresRnManuales;
+
     /**
      * Constructor que inicializa la ventana principal con simulación de 365 días
      */
     public SimulacionCompleta() {
-        super("Simulación de Inventario - Análisis Completo");
+        super("Simulación de Inventario - Análisis Completo (Entrada Manual Rn)");
 
         int dias = 365;
         motorSimulacion = new MotorSimulacion();
 
         // Panel superior para controles
-        JPanel panelControles = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        panelControles.setBorder(new EmptyBorder(10, 10, 10, 10));
-        panelControles.add(new JLabel("Política de producción: "));
-        JComboBox<Integer> comboPolitica = new JComboBox<>();
-        for (int op : Constantes.OPCIONES_POLITICA) {
-            comboPolitica.addItem(op);
-        }
-        comboPolitica.setSelectedItem(Constantes.POLITICA_PRODUCCION);
-        panelControles.add(comboPolitica);
+        JPanel panelControles = crearPanelControles(dias);
 
         configurarTabla();
 
-        // Ejecutar simulación completa de 365 días
-        double[] costosTotales = motorSimulacion.generarSimulacionYllenarTabla(dias, model);
+        // MODIFICADO: Solicitar valores Rn manuales al inicio
+        solicitarValoresRnManuales(dias);
+
+        // Ejecutar simulación completa de 365 días con valores manuales
+        double[] costosTotales = motorSimulacion.generarSimulacionYllenarTabla(dias, model, valoresRnManuales);
         motorSimulacion.calcularEstadisticasYPruebas(costosTotales);
         double[] minMax = CreadorPaneles.getMinMaxCosto(model);
         JPanel resumenPanel = CreadorPaneles.crearResumenEstadisticoPanel(true,
@@ -76,41 +75,162 @@ public class SimulacionCompleta extends JFrame {
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
 
-        // Acción al cambiar la política
-        comboPolitica.addActionListener(e -> {
-            int nuevaPolitica = (int) comboPolitica.getSelectedItem();
-            Constantes.setPoliticaProduccion(nuevaPolitica);
-            // Volver a ejecutar la simulación con la nueva política
-            model.setRowCount(0);
-            double[] nuevosCostos = motorSimulacion.generarSimulacionYllenarTabla(dias, model);
-            motorSimulacion.calcularEstadisticasYPruebas(nuevosCostos);
-            double[] minMax2 = CreadorPaneles.getMinMaxCosto(model);
-            JPanel nuevoResumen = CreadorPaneles.crearResumenEstadisticoPanel(true,
-                motorSimulacion.getPromedio(), motorSimulacion.getDesviacion(),
-                minMax2[0], minMax2[1], motorSimulacion.getValorAd(), motorSimulacion.getPValue(),
-                motorSimulacion.isEsNormal(), motorSimulacion.getTamanoRecomendado());
-            JButton nuevoBoton = new JButton("Generar tabla tamaño recomendado");
-            // CAMBIO MÍNIMO: Habilitar botón tanto para normales como no normales
-            nuevoBoton.setEnabled(motorSimulacion.getTamanoRecomendado() > 0);
-            nuevoResumen.add(nuevoBoton);
-            JPanel nuevasGraficas = GeneradorGraficas.crearPanelGraficas(nuevosCostos,
-                motorSimulacion.getPromedio(), motorSimulacion.getDesviacion());
-            JScrollPane nuevoScroll = new JScrollPane(tabla);
-            nuevoScroll.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-            JPanel nuevoMainPanel = CreadorPaneles.crearPanelPrincipal(nuevasGraficas, nuevoScroll, nuevoResumen);
-            // Remover el panel central actual y agregar el nuevo
-            panelConControles.remove(panelCentralActual);
-            panelConControles.add(nuevoMainPanel, BorderLayout.CENTER);
-            panelConControles.revalidate();
-            panelConControles.repaint();
-            // Actualizar referencia
-            panelCentralActual = nuevoMainPanel;
-            // Asignar acción al nuevo botón
-            nuevoBoton.addActionListener(this::generarTablaRecomendada);
-        });
-
         // Asignar acción al botón
         botonNuevaTabla.addActionListener(this::generarTablaRecomendada);
+
+        // Configurar acciones de los controles en el constructor
+        configurarAccionesControles(panelControles, dias);
+    }
+
+    /**
+     * NUEVO: Crea el panel de controles con botones adicionales
+     */
+    private JPanel crearPanelControles(int dias) {
+        JPanel panelControles = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+        panelControles.setBorder(new EmptyBorder(10, 10, 10, 10));
+        panelControles.setBackground(Color.WHITE);
+
+        // Control de política de producción
+        panelControles.add(new JLabel("Política de producción: "));
+        JComboBox<Integer> comboPolitica = new JComboBox<>();
+        for (int op : Constantes.OPCIONES_POLITICA) {
+            comboPolitica.addItem(op);
+        }
+        comboPolitica.setSelectedItem(Constantes.POLITICA_PRODUCCION);
+        comboPolitica.setName("comboPolitica");
+        panelControles.add(comboPolitica);
+
+        // Separador
+        panelControles.add(Box.createHorizontalStrut(20));
+
+        // NUEVO: Botón para modificar valores Rn
+        JButton botonModificarRn = new JButton("Modificar Valores Rn");
+        botonModificarRn.setFont(Constantes.FUENTE_GENERAL);
+        botonModificarRn.setBackground(new Color(40, 167, 69));
+        botonModificarRn.setForeground(Color.WHITE);
+        botonModificarRn.setFocusPainted(false);
+        botonModificarRn.setName("botonModificarRn");
+        panelControles.add(botonModificarRn);
+
+        // NUEVO: Botón para regenerar simulación
+        JButton botonRegenerarSimulacion = new JButton("Regenerar Simulación");
+        botonRegenerarSimulacion.setFont(Constantes.FUENTE_GENERAL);
+        botonRegenerarSimulacion.setBackground(new Color(255, 193, 7));
+        botonRegenerarSimulacion.setForeground(Color.BLACK);
+        botonRegenerarSimulacion.setFocusPainted(false);
+        botonRegenerarSimulacion.setName("botonRegenerar");
+        panelControles.add(botonRegenerarSimulacion);
+
+        return panelControles;
+    }
+
+    /**
+     * NUEVO: Configura las acciones de los controles
+     */
+    private void configurarAccionesControles(JPanel panelControles, int dias) {
+        // Buscar componentes por nombre
+        JComboBox<Integer> comboPolitica = null;
+        JButton botonModificarRn = null;
+        JButton botonRegenerar = null;
+
+        for (Component comp : panelControles.getComponents()) {
+            if (comp.getName() != null) {
+                switch (comp.getName()) {
+                    case "comboPolitica":
+                        comboPolitica = (JComboBox<Integer>) comp;
+                        break;
+                    case "botonModificarRn":
+                        botonModificarRn = (JButton) comp;
+                        break;
+                    case "botonRegenerar":
+                        botonRegenerar = (JButton) comp;
+                        break;
+                }
+            }
+        }
+
+        // Configurar acciones
+        if (comboPolitica != null) {
+            JComboBox<Integer> finalComboPolitica = comboPolitica;
+            comboPolitica.addActionListener(e -> {
+                int nuevaPolitica = (int) finalComboPolitica.getSelectedItem();
+                Constantes.setPoliticaProduccion(nuevaPolitica);
+                regenerarSimulacionConValoresActuales(dias);
+            });
+        }
+
+        if (botonModificarRn != null) {
+            botonModificarRn.addActionListener(e -> {
+                EntradaManualDialog dialog = new EntradaManualDialog(this, dias);
+                // Establecer valores actuales en el diálogo
+                if (valoresRnManuales != null) {
+                    System.arraycopy(valoresRnManuales, 0, dialog.getValoresRn(), 0, Math.min(valoresRnManuales.length, dialog.getValoresRn().length));
+                }
+                dialog.setVisible(true);
+
+                if (dialog.isConfirmado()) {
+                    valoresRnManuales = dialog.getValoresRn();
+                    regenerarSimulacionConValoresActuales(dias);
+                }
+            });
+        }
+
+        if (botonRegenerar != null) {
+            botonRegenerar.addActionListener(e -> regenerarSimulacionConValoresActuales(dias));
+        }
+    }
+
+    /**
+     * NUEVO: Solicita valores Rn manuales al usuario
+     */
+    private void solicitarValoresRnManuales(int dias) {
+        EntradaManualDialog dialog = new EntradaManualDialog(this, dias);
+        dialog.setVisible(true);
+
+        if (dialog.isConfirmado()) {
+            valoresRnManuales = dialog.getValoresRn();
+        } else {
+            // Si cancela, generar valores aleatorios por defecto
+            valoresRnManuales = new double[dias];
+            for (int i = 0; i < dias; i++) {
+                valoresRnManuales[i] = Math.random();
+            }
+        }
+    }
+
+    /**
+     * NUEVO: Regenera la simulación con los valores Rn actuales
+     */
+    private void regenerarSimulacionConValoresActuales(int dias) {
+        // Volver a ejecutar la simulación con los valores Rn manuales actuales
+        model.setRowCount(0);
+        double[] nuevosCostos = motorSimulacion.generarSimulacionYllenarTabla(dias, model, valoresRnManuales);
+        motorSimulacion.calcularEstadisticasYPruebas(nuevosCostos);
+        double[] minMax2 = CreadorPaneles.getMinMaxCosto(model);
+        JPanel nuevoResumen = CreadorPaneles.crearResumenEstadisticoPanel(true,
+            motorSimulacion.getPromedio(), motorSimulacion.getDesviacion(),
+            minMax2[0], minMax2[1], motorSimulacion.getValorAd(), motorSimulacion.getPValue(),
+            motorSimulacion.isEsNormal(), motorSimulacion.getTamanoRecomendado());
+        JButton nuevoBoton = new JButton("Generar tabla tamaño recomendado");
+        // CAMBIO MÍNIMO: Habilitar botón tanto para normales como no normales
+        nuevoBoton.setEnabled(motorSimulacion.getTamanoRecomendado() > 0);
+        nuevoResumen.add(nuevoBoton);
+        JPanel nuevasGraficas = GeneradorGraficas.crearPanelGraficas(nuevosCostos,
+            motorSimulacion.getPromedio(), motorSimulacion.getDesviacion());
+        JScrollPane nuevoScroll = new JScrollPane(tabla);
+        nuevoScroll.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        JPanel nuevoMainPanel = CreadorPaneles.crearPanelPrincipal(nuevasGraficas, nuevoScroll, nuevoResumen);
+
+        // Remover el panel central actual y agregar el nuevo
+        JPanel panelConControles = (JPanel) getContentPane();
+        panelConControles.remove(panelCentralActual);
+        panelConControles.add(nuevoMainPanel, BorderLayout.CENTER);
+        panelConControles.revalidate();
+        panelConControles.repaint();
+        // Actualizar referencia
+        panelCentralActual = nuevoMainPanel;
+        // Asignar acción al nuevo botón
+        nuevoBoton.addActionListener(this::generarTablaRecomendada);
     }
 
     /**
@@ -120,24 +240,6 @@ public class SimulacionCompleta extends JFrame {
         model = new DefaultTableModel(Constantes.COLUMNAS, 0);
         tabla = new JTable(model);
         ConfiguradorTabla.configurarEstilosTabla(tabla);
-    }
-
-    /**
-     * Configura el layout y componentes principales de la ventana
-     */
-    private void configurarInterfazPrincipal(double[] costosTotales, JPanel resumenPanel) {
-        JScrollPane scrollPaneTabla = new JScrollPane(tabla);
-        scrollPaneTabla.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
-        JPanel graficasPanel = GeneradorGraficas.crearPanelGraficas(costosTotales,
-            motorSimulacion.getPromedio(), motorSimulacion.getDesviacion());
-
-        JPanel mainPanel = CreadorPaneles.crearPanelPrincipal(graficasPanel, scrollPaneTabla, resumenPanel);
-
-        setContentPane(mainPanel);
-        setSize(1400, 1000);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
     }
 
     /**
@@ -157,7 +259,8 @@ public class SimulacionCompleta extends JFrame {
         JScrollPane scroll = new JScrollPane(nuevaTabla);
         scroll.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Generar simulación con tamaño recomendado
+        // MODIFICADO: Para tabla recomendada, usar valores aleatorios (como réplicas)
+        // Generar simulación con tamaño recomendado usando método original (aleatorio)
         double[] costosTotalesNueva = motorSimulacion.generarSimulacionYllenarTabla(
             motorSimulacion.getTamanoRecomendado(), nuevoModel);
         ModelosDeDatos.EstadisticasSimulacion statsNueva = motorSimulacion.calcularEstadisticas(costosTotalesNueva);
