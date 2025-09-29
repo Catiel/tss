@@ -13,20 +13,20 @@ import java.util.Random;
 public class MotorSimulacion {
 
     // Variables para resultados de análisis
-    private double promedio;
-    private double desviacion;
-    private int tamanoRecomendado;
-    private boolean esNormal;
-    private double pValue;
-    private double valorAd;
+    private double promedio; // Promedio de los costos
+    private double desviacion; // Desviación estándar de los costos
+    private int tamanoRecomendado; // Tamaño recomendado de la muestra
+    private boolean esNormal; // Indica si la distribución es normal
+    private double pValue; // Valor p de la prueba de normalidad
+    private double valorAd; // Valor de Anderson-Darling (simulado)
 
     // ========================== GETTERS ==========================
-    public double getPromedio() { return promedio; }
-    public double getDesviacion() { return desviacion; }
-    public int getTamanoRecomendado() { return tamanoRecomendado; }
-    public boolean isEsNormal() { return esNormal; }
-    public double getPValue() { return pValue; }
-    public double getValorAd() { return valorAd; }
+    public double getPromedio() { return promedio; } // Devuelve el promedio
+    public double getDesviacion() { return desviacion; } // Devuelve la desviación
+    public int getTamanoRecomendado() { return tamanoRecomendado; } // Devuelve el tamaño recomendado
+    public boolean isEsNormal() { return esNormal; } // Devuelve si es normal
+    public double getPValue() { return pValue; } // Devuelve el valor p
+    public double getValorAd() { return valorAd; } // Devuelve el valor Ad
 
     /**
      * Ejecuta la simulación completa y llena la tabla con los resultados
@@ -35,35 +35,35 @@ public class MotorSimulacion {
     public double[] generarSimulacionYllenarTabla(int dias, DefaultTableModel modeloTabla, double[] valoresRn) {
         modeloTabla.setRowCount(0); // Limpiar tabla existente
         int inventarioFinal = 0; // Inventario inicial es cero al comenzar
-        NormalDistribution dist = new NormalDistribution(Constantes.MEDIA_DEMANDA, Constantes.DESVIACION_DEMANDA);
-        double[] costosTotales = new double[dias];
+        NormalDistribution dist = new NormalDistribution(Constantes.MEDIA_DEMANDA, Constantes.DESVIACION_DEMANDA); // Distribución normal para la demanda
+        double[] costosTotales = new double[dias]; // Arreglo para los costos totales
 
         // Simular cada día individualmente usando los valores Rn proporcionados
         for (int dia = 1; dia <= dias; dia++) {
             double rnManual = valoresRn[dia - 1]; // Usar valor Rn manual
             // Simular un día y obtener todos los resultados
-            ModelosDeDatos.ResultadoSimulacion resultado = simularDiaConRnManual(inventarioFinal, dist, rnManual);
+            ModelosDeDatos.ResultadoSimulacion resultado = simularDiaConRnManual(inventarioFinal, dist, rnManual); // Simula el día
             costosTotales[dia - 1] = resultado.costoTotal; // Guardar costo total (índice base 0)
             inventarioFinal = resultado.inventarioFinal; // El inventario final se convierte en inicial del siguiente día
 
             // Crear fila para mostrar en la tabla
             Object[] fila = {
-                dia,
-                resultado.inventarioInicial,
-                Constantes.POLITICA_PRODUCCION,
-                resultado.totalDisponible,
-                String.format("%.4f", resultado.rn),
-                resultado.demanda,
-                resultado.ventas,
-                resultado.ventasPerdidas,
-                resultado.inventarioFinal,
-                resultado.costoFaltante,
-                resultado.costoInventario,
-                resultado.costoTotal
+                dia, // Día actual
+                resultado.inventarioInicial, // Inventario inicial
+                Constantes.POLITICA_PRODUCCION, // Política de producción
+                resultado.totalDisponible, // Total disponible
+                String.format("%.4f", resultado.rn), // Valor Rn
+                resultado.demanda, // Demanda
+                resultado.ventas, // Ventas
+                resultado.ventasPerdidas, // Ventas perdidas
+                resultado.inventarioFinal, // Inventario final
+                resultado.costoFaltante, // Costo por faltante
+                resultado.costoInventario, // Costo de inventario
+                resultado.costoTotal // Costo total
             };
-            modeloTabla.addRow(fila);
+            modeloTabla.addRow(fila); // Agrega la fila a la tabla
         }
-        return costosTotales;
+        return costosTotales; // Devuelve los costos totales
     }
 
     /**
@@ -71,12 +71,12 @@ public class MotorSimulacion {
      */
     public double[] generarSimulacionYllenarTabla(int dias, DefaultTableModel modeloTabla) {
         // Generar valores Rn aleatorios para mantener compatibilidad
-        Random random = new Random();
-        double[] valoresRnAleatorios = new double[dias];
+        Random random = new Random(); // Generador de números aleatorios
+        double[] valoresRnAleatorios = new double[dias]; // Arreglo para los valores aleatorios
         for (int i = 0; i < dias; i++) {
-            valoresRnAleatorios[i] = random.nextDouble();
+            valoresRnAleatorios[i] = random.nextDouble(); // Genera un valor aleatorio entre 0 y 1
         }
-        return generarSimulacionYllenarTabla(dias, modeloTabla, valoresRnAleatorios);
+        return generarSimulacionYllenarTabla(dias, modeloTabla, valoresRnAleatorios); // Llama al método principal
     }
 
     /**
@@ -85,76 +85,76 @@ public class MotorSimulacion {
      */
     public ModelosDeDatos.ResultadoSimulacion simularDiaConRnManual(int inventarioFinalAnterior,
             NormalDistribution dist, double rnManual) {
-        ModelosDeDatos.ResultadoSimulacion resultado = new ModelosDeDatos.ResultadoSimulacion();
+        ModelosDeDatos.ResultadoSimulacion resultado = new ModelosDeDatos.ResultadoSimulacion(); // Objeto para resultados
 
         // Valores iniciales del día
-        resultado.inventarioInicial = inventarioFinalAnterior;
-        resultado.totalDisponible = resultado.inventarioInicial + Constantes.POLITICA_PRODUCCION;
+        resultado.inventarioInicial = inventarioFinalAnterior; // Inventario inicial
+        resultado.totalDisponible = resultado.inventarioInicial + Constantes.POLITICA_PRODUCCION; // Total disponible
 
         // Usar el valor Rn manual proporcionado
-        resultado.rn = rnManual;
-        resultado.demanda = (int) Math.round(dist.inverseCumulativeProbability(resultado.rn));
+        resultado.rn = rnManual; // Valor Rn
+        resultado.demanda = (int) Math.round(dist.inverseCumulativeProbability(resultado.rn)); // Demanda generada
 
         // Cálculos de ventas y faltantes
-        resultado.ventas = Math.min(resultado.demanda, resultado.totalDisponible);
-        resultado.ventasPerdidas = Math.max(0, resultado.demanda - resultado.ventas);
-        resultado.inventarioFinal = resultado.totalDisponible - resultado.ventas;
+        resultado.ventas = Math.min(resultado.demanda, resultado.totalDisponible); // Ventas realizadas
+        resultado.ventasPerdidas = Math.max(0, resultado.demanda - resultado.ventas); // Ventas perdidas
+        resultado.inventarioFinal = resultado.totalDisponible - resultado.ventas; // Inventario final
 
         // Cálculos de costos
-        resultado.costoFaltante = resultado.ventasPerdidas * Constantes.COSTO_FALTANTE_UNITARIO;
-        resultado.costoInventario = resultado.inventarioFinal * Constantes.COSTO_INVENTARIO_UNITARIO;
-        resultado.costoTotal = resultado.costoFaltante + resultado.costoInventario;
+        resultado.costoFaltante = resultado.ventasPerdidas * Constantes.COSTO_FALTANTE_UNITARIO; // Costo por faltante
+        resultado.costoInventario = resultado.inventarioFinal * Constantes.COSTO_INVENTARIO_UNITARIO; // Costo de inventario
+        resultado.costoTotal = resultado.costoFaltante + resultado.costoInventario; // Costo total
 
-        return resultado;
+        return resultado; // Devuelve el resultado
     }
 
     /**
      * Simula las operaciones de un día específico (versión original con Random)
      */
     public ModelosDeDatos.ResultadoSimulacion simularDia(int inventarioFinalAnterior, NormalDistribution dist, Random random) {
-        ModelosDeDatos.ResultadoSimulacion resultado = new ModelosDeDatos.ResultadoSimulacion();
+        ModelosDeDatos.ResultadoSimulacion resultado = new ModelosDeDatos.ResultadoSimulacion(); // Objeto para resultados
 
         // Valores iniciales del día
-        resultado.inventarioInicial = inventarioFinalAnterior;
-        resultado.totalDisponible = resultado.inventarioInicial + Constantes.POLITICA_PRODUCCION;
+        resultado.inventarioInicial = inventarioFinalAnterior; // Inventario inicial
+        resultado.totalDisponible = resultado.inventarioInicial + Constantes.POLITICA_PRODUCCION; // Total disponible
 
         // Generación de demanda aleatoria
-        resultado.rn = random.nextDouble();
-        resultado.demanda = (int) Math.round(dist.inverseCumulativeProbability(resultado.rn));
+        resultado.rn = random.nextDouble(); // Valor aleatorio Rn
+        resultado.demanda = (int) Math.round(dist.inverseCumulativeProbability(resultado.rn)); // Demanda generada
 
         // Cálculos de ventas y faltantes
-        resultado.ventas = Math.min(resultado.demanda, resultado.totalDisponible);
-        resultado.ventasPerdidas = Math.max(0, resultado.demanda - resultado.ventas);
-        resultado.inventarioFinal = resultado.totalDisponible - resultado.ventas;
+        resultado.ventas = Math.min(resultado.demanda, resultado.totalDisponible); // Ventas realizadas
+        resultado.ventasPerdidas = Math.max(0, resultado.demanda - resultado.ventas); // Ventas perdidas
+        resultado.inventarioFinal = resultado.totalDisponible - resultado.ventas; // Inventario final
 
         // Cálculos de costos
-        resultado.costoFaltante = resultado.ventasPerdidas * Constantes.COSTO_FALTANTE_UNITARIO;
-        resultado.costoInventario = resultado.inventarioFinal * Constantes.COSTO_INVENTARIO_UNITARIO;
-        resultado.costoTotal = resultado.costoFaltante + resultado.costoInventario;
+        resultado.costoFaltante = resultado.ventasPerdidas * Constantes.COSTO_FALTANTE_UNITARIO; // Costo por faltante
+        resultado.costoInventario = resultado.inventarioFinal * Constantes.COSTO_INVENTARIO_UNITARIO; // Costo de inventario
+        resultado.costoTotal = resultado.costoFaltante + resultado.costoInventario; // Costo total
 
-        return resultado;
+        return resultado; // Devuelve el resultado
     }
 
     /**
      * Calcula estadísticas descriptivas de un array de datos
      */
     public ModelosDeDatos.EstadisticasSimulacion calcularEstadisticas(double[] costosTotales) {
-        ModelosDeDatos.EstadisticasSimulacion stats = new ModelosDeDatos.EstadisticasSimulacion();
+        ModelosDeDatos.EstadisticasSimulacion stats = new ModelosDeDatos.EstadisticasSimulacion(); // Objeto para estadísticas
 
         // Cálculos usando streams de Java 8 para eficiencia
-        stats.suma = Arrays.stream(costosTotales).sum();
-        stats.sumaCuadrados = Arrays.stream(costosTotales).map(x -> x * x).sum();
-        stats.promedio = stats.suma / costosTotales.length;
+        stats.suma = Arrays.stream(costosTotales).sum(); // Suma total
+        stats.sumaCuadrados = Arrays.stream(costosTotales).map(x -> x * x).sum(); // Suma de cuadrados
+        stats.promedio = stats.suma / costosTotales.length; // Promedio
 
         // Varianza usando fórmula: E[X²] - (E[X])²
-        stats.varianza = (stats.sumaCuadrados / costosTotales.length) - (stats.promedio * stats.promedio);
-        stats.desviacion = Math.sqrt(stats.varianza);
+        stats.varianza = (stats.sumaCuadrados / costosTotales.length) - (stats.promedio * stats.promedio); // Varianza
+        stats.desviacion = Math.sqrt(stats.varianza); // Desviación estándar
 
         // Valores extremos
-        stats.minimo = Arrays.stream(costosTotales).min().orElse(Double.NaN);
-        stats.maximo = Arrays.stream(costosTotales).max().orElse(Double.NaN);
+        stats.minimo = Arrays.stream(costosTotales).min().orElse(Double.NaN); // Valor mínimo
+        stats.maximo = Arrays.stream(costosTotales).max().orElse(Double.NaN); // Valor máximo
 
-        return stats;
+        return stats; // Devuelve las estadísticas
     }
 
     /**
@@ -162,24 +162,24 @@ public class MotorSimulacion {
      */
     public void calcularEstadisticasYPruebas(double[] costosTotales) {
         // Calcular estadísticas descriptivas básicas
-        ModelosDeDatos.EstadisticasSimulacion stats = calcularEstadisticas(costosTotales);
-        promedio = stats.promedio;
-        desviacion = stats.desviacion;
+        ModelosDeDatos.EstadisticasSimulacion stats = calcularEstadisticas(costosTotales); // Estadísticas básicas
+        promedio = stats.promedio; // Asigna el promedio
+        desviacion = stats.desviacion; // Asigna la desviación
 
         // Prueba de normalidad Kolmogorov-Smirnov
         pValue = new KolmogorovSmirnovTest().kolmogorovSmirnovTest(
-            new NormalDistribution(promedio, desviacion), costosTotales, false);
+            new NormalDistribution(promedio, desviacion), costosTotales, false); // Valor p
 
         // Determinar si los datos siguen distribución normal (α = 0.05)
-        esNormal = pValue > 0.05;
+        esNormal = pValue > 0.05; // Es normal si p > 0.05
 
         if (esNormal) {
             // CASO NORMAL: Usar fórmula existente
-            tamanoRecomendado = (int) Math.ceil(Math.pow((desviacion / Constantes.ERROR_PERMITIDO) * Constantes.VALOR_T, 2));
+            tamanoRecomendado = (int) Math.ceil(Math.pow((desviacion / Constantes.ERROR_PERMITIDO) * Constantes.VALOR_T, 2)); // Tamaño recomendado
         } else {
             // CASO NO NORMAL: Usar fórmula n = (1/α × s/ε)²
-            double alfa = 0.05;
-            tamanoRecomendado = (int) Math.ceil(Math.pow((1.0/alfa) * (desviacion / Constantes.ERROR_PERMITIDO), 2));
+            double alfa = 0.05; // Nivel de significancia
+            tamanoRecomendado = (int) Math.ceil(Math.pow((1.0/alfa) * (desviacion / Constantes.ERROR_PERMITIDO), 2)); // Tamaño recomendado
         }
 
         valorAd = pValue; // Mantener compatibilidad (simulado)
@@ -190,43 +190,43 @@ public class MotorSimulacion {
      */
     public double[] calcularIntervalosConfianzaNoNormal(double[] promediosReplicas) {
         int r = promediosReplicas.length; // Número de réplicas = 5
-        double alfa = 0.05;
+        double alfa = 0.05; // Nivel de significancia
 
         // Calcular promedio de las réplicas
-        double sumaReplicas = Arrays.stream(promediosReplicas).sum();
-        double promedioReplicas = sumaReplicas / r;
+        double sumaReplicas = Arrays.stream(promediosReplicas).sum(); // Suma de promedios
+        double promedioReplicas = sumaReplicas / r; // Promedio de réplicas
 
         // Calcular desviación estándar de las réplicas
         double sumaCuadrados = Arrays.stream(promediosReplicas)
             .map(x -> Math.pow(x - promedioReplicas, 2))
-            .sum();
-        double desviacionReplicas = Math.sqrt(sumaCuadrados / (r - 1));
+            .sum(); // Suma de cuadrados de desviación
+        double desviacionReplicas = Math.sqrt(sumaCuadrados / (r - 1)); // Desviación estándar
 
         // Fórmula NO NORMAL: IC = x̄ ± s/√(rα/2)
-        double denominador = Math.sqrt(r * alfa / 2);
-        double margenError = desviacionReplicas / denominador;
+        double denominador = Math.sqrt(r * alfa / 2); // Denominador de la fórmula
+        double margenError = desviacionReplicas / denominador; // Margen de error
 
-        double intervaloInferior = promedioReplicas - margenError;
-        double intervaloSuperior = promedioReplicas + margenError;
+        double intervaloInferior = promedioReplicas - margenError; // Límite inferior
+        double intervaloSuperior = promedioReplicas + margenError; // Límite superior
 
-        return new double[]{intervaloInferior, intervaloSuperior};
+        return new double[]{intervaloInferior, intervaloSuperior}; // Devuelve los intervalos
     }
 
     /**
      * Simula una réplica completa de forma independiente
      */
     public double[] simularReplicaCompleta(int tamanoRecomendado) {
-        double[] costos = new double[tamanoRecomendado];
-        int inventarioFinal = 0;
-        NormalDistribution dist = new NormalDistribution(Constantes.MEDIA_DEMANDA, Constantes.DESVIACION_DEMANDA);
-        Random random = new Random();
+        double[] costos = new double[tamanoRecomendado]; // Arreglo para los costos
+        int inventarioFinal = 0; // Inventario inicial
+        NormalDistribution dist = new NormalDistribution(Constantes.MEDIA_DEMANDA, Constantes.DESVIACION_DEMANDA); // Distribución normal
+        Random random = new Random(); // Generador de números aleatorios
 
-        for (int dia = 0; dia < tamanoRecomendado; dia++) {
-            ModelosDeDatos.ResultadoSimulacion resultado = simularDia(inventarioFinal, dist, random);
-            costos[dia] = resultado.costoTotal;
-            inventarioFinal = resultado.inventarioFinal;
+        for (int dia = 0; dia < tamanoRecomendado; dia++) { // Para cada día
+            ModelosDeDatos.ResultadoSimulacion resultado = simularDia(inventarioFinal, dist, random); // Simula el día
+            costos[dia] = resultado.costoTotal; // Guarda el costo total
+            inventarioFinal = resultado.inventarioFinal; // Actualiza el inventario final
         }
 
-        return costos;
+        return costos; // Devuelve los costos
     }
 }
