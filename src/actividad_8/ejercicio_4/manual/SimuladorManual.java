@@ -1,4 +1,4 @@
-package actividad_8.manual;
+package actividad_8.ejercicio_4.manual;
 
 import com.formdev.flatlaf.FlatLightLaf;
 import org.apache.commons.math3.distribution.TriangularDistribution;
@@ -15,11 +15,9 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Simulador de Estimación de Costos con Ingreso Manual

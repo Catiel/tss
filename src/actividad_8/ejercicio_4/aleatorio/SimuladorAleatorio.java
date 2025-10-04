@@ -1,4 +1,4 @@
-package actividad_8.aleatorio;
+package actividad_8.ejercicio_4.aleatorio;
 
 import com.formdev.flatlaf.FlatLightLaf;
 import org.apache.commons.math3.distribution.TriangularDistribution;

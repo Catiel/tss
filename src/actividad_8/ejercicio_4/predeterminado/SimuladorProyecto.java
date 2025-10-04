@@ -1,4 +1,4 @@
-package actividad_8.predeterminado;
+package actividad_8.ejercicio_4.predeterminado;
 
 import com.formdev.flatlaf.FlatLightLaf;
 import org.apache.commons.math3.distribution.TriangularDistribution;
