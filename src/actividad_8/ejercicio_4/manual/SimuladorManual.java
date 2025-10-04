@@ -52,11 +52,14 @@ public class SimuladorManual extends JFrame {
     private JLabel lblDesviacion;
     private JLabel lblMin;
     private JLabel lblMax;
-    private JLabel lblTotalEstimado;
-    private JLabel lblTotalMin;
-    private JLabel lblTotalMax;
     private double[] resultadosSimulacion;
     private boolean actualizandoAutomaticamente = false;
+
+    // Índices de las filas de totales
+    private int filaIndexTotalProyecto;
+    private int filaIndexContingencia;
+    private int filaIndexTotalConContingencia;
+    private final double PORCENTAJE_CONTINGENCIA = 0.20; // 20%
 
     public SimuladorManual() {
         super("Simulador de Estimación de Costos - Ingreso Manual");
@@ -111,6 +114,11 @@ public class SimuladorManual extends JFrame {
         lineas.add(new LineaPresupuesto("65", "RCRA", false));
         lineas.add(new LineaPresupuesto("66", "CAA", false));
         lineas.add(new LineaPresupuesto("6", "SEGURIDAD & AMBIENTE", true));
+
+        // Guardar índices de filas de totales
+        filaIndexTotalProyecto = lineas.size();
+        filaIndexContingencia = lineas.size() + 1;
+        filaIndexTotalConContingencia = lineas.size() + 2;
     }
 
     private void configurarUI() {
@@ -120,7 +128,7 @@ public class SimuladorManual extends JFrame {
         modeloTabla = new DefaultTableModel(columnas, 0) {
             @Override
             public boolean isCellEditable(int row, int col) {
-                if (row >= lineas.size()) return false;
+                if (row >= lineas.size()) return false; // Filas de totales no editables
 
                 LineaPresupuesto linea = lineas.get(row);
 
@@ -149,8 +157,6 @@ public class SimuladorManual extends JFrame {
         JScrollPane scrollTabla = new JScrollPane(tabla);
         scrollTabla.setBorder(BorderFactory.createTitledBorder(
             "Proyecto de Estimación de Costos - Edite subcategorías (Estimado) y categorías (Min/Max)"));
-
-        JPanel panelTotales = crearPanelTotales();
 
         JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
 
@@ -185,8 +191,7 @@ public class SimuladorManual extends JFrame {
 
         JPanel panelCentral = new JPanel(new BorderLayout(10, 10));
         panelCentral.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        panelCentral.add(scrollTabla, BorderLayout.NORTH);
-        panelCentral.add(panelTotales, BorderLayout.CENTER);
+        panelCentral.add(scrollTabla, BorderLayout.CENTER);
         panelCentral.add(panelBotones, BorderLayout.SOUTH);
 
         add(panelCentral, BorderLayout.CENTER);
@@ -195,13 +200,11 @@ public class SimuladorManual extends JFrame {
         btnCargarEjemplo.addActionListener(e -> {
             cargarDatosEjemplo();
             calcularSumas();
-            actualizarTotales();
         });
 
         btnLimpiar.addActionListener(e -> {
             limpiarDatos();
             calcularSumas();
-            actualizarTotales();
         });
 
         btnSimular.addActionListener(e -> {
@@ -216,7 +219,6 @@ public class SimuladorManual extends JFrame {
             if (!actualizandoAutomaticamente) {
                 SwingUtilities.invokeLater(() -> {
                     calcularSumas();
-                    actualizarTotales();
                 });
             }
         });
@@ -264,7 +266,37 @@ public class SimuladorManual extends JFrame {
         }
         modeloTabla.setValueAt(suma6, 29, 2);
 
+        // Calcular totales del proyecto
+        actualizarFilasTotales();
+
         actualizandoAutomaticamente = false;
+    }
+
+    private void actualizarFilasTotales() {
+        // Calcular TOTAL PROYECTO (suma de todas las categorías)
+        double totalEstimado = 0;
+        double totalMin = 0;
+        double totalMax = 0;
+
+        for (int i = 0; i < lineas.size(); i++) {
+            if (lineas.get(i).esCategoria) {
+                totalEstimado += getValorTabla(i, 2);
+                totalMin += getValorTabla(i, 3);
+                totalMax += getValorTabla(i, 4);
+            }
+        }
+
+        // Actualizar fila TOTAL PROYECTO
+        modeloTabla.setValueAt(totalEstimado, filaIndexTotalProyecto, 2);
+        modeloTabla.setValueAt(totalMin, filaIndexTotalProyecto, 3);
+        modeloTabla.setValueAt(totalMax, filaIndexTotalProyecto, 4);
+
+        // Actualizar fila CONTINGENCIA (mostrar como texto el porcentaje)
+        modeloTabla.setValueAt("20%", filaIndexContingencia, 2);
+
+        // Calcular TOTAL CON CONTINGENCIA
+        double totalConContingencia = totalEstimado * (1 + PORCENTAJE_CONTINGENCIA);
+        modeloTabla.setValueAt(totalConContingencia, filaIndexTotalConContingencia, 2);
     }
 
     private double getValorTabla(int fila, int columna) {
@@ -295,14 +327,30 @@ public class SimuladorManual extends JFrame {
                 Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
                 boolean esCategoria = false;
+                boolean esFilaTotal = false;
+
                 if (row < lineas.size()) {
                     esCategoria = lineas.get(row).esCategoria;
-                }
-
-                if (esCategoria) {
+                } else if (row == filaIndexTotalProyecto || row == filaIndexTotalConContingencia) {
+                    esFilaTotal = true;
+                } else if (row == filaIndexContingencia) {
+                    // Fila de contingencia
                     setFont(new Font("Segoe UI", Font.BOLD, 12));
                     if (!isSelected) {
-                        comp.setBackground(new Color(144, 238, 144)); // Verde claro
+                        comp.setBackground(new Color(255, 255, 153)); // Amarillo claro
+                    }
+                    setHorizontalAlignment(column >= 2 ? SwingConstants.RIGHT : SwingConstants.LEFT);
+                    return comp;
+                }
+
+                if (esCategoria || esFilaTotal) {
+                    setFont(new Font("Segoe UI", Font.BOLD, 12));
+                    if (!isSelected) {
+                        if (esFilaTotal) {
+                            comp.setBackground(new Color(255, 255, 153)); // Amarillo claro para totales
+                        } else {
+                            comp.setBackground(new Color(144, 238, 144)); // Verde claro para categorías
+                        }
                     }
                 } else {
                     setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -319,6 +367,9 @@ public class SimuladorManual extends JFrame {
                     } else {
                         setText(formato.format(val));
                     }
+                } else if (column >= 2 && value instanceof String) {
+                    setHorizontalAlignment(SwingConstants.RIGHT);
+                    setText((String) value);
                 } else if (column >= 2) {
                     setHorizontalAlignment(SwingConstants.RIGHT);
                 } else {
@@ -359,6 +410,7 @@ public class SimuladorManual extends JFrame {
     private void llenarTabla() {
         modeloTabla.setRowCount(0);
 
+        // Agregar líneas de presupuesto
         for (LineaPresupuesto linea : lineas) {
             Object[] fila = new Object[6];
             fila[0] = linea.codigo;
@@ -370,49 +422,36 @@ public class SimuladorManual extends JFrame {
 
             modeloTabla.addRow(fila);
         }
-    }
 
-    private JPanel crearPanelTotales() {
-        JPanel panel = new JPanel(new GridLayout(1, 3, 20, 10));
-        panel.setBorder(BorderFactory.createTitledBorder("Totales del Proyecto (Solo Categorías)"));
-        panel.setBackground(Color.WHITE);
+        // Agregar fila de TOTAL PROYECTO
+        Object[] filaTotal = new Object[6];
+        filaTotal[0] = "";
+        filaTotal[1] = "TOTAL PROYECTO";
+        filaTotal[2] = 0.0;
+        filaTotal[3] = 0.0;
+        filaTotal[4] = 0.0;
+        filaTotal[5] = 0.0;
+        modeloTabla.addRow(filaTotal);
 
-        Font fuenteLabel = new Font("Segoe UI", Font.BOLD, 14);
-        Font fuenteValor = new Font("Segoe UI", Font.BOLD, 16);
-        Color colorValor = new Color(0, 100, 0);
+        // Agregar fila de CONTINGENCIA
+        Object[] filaConting = new Object[6];
+        filaConting[0] = "";
+        filaConting[1] = "CONTINGENCIA";
+        filaConting[2] = "20%";
+        filaConting[3] = "";
+        filaConting[4] = "";
+        filaConting[5] = "";
+        modeloTabla.addRow(filaConting);
 
-        lblTotalEstimado = new JLabel("$0", SwingConstants.CENTER);
-        lblTotalMin = new JLabel("$0", SwingConstants.CENTER);
-        lblTotalMax = new JLabel("$0", SwingConstants.CENTER);
-
-        lblTotalEstimado.setFont(fuenteValor);
-        lblTotalMin.setFont(fuenteValor);
-        lblTotalMax.setFont(fuenteValor);
-
-        lblTotalEstimado.setForeground(colorValor);
-        lblTotalMin.setForeground(colorValor);
-        lblTotalMax.setForeground(colorValor);
-
-        JPanel p1 = new JPanel(new BorderLayout());
-        p1.setBackground(Color.WHITE);
-        p1.add(crearEtiqueta("TOTAL ESTIMADO:", fuenteLabel), BorderLayout.NORTH);
-        p1.add(lblTotalEstimado, BorderLayout.CENTER);
-
-        JPanel p2 = new JPanel(new BorderLayout());
-        p2.setBackground(Color.WHITE);
-        p2.add(crearEtiqueta("TOTAL MÍNIMO:", fuenteLabel), BorderLayout.NORTH);
-        p2.add(lblTotalMin, BorderLayout.CENTER);
-
-        JPanel p3 = new JPanel(new BorderLayout());
-        p3.setBackground(Color.WHITE);
-        p3.add(crearEtiqueta("TOTAL MÁXIMO:", fuenteLabel), BorderLayout.NORTH);
-        p3.add(lblTotalMax, BorderLayout.CENTER);
-
-        panel.add(p1);
-        panel.add(p2);
-        panel.add(p3);
-
-        return panel;
+        // Agregar fila de TOTAL CON CONTINGENCIA
+        Object[] filaTotalConting = new Object[6];
+        filaTotalConting[0] = "";
+        filaTotalConting[1] = "PROYECTO TOTAL CON CONTINGENCIA";
+        filaTotalConting[2] = 0.0;
+        filaTotalConting[3] = "";
+        filaTotalConting[4] = "";
+        filaTotalConting[5] = "";
+        modeloTabla.addRow(filaTotalConting);
     }
 
     private JPanel crearPanelEstadisticas() {
@@ -457,26 +496,6 @@ public class SimuladorManual extends JFrame {
         JLabel lbl = new JLabel(texto, SwingConstants.CENTER);
         lbl.setFont(fuente);
         return lbl;
-    }
-
-    private void actualizarTotales() {
-        DecimalFormat df = new DecimalFormat("$#,##0");
-
-        double totalEst = 0;
-        double totalMin = 0;
-        double totalMax = 0;
-
-        for (int i = 0; i < lineas.size(); i++) {
-            if (lineas.get(i).esCategoria) {
-                totalEst += getValorTabla(i, 2);
-                totalMin += getValorTabla(i, 3);
-                totalMax += getValorTabla(i, 4);
-            }
-        }
-
-        lblTotalEstimado.setText(df.format(totalEst));
-        lblTotalMin.setText(df.format(totalMin));
-        lblTotalMax.setText(df.format(totalMax));
     }
 
     private void cargarDatosEjemplo() {
@@ -543,6 +562,18 @@ public class SimuladorManual extends JFrame {
             modeloTabla.setValueAt(0.0, i, 4);
             modeloTabla.setValueAt(0.0, i, 5);
         }
+
+        // Limpiar filas de totales
+        modeloTabla.setValueAt(0.0, filaIndexTotalProyecto, 2);
+        modeloTabla.setValueAt(0.0, filaIndexTotalProyecto, 3);
+        modeloTabla.setValueAt(0.0, filaIndexTotalProyecto, 4);
+        modeloTabla.setValueAt(0.0, filaIndexTotalProyecto, 5);
+
+        modeloTabla.setValueAt("20%", filaIndexContingencia, 2);
+
+        modeloTabla.setValueAt(0.0, filaIndexTotalConContingencia, 2);
+        modeloTabla.setValueAt(0.0, filaIndexTotalConContingencia, 5);
+
         actualizandoAutomaticamente = false;
 
         lblResultadoSimulacion.setText("Pendiente");
@@ -661,6 +692,10 @@ public class SimuladorManual extends JFrame {
 
     private void actualizarTablaConSimulacion() {
         actualizandoAutomaticamente = true;
+
+        double totalSimulado = 0;
+
+        // Actualizar valores simulados para cada categoría
         for (int i = 0; i < lineas.size(); i++) {
             LineaPresupuesto linea = lineas.get(i);
             if (linea.esCategoria && linea.min > 0 && linea.max > 0 && linea.estimado > 0) {
@@ -668,8 +703,20 @@ public class SimuladorManual extends JFrame {
                     linea.min, linea.estimado, linea.max);
                 double valorSimulado = dist.sample();
                 modeloTabla.setValueAt(valorSimulado, i, 5);
+                totalSimulado += valorSimulado;
             }
         }
+
+        // Actualizar TOTAL PROYECTO simulado
+        if (resultadosSimulacion != null && resultadosSimulacion.length > 0) {
+            double promedioTotal = Arrays.stream(resultadosSimulacion).average().orElse(0);
+            modeloTabla.setValueAt(promedioTotal, filaIndexTotalProyecto, 5);
+
+            // Actualizar TOTAL CON CONTINGENCIA simulado
+            double totalConContingenciaSimulado = promedioTotal * (1 + PORCENTAJE_CONTINGENCIA);
+            modeloTabla.setValueAt(totalConContingenciaSimulado, filaIndexTotalConContingencia, 5);
+        }
+
         actualizandoAutomaticamente = false;
     }
 
