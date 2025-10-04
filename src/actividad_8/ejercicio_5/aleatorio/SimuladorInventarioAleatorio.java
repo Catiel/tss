@@ -1,4 +1,4 @@
-package actividad_8.ejercicio_5.manual;
+package actividad_8.ejercicio_5.aleatorio;
 
 import com.formdev.flatlaf.FlatLightLaf;
 import org.jfree.chart.ChartFactory;
@@ -18,24 +18,26 @@ import java.util.Arrays;
 import java.util.Random;
 
 /**
- * Simulador de Optimización de Inventario (EDITABLE)
- * Permite modificar todos los parámetros
+ * Simulador de Optimización de Inventario con Valores Aleatorios
+ * Los parámetros se generan aleatoriamente al iniciar
  */
-public class SimuladorInventarioEditable extends JFrame {
+public class SimuladorInventarioAleatorio extends JFrame {
 
-    // Parámetros editables del problema
-    private double precioVenta = 12.00;
-    private double costo = 7.50;
-    private double precioDescuento = 6.00;
-    private int demandaMin = 40;
-    private int demandaMax = 90;
-    private int paso = 10;
-    private double cantidadComprada = 90;
-    private int demandaEjemplo = 40;
+    // Parámetros aleatorios del problema
+    private double precioVenta;
+    private double costo;
+    private double precioDescuento;
+    private int demandaMin;
+    private int demandaMax;
+    private int paso;
+    private double probabilidad;
+    private double cantidadComprada;
+    private int demandaEjemplo;
 
     private double[] resultadosGanancia;
     private JTable tabla;
     private DefaultTableModel modeloTabla;
+    private JTextArea txtDistribucion;
     private JLabel lblEstado;
     private JLabel lblMedia;
     private JLabel lblMediana;
@@ -44,15 +46,53 @@ public class SimuladorInventarioEditable extends JFrame {
     private JLabel lblVarianza;
     private JLabel lblMin;
     private JLabel lblMax;
-    private JSpinner spinnerCantidad;
-    private JTextArea txtDistribucion;
 
-    public SimuladorInventarioEditable() {
-        super("Simulador de Inventario - Editable");
+    public SimuladorInventarioAleatorio() {
+        super("Simulador de Inventario - Valores Aleatorios");
+        generarParametrosAleatorios();
         configurarUI();
         setSize(1400, 900);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
+    }
+
+    private void generarParametrosAleatorios() {
+        Random rand = new Random();
+
+        // Generar precio de venta entre $10 y $20
+        precioVenta = 10.0 + rand.nextDouble() * 10.0;
+
+        // Generar costo entre 50% y 80% del precio de venta
+        costo = precioVenta * (0.5 + rand.nextDouble() * 0.3);
+
+        // Generar precio con descuento entre el costo y el precio de venta
+        precioDescuento = costo + rand.nextDouble() * (precioVenta - costo) * 0.5;
+
+        // Generar rango de demanda
+        demandaMin = 20 + rand.nextInt(30); // Entre 20 y 50
+        paso = 5 + rand.nextInt(11); // Entre 5 y 15
+        int numValores = 4 + rand.nextInt(4); // Entre 4 y 7 valores
+        demandaMax = demandaMin + (paso * (numValores - 1));
+
+        // Calcular probabilidad uniforme
+        probabilidad = 1.0 / numValores;
+
+        // Generar cantidad comprada en el rango de demanda
+        cantidadComprada = demandaMin + rand.nextInt(demandaMax - demandaMin + 1);
+
+        // Generar demanda de ejemplo
+        int[] valoresPosibles = generarValoresPosibles();
+        demandaEjemplo = valoresPosibles[rand.nextInt(valoresPosibles.length)];
+    }
+
+    private int[] generarValoresPosibles() {
+        int numValores = (demandaMax - demandaMin) / paso + 1;
+        int[] valores = new int[numValores];
+        int idx = 0;
+        for (int valor = demandaMin; valor <= demandaMax; valor += paso) {
+            valores[idx++] = valor;
+        }
+        return valores;
     }
 
     private void configurarUI() {
@@ -67,8 +107,6 @@ public class SimuladorInventarioEditable extends JFrame {
         add(panelInferior, BorderLayout.SOUTH);
     }
 
-    private boolean actualizandoTabla = false;
-
     private JPanel crearPanelParametros() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -77,13 +115,7 @@ public class SimuladorInventarioEditable extends JFrame {
         modeloTabla = new DefaultTableModel(columnas, 0) {
             @Override
             public boolean isCellEditable(int row, int col) {
-                return col == 1 && row != 5 && row != 6; // No editable separador ni ganancia
-            }
-
-            @Override
-            public Class<?> getColumnClass(int columnIndex) {
-                if (columnIndex == 1) return Object.class;
-                return String.class;
+                return false;
             }
         };
 
@@ -91,35 +123,52 @@ public class SimuladorInventarioEditable extends JFrame {
         configurarTabla();
         llenarTabla();
 
-        // Listener para cambios en la tabla
-        modeloTabla.addTableModelListener(e -> {
-            if (actualizandoTabla) return; // Evitar recursión
-
-            int row = e.getFirstRow();
-            int col = e.getColumn();
-
-            if (col == 1 && row >= 0 && row != 5 && row != 6) {
-                try {
-                    actualizarParametroDesdeTabla(row);
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(this,
-                        "Valor inválido. Por favor ingrese un número válido.",
-                        "Error", JOptionPane.ERROR_MESSAGE);
-                    llenarTabla();
-                }
-            }
-        });
-
         JScrollPane scrollTabla = new JScrollPane(tabla);
-        scrollTabla.setBorder(BorderFactory.createTitledBorder("Parámetros del Problema (Editable)"));
+        scrollTabla.setBorder(BorderFactory.createTitledBorder("Parámetros del Problema (Generados Aleatoriamente)"));
         scrollTabla.setPreferredSize(new Dimension(600, 250));
 
-        panel.add(scrollTabla, BorderLayout.WEST);
+        JPanel panelTablaYBoton = new JPanel(new BorderLayout(5, 5));
+        panelTablaYBoton.add(scrollTabla, BorderLayout.CENTER);
+
+        JButton btnRegenerar = new JButton("🔄 Regenerar Parámetros");
+        btnRegenerar.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btnRegenerar.setBackground(new Color(255, 153, 0));
+        btnRegenerar.setForeground(Color.WHITE);
+        btnRegenerar.setFocusPainted(false);
+        btnRegenerar.addActionListener(e -> regenerarParametros());
+        panelTablaYBoton.add(btnRegenerar, BorderLayout.SOUTH);
+
+        panel.add(panelTablaYBoton, BorderLayout.WEST);
 
         JPanel panelDistribucion = crearPanelDistribucion();
         panel.add(panelDistribucion, BorderLayout.CENTER);
 
         return panel;
+    }
+
+    private void regenerarParametros() {
+        generarParametrosAleatorios();
+        modeloTabla.setRowCount(0);
+        llenarTabla();
+        actualizarDistribucion();
+        limpiarEstadisticas();
+        JOptionPane.showMessageDialog(this,
+            "Parámetros regenerados exitosamente.\nEjecute la simulación para ver los nuevos resultados.",
+            "Parámetros Actualizados",
+            JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void limpiarEstadisticas() {
+        lblEstado.setText("Pendiente");
+        lblEstado.setForeground(Color.GRAY);
+        lblMedia.setText("--");
+        lblMediana.setText("--");
+        lblModo.setText("--");
+        lblDesviacion.setText("--");
+        lblVarianza.setText("--");
+        lblMin.setText("--");
+        lblMax.setText("--");
+        resultadosGanancia = null;
     }
 
     private void configurarTabla() {
@@ -128,6 +177,7 @@ public class SimuladorInventarioEditable extends JFrame {
         tabla.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
         tabla.getTableHeader().setBackground(new Color(255, 153, 0));
         tabla.getTableHeader().setForeground(Color.WHITE);
+        tabla.setEnabled(false);
 
         DefaultTableCellRenderer valueRenderer = new DefaultTableCellRenderer() {
             @Override
@@ -144,9 +194,6 @@ public class SimuladorInventarioEditable extends JFrame {
                 } else if (row == 6 && column == 1) {
                     setBackground(new Color(0, 176, 240));
                     setFont(new Font("Segoe UI", Font.BOLD, 13));
-                } else if (row == 5) {
-                    setBackground(new Color(220, 220, 220));
-                    setFont(new Font("Segoe UI", Font.PLAIN, 13));
                 } else {
                     setBackground(Color.WHITE);
                     setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -166,141 +213,42 @@ public class SimuladorInventarioEditable extends JFrame {
     }
 
     private void llenarTabla() {
-        actualizandoTabla = true; // Evitar que el listener se active
-
-        boolean wasUpdating = modeloTabla.getRowCount() > 0;
-
-        if (!wasUpdating) {
-            modeloTabla.setRowCount(0);
-        }
-
         DecimalFormat dfMoney = new DecimalFormat("$#,##0.00");
         DecimalFormat dfInt = new DecimalFormat("$ #,##0");
 
-        double gananciaCalculada = calcularGanancia(demandaEjemplo, cantidadComprada);
+        double gananciaEjemplo = calcularGanancia(demandaEjemplo, cantidadComprada);
 
-        if (wasUpdating) {
-            modeloTabla.setValueAt(dfMoney.format(precioVenta), 0, 1);
-            modeloTabla.setValueAt(dfMoney.format(costo), 1, 1);
-            modeloTabla.setValueAt(dfMoney.format(precioDescuento), 2, 1);
-            modeloTabla.setValueAt(dfInt.format(demandaEjemplo), 3, 1);
-            modeloTabla.setValueAt(dfInt.format((int)cantidadComprada), 4, 1);
-            modeloTabla.setValueAt(dfMoney.format(gananciaCalculada), 6, 1);
-        } else {
-            modeloTabla.addRow(new Object[]{"Precio de venta", dfMoney.format(precioVenta)});
-            modeloTabla.addRow(new Object[]{"Costo", dfMoney.format(costo)});
-            modeloTabla.addRow(new Object[]{"Precio con descuento", dfMoney.format(precioDescuento)});
-            modeloTabla.addRow(new Object[]{"Demanda", dfInt.format(demandaEjemplo)});
-            modeloTabla.addRow(new Object[]{"Cantidad comprada", dfInt.format((int)cantidadComprada)});
-            modeloTabla.addRow(new Object[]{"-", "-"});
-            modeloTabla.addRow(new Object[]{"Ganancia", dfMoney.format(gananciaCalculada)});
-        }
-
-        actualizandoTabla = false; // Reactivar el listener
-    }
-
-    private void actualizarParametroDesdeTabla(int row) {
-        String valor = modeloTabla.getValueAt(row, 1).toString().replace("$", "").replace(",", "").trim();
-
-        switch (row) {
-            case 0: // Precio de venta
-                precioVenta = Double.parseDouble(valor);
-                break;
-            case 1: // Costo
-                costo = Double.parseDouble(valor);
-                break;
-            case 2: // Precio con descuento
-                precioDescuento = Double.parseDouble(valor);
-                break;
-            case 3: // Demanda
-                demandaEjemplo = Integer.parseInt(valor);
-                break;
-            case 4: // Cantidad comprada
-                cantidadComprada = Double.parseDouble(valor);
-                if (spinnerCantidad != null) {
-                    spinnerCantidad.setValue((int)cantidadComprada);
-                }
-                break;
-        }
-
-        llenarTabla();
+        modeloTabla.addRow(new Object[]{"Precio de venta", dfMoney.format(precioVenta)});
+        modeloTabla.addRow(new Object[]{"Costo", dfMoney.format(costo)});
+        modeloTabla.addRow(new Object[]{"Precio con descuento", dfMoney.format(precioDescuento)});
+        modeloTabla.addRow(new Object[]{"Demanda", dfInt.format(demandaEjemplo)});
+        modeloTabla.addRow(new Object[]{"Cantidad comprada", dfInt.format(cantidadComprada)});
+        modeloTabla.addRow(new Object[]{"-", "-"});
+        modeloTabla.addRow(new Object[]{"Ganancia", dfMoney.format(gananciaEjemplo)});
     }
 
     private JPanel crearPanelDistribucion() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(BorderFactory.createTitledBorder("Distribución Personalizada - Demanda (Editable)"));
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(BorderFactory.createTitledBorder("Distribución Personalizada - Demanda"));
 
-        // Panel de controles
-        JPanel panelControles = new JPanel(new GridLayout(3, 2, 10, 10));
-        panelControles.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
-        JLabel lblMin = new JLabel("Mínimo:");
-        JSpinner spinnerMin = new JSpinner(new SpinnerNumberModel(demandaMin, 10, 200, 10));
-
-        JLabel lblMax = new JLabel("Máximo:");
-        JSpinner spinnerMax = new JSpinner(new SpinnerNumberModel(demandaMax, 10, 200, 10));
-
-        JLabel lblPaso = new JLabel("Paso:");
-        JSpinner spinnerPaso = new JSpinner(new SpinnerNumberModel(paso, 5, 50, 5));
-
-        panelControles.add(lblMin);
-        panelControles.add(spinnerMin);
-        panelControles.add(lblMax);
-        panelControles.add(spinnerMax);
-        panelControles.add(lblPaso);
-        panelControles.add(spinnerPaso);
-
-        // Botón para actualizar distribución
-        JButton btnActualizar = new JButton("Actualizar Distribución");
-        btnActualizar.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btnActualizar.setBackground(new Color(46, 204, 113));
-        btnActualizar.setForeground(Color.WHITE);
-        btnActualizar.setFocusPainted(false);
-
-        btnActualizar.addActionListener(e -> {
-            demandaMin = (int) spinnerMin.getValue();
-            demandaMax = (int) spinnerMax.getValue();
-            paso = (int) spinnerPaso.getValue();
-
-            if (demandaMin >= demandaMax) {
-                JOptionPane.showMessageDialog(this,
-                    "El mínimo debe ser menor que el máximo.",
-                    "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            actualizarDistribucionTexto();
-        });
-
-        // Área de texto para mostrar la distribución
         txtDistribucion = new JTextArea();
         txtDistribucion.setEditable(false);
         txtDistribucion.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         txtDistribucion.setBackground(new Color(255, 255, 224));
-        actualizarDistribucionTexto();
+
+        actualizarDistribucion();
 
         JScrollPane scroll = new JScrollPane(txtDistribucion);
-
-        // Panel combinado
-        JPanel panelTop = new JPanel(new BorderLayout());
-        panelTop.add(panelControles, BorderLayout.CENTER);
-        panelTop.add(btnActualizar, BorderLayout.SOUTH);
-
-        panel.add(panelTop, BorderLayout.NORTH);
         panel.add(scroll, BorderLayout.CENTER);
 
         return panel;
     }
 
-    private void actualizarDistribucionTexto() {
-        int numValores = (demandaMax - demandaMin) / paso + 1;
-        double probabilidad = 1.0 / numValores;
-
+    private void actualizarDistribucion() {
         StringBuilder sb = new StringBuilder();
         sb.append("Distribución Discreta Uniforme:\n\n");
         sb.append(String.format("Rango: $%d - $%d\n", demandaMin, demandaMax));
         sb.append(String.format("Paso: $%d\n", paso));
-        sb.append(String.format("Número de valores: %d\n", numValores));
         sb.append(String.format("Probabilidad por valor: %.4f (%.2f%%)\n\n", probabilidad, probabilidad * 100));
         sb.append("Valores posibles:\n");
 
@@ -312,48 +260,15 @@ public class SimuladorInventarioEditable extends JFrame {
     }
 
     private JPanel crearPanelSimulacion() {
-        JPanel panel = new JPanel(new GridBagLayout());
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 30));
         panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-
-        // Spinner para cantidad comprada
-        JLabel lblCantidad = new JLabel("Cantidad a Comprar:");
-        lblCantidad.setFont(new Font("Segoe UI", Font.BOLD, 14));
-
-        spinnerCantidad = new JSpinner(new SpinnerNumberModel((int)cantidadComprada, 10, 200, 5));
-        spinnerCantidad.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        ((JSpinner.DefaultEditor) spinnerCantidad.getEditor()).getTextField().setColumns(8);
-
-        spinnerCantidad.addChangeListener(e -> {
-            cantidadComprada = (int) spinnerCantidad.getValue();
-            llenarTabla(); // Esto actualizará tanto la cantidad como la ganancia
-        });
-
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        panel.add(lblCantidad, gbc);
-
-        gbc.gridx = 1;
-        panel.add(spinnerCantidad, gbc);
-
-        // Spinner para número de simulaciones
         JLabel lblSimulaciones = new JLabel("Número de Simulaciones:");
         lblSimulaciones.setFont(new Font("Segoe UI", Font.BOLD, 14));
 
         JSpinner spinnerSimulaciones = new JSpinner(new SpinnerNumberModel(5000, 1000, 100000, 1000));
         spinnerSimulaciones.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 
-        gbc.gridx = 0;
-        gbc.gridy = 1;
-        panel.add(lblSimulaciones, gbc);
-
-        gbc.gridx = 1;
-        panel.add(spinnerSimulaciones, gbc);
-
-        // Botón de simulación
         JButton btnSimular = new JButton("Ejecutar Simulación Monte Carlo");
         btnSimular.setFont(new Font("Segoe UI", Font.BOLD, 16));
         btnSimular.setBackground(new Color(30, 144, 255));
@@ -361,43 +276,10 @@ public class SimuladorInventarioEditable extends JFrame {
         btnSimular.setFocusPainted(false);
         btnSimular.setPreferredSize(new Dimension(350, 50));
 
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        gbc.gridwidth = 2;
-        gbc.insets = new Insets(30, 10, 10, 10);
-        panel.add(btnSimular, gbc);
+        panel.add(lblSimulaciones);
+        panel.add(spinnerSimulaciones);
+        panel.add(btnSimular);
 
-        // Botón para resetear valores
-        JButton btnReset = new JButton("Resetear a Valores Originales");
-        btnReset.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        btnReset.setBackground(new Color(231, 76, 60));
-        btnReset.setForeground(Color.WHITE);
-        btnReset.setFocusPainted(false);
-
-        btnReset.addActionListener(e -> {
-            precioVenta = 12.00;
-            costo = 7.50;
-            precioDescuento = 6.00;
-            demandaMin = 40;
-            demandaMax = 90;
-            paso = 10;
-            cantidadComprada = 90;
-            demandaEjemplo = 40;
-
-            llenarTabla();
-            spinnerCantidad.setValue(90);
-            actualizarDistribucionTexto();
-
-            JOptionPane.showMessageDialog(this,
-                "Parámetros restablecidos a valores originales.",
-                "Reset Exitoso", JOptionPane.INFORMATION_MESSAGE);
-        });
-
-        gbc.gridy = 3;
-        gbc.insets = new Insets(10, 10, 10, 10);
-        panel.add(btnReset, gbc);
-
-        // Acción del botón simular
         btnSimular.addActionListener(e -> {
             int numSimulaciones = (int) spinnerSimulaciones.getValue();
             ejecutarSimulacion(numSimulaciones);
@@ -465,19 +347,18 @@ public class SimuladorInventarioEditable extends JFrame {
     }
 
     private int generarDemanda(Random random) {
-        int[] valoresPosibles = new int[(demandaMax - demandaMin) / paso + 1];
-        int idx = 0;
-        for (int valor = demandaMin; valor <= demandaMax; valor += paso) {
-            valoresPosibles[idx++] = valor;
-        }
+        int[] valoresPosibles = generarValoresPosibles();
         return valoresPosibles[random.nextInt(valoresPosibles.length)];
     }
 
     private double calcularGanancia(int demanda, double cantidad) {
+        double margenVenta = precioVenta - precioDescuento;
+        double margenDescuento = precioDescuento - costo;
+
         if (demanda <= cantidad) {
-            return 6.0 * demanda - 1.5 * cantidad;
+            return margenVenta * demanda - margenDescuento * cantidad;
         } else {
-            return 4.5 * cantidad;
+            return margenVenta * cantidad;
         }
     }
 
@@ -505,11 +386,11 @@ public class SimuladorInventarioEditable extends JFrame {
                 try {
                     double[] resultados = get();
                     actualizarEstadisticas(resultados);
-                    actualizarTablaConMedia();
+                    actualizarTabla();
                     mostrarHistograma(resultados, iteraciones);
                 } catch (Exception ex) {
                     ex.printStackTrace();
-                    JOptionPane.showMessageDialog(SimuladorInventarioEditable.this,
+                    JOptionPane.showMessageDialog(SimuladorInventarioAleatorio.this,
                         "Error en la simulación: " + ex.getMessage(),
                         "Error", JOptionPane.ERROR_MESSAGE);
                 }
@@ -582,7 +463,7 @@ public class SimuladorInventarioEditable extends JFrame {
         return moda;
     }
 
-    private void actualizarTablaConMedia() {
+    private void actualizarTabla() {
         DecimalFormat df = new DecimalFormat("$#,##0.00");
 
         if (resultadosGanancia != null && resultadosGanancia.length > 0) {
@@ -644,7 +525,7 @@ public class SimuladorInventarioEditable extends JFrame {
         }
 
         SwingUtilities.invokeLater(() -> {
-            SimuladorInventarioEditable simulador = new SimuladorInventarioEditable();
+            SimuladorInventarioAleatorio simulador = new SimuladorInventarioAleatorio();
             simulador.setVisible(true);
         });
     }
