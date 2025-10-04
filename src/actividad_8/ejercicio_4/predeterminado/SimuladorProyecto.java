@@ -64,7 +64,8 @@ public class SimuladorProyecto extends JFrame {
     }
 
     private void inicializarDatos() {
-        // 11 - Big Co. PROJECT MANAGEMENT (solo título, no se simula)
+        // 11 - Big Co. PROJECT MANAGEMENT
+        lineas.add(new LineaPresupuesto("11", "Big Co. PROYECT MANAGEMENT", 4719278, 0, 0, false));
 
         // 1 - Administración del proyecto
         lineas.add(new LineaPresupuesto("1", "ADMINSTRACION DEL PROYECTO", 4719278, 4500000, 5500000, true));
@@ -162,15 +163,15 @@ public class SimuladorProyecto extends JFrame {
     }
 
     private void configurarTabla() {
-        tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tabla.setRowHeight(28);
-        tabla.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
-        tabla.getTableHeader().setBackground(new Color(30, 144, 255));
+        tabla.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        tabla.setRowHeight(25);
+        tabla.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+        tabla.getTableHeader().setBackground(new Color(255, 153, 51)); // Naranja como en Excel
         tabla.getTableHeader().setForeground(Color.WHITE);
 
         // Renderizador para formato moneda
         DefaultTableCellRenderer moneyRenderer = new DefaultTableCellRenderer() {
-            DecimalFormat formato = new DecimalFormat("$#,##0.00");
+            DecimalFormat formato = new DecimalFormat("$#,##0");
             @Override
             protected void setValue(Object value) {
                 if (value instanceof Number) {
@@ -182,16 +183,45 @@ public class SimuladorProyecto extends JFrame {
             }
         };
 
+        // Renderizador especial para categorías (filas en negrita)
+        DefaultTableCellRenderer categoryRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+                // Verificar si es una categoría (las que tienen código de 1 dígito)
+                String codigo = (String) table.getValueAt(row, 0);
+                boolean esCategoria = codigo.length() == 1 && !codigo.isEmpty();
+
+                if (esCategoria) {
+                    setFont(new Font("Segoe UI", Font.BOLD, 12));
+                } else {
+                    setFont(new Font("Segoe UI", Font.PLAIN, 12));
+                }
+
+                return c;
+            }
+        };
+
+        // Aplicar renderizadores
+        tabla.getColumnModel().getColumn(0).setCellRenderer(categoryRenderer);
+        tabla.getColumnModel().getColumn(1).setCellRenderer(categoryRenderer);
+
         for (int i = 2; i < 6; i++) {
             tabla.getColumnModel().getColumn(i).setCellRenderer(moneyRenderer);
         }
 
-        tabla.getColumnModel().getColumn(0).setPreferredWidth(80);
-        tabla.getColumnModel().getColumn(1).setPreferredWidth(300);
+        tabla.getColumnModel().getColumn(0).setPreferredWidth(60);
+        tabla.getColumnModel().getColumn(1).setPreferredWidth(350);
+        tabla.getColumnModel().getColumn(2).setPreferredWidth(120);
+        tabla.getColumnModel().getColumn(3).setPreferredWidth(120);
+        tabla.getColumnModel().getColumn(4).setPreferredWidth(120);
+        tabla.getColumnModel().getColumn(5).setPreferredWidth(120);
     }
 
     private void llenarTabla() {
-        DecimalFormat df = new DecimalFormat("#,##0.00");
+        DecimalFormat df = new DecimalFormat("#,##0");
 
         for (LineaPresupuesto linea : lineas) {
             Object[] fila = new Object[6];
@@ -200,7 +230,7 @@ public class SimuladorProyecto extends JFrame {
             fila[2] = linea.estimado;
             fila[3] = linea.min > 0 ? linea.min : "";
             fila[4] = linea.max > 0 ? linea.max : "";
-            fila[5] = ""; // Se llenará con la simulación
+            fila[5] = linea.esCategoria ? linea.estimado : ""; // Mostrar simulado para categorías
 
             modeloTabla.addRow(fila);
         }
@@ -209,19 +239,19 @@ public class SimuladorProyecto extends JFrame {
         Object[] filaTotal = new Object[6];
         filaTotal[0] = "";
         filaTotal[1] = "TOTAL PROYECTO";
-        filaTotal[2] = 70967376.0; // Suma exacta de las categorías
+        filaTotal[2] = 70967376.0;
         filaTotal[3] = 67500000.0;
         filaTotal[4] = 85500000.0;
-        filaTotal[5] = "";
+        filaTotal[5] = 70967376.0;
         modeloTabla.addRow(filaTotal);
 
         // Fila de CONTINGENCIA
         Object[] filaConting = new Object[6];
         filaConting[0] = "";
         filaConting[1] = "CONTINGENCIA";
-        filaConting[2] = "";
+        filaConting[2] = "20%";
         filaConting[3] = "";
-        filaConting[4] = "20%";
+        filaConting[4] = "";
         filaConting[5] = "";
         modeloTabla.addRow(filaConting);
 
@@ -327,7 +357,7 @@ public class SimuladorProyecto extends JFrame {
     }
 
     private void actualizarResultados(double[] resultados) {
-        DecimalFormat df = new DecimalFormat("$#,##0.00");
+        DecimalFormat df = new DecimalFormat("$#,##0");
 
         double suma = Arrays.stream(resultados).sum();
         double promedio = suma / resultados.length;
@@ -349,7 +379,7 @@ public class SimuladorProyecto extends JFrame {
     }
 
     private void actualizarTablaConSimulacion() {
-        DecimalFormat df = new DecimalFormat("#,##0.00");
+        DecimalFormat df = new DecimalFormat("#,##0");
 
         int filaIdx = 0;
         for (LineaPresupuesto linea : lineas) {
@@ -362,10 +392,37 @@ public class SimuladorProyecto extends JFrame {
             filaIdx++;
         }
 
-        // Actualizar total proyecto
+        // Actualizar total proyecto con color verde claro
         if (resultadosSimulacion != null && resultadosSimulacion.length > 0) {
             double promedioTotal = Arrays.stream(resultadosSimulacion).average().orElse(0);
             modeloTabla.setValueAt(promedioTotal, lineas.size(), 5);
+
+            // Aplicar color verde a las celdas de la columna "Simulado" para las categorías
+            tabla.getColumnModel().getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
+                DecimalFormat formato = new DecimalFormat("$#,##0");
+                @Override
+                public Component getTableCellRendererComponent(JTable table, Object value,
+                        boolean isSelected, boolean hasFocus, int row, int column) {
+                    Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+                    setHorizontalAlignment(SwingConstants.RIGHT);
+
+                    if (value instanceof Number) {
+                        setText(formato.format(value));
+                        // Fondo verde claro para valores simulados
+                        if (!isSelected) {
+                            setBackground(new Color(144, 238, 144));
+                        }
+                    } else {
+                        setText("");
+                        if (!isSelected) {
+                            setBackground(Color.WHITE);
+                        }
+                    }
+
+                    return c;
+                }
+            });
         }
     }
 
@@ -397,7 +454,7 @@ public class SimuladorProyecto extends JFrame {
         chart.setBackgroundPaint(Color.WHITE);
 
         // Añadir información de certeza
-        DecimalFormat df = new DecimalFormat("#,##0.00");
+        DecimalFormat df = new DecimalFormat("#,##0");
         double promedio = Arrays.stream(datos).average().orElse(0);
         chart.addSubtitle(new org.jfree.chart.title.TextTitle(
             String.format("%d pruebas | Certeza: 100.00%% | Promedio: $%s",

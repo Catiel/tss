@@ -21,7 +21,8 @@ import java.util.List;
 
 /**
  * Simulador de Estimación de Costos con Ingreso Manual
- * Permite editar todos los valores de Estimado, Min y Max
+ * Permite editar subcategorías y Min/Max de categorías
+ * Las categorías se calculan automáticamente
  */
 public class SimuladorManual extends JFrame {
 
@@ -33,13 +34,13 @@ public class SimuladorManual extends JFrame {
         double max;
         boolean esCategoria;
 
-        LineaPresupuesto(String codigo, String desc, double est, double min, double max, boolean cat) {
+        LineaPresupuesto(String codigo, String desc, boolean cat) {
             this.codigo = codigo;
             this.descripcion = desc;
-            this.estimado = est;
-            this.min = min;
-            this.max = max;
             this.esCategoria = cat;
+            this.estimado = 0;
+            this.min = 0;
+            this.max = 0;
         }
     }
 
@@ -55,72 +56,81 @@ public class SimuladorManual extends JFrame {
     private JLabel lblTotalMin;
     private JLabel lblTotalMax;
     private double[] resultadosSimulacion;
+    private boolean actualizandoAutomaticamente = false;
 
     public SimuladorManual() {
         super("Simulador de Estimación de Costos - Ingreso Manual");
-        inicializarDatosVacios();
+        inicializarEstructura();
         configurarUI();
         setSize(1500, 950);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
     }
 
-    /**
-     * Inicializa la estructura con valores en cero para ingreso manual
-     */
-    private void inicializarDatosVacios() {
+    private void inicializarEstructura() {
+        // 11 - Big Co. PROJECT MANAGEMENT
+        lineas.add(new LineaPresupuesto("11", "Big Co. PROYECT MANAGEMENT", false));
+
         // Categoría 1
-        lineas.add(new LineaPresupuesto("1", "ADMINSTRACION DEL PROYECTO", 0, 0, 0, true));
+        lineas.add(new LineaPresupuesto("1", "ADMINSTRACION DEL PROYECTO", true));
 
         // Categoría 2 - Ingeniería
-        lineas.add(new LineaPresupuesto("21", "ENEGINEERING MANAGEMENT", 0, 0, 0, false));
-        lineas.add(new LineaPresupuesto("22", "TECHNICAL STUDIES", 0, 0, 0, false));
-        lineas.add(new LineaPresupuesto("23", "DEFINITIVE DESIGN", 0, 0, 0, false));
-        lineas.add(new LineaPresupuesto("24", "ENGINEERING INSPECTION", 0, 0, 0, false));
-        lineas.add(new LineaPresupuesto("25", "EQUIPMENT REMOVAL DESINGN", 0, 0, 0, false));
-        lineas.add(new LineaPresupuesto("2", "INGENIERIA", 0, 0, 0, true));
+        lineas.add(new LineaPresupuesto("21", "ENEGINEERING MANAGEMENT", false));
+        lineas.add(new LineaPresupuesto("22", "TECHNICAL STUDIES", false));
+        lineas.add(new LineaPresupuesto("23", "DEFINITIVE DESIGN", false));
+        lineas.add(new LineaPresupuesto("24", "ENGINEERING INSPECTION", false));
+        lineas.add(new LineaPresupuesto("25", "EQUIPMENT REMOVAL DESINGN", false));
+        lineas.add(new LineaPresupuesto("2", "INGENIERIA", true));
 
         // Categoría 3 - CENRTC
-        lineas.add(new LineaPresupuesto("31", "CENRTC DEFINITIVE DESIGN", 0, 0, 0, false));
-        lineas.add(new LineaPresupuesto("32", "CENRTC PROCUREMENT", 0, 0, 0, false));
-        lineas.add(new LineaPresupuesto("33", "CENRTC FABRICATION", 0, 0, 0, false));
-        lineas.add(new LineaPresupuesto("3", "CENRTC", 0, 0, 0, true));
+        lineas.add(new LineaPresupuesto("31", "CENRTC DEFINITIVE DESIGN", false));
+        lineas.add(new LineaPresupuesto("32", "CENRTC PROCUREMENT", false));
+        lineas.add(new LineaPresupuesto("33", "CENRTC FABRICATION", false));
+        lineas.add(new LineaPresupuesto("3", "CENRTC", true));
 
         // Categoría 4 - Construcción
-        lineas.add(new LineaPresupuesto("41", "WHC CONSTRUCTION MANAGEMENT", 0, 0, 0, false));
-        lineas.add(new LineaPresupuesto("42", "INTER-FARM MODIFICATIONS", 0, 0, 0, false));
-        lineas.add(new LineaPresupuesto("43", "C-FARM MODIFICATIONS", 0, 0, 0, false));
-        lineas.add(new LineaPresupuesto("44", "AY-FARM MODIFICATIONS", 0, 0, 0, false));
-        lineas.add(new LineaPresupuesto("45", "EXPENSE PROCUREMENT", 0, 0, 0, false));
-        lineas.add(new LineaPresupuesto("46", "FACILITY PREP", 0, 0, 0, false));
-        lineas.add(new LineaPresupuesto("47", "CONSTRUCTION SERVICES", 0, 0, 0, false));
-        lineas.add(new LineaPresupuesto("4", "CONSTRUCCION", 0, 0, 0, true));
+        lineas.add(new LineaPresupuesto("41", "WHC CONSTRUCTION MANAGEMENT", false));
+        lineas.add(new LineaPresupuesto("42", "INTER-FARM MODIFICATIONS", false));
+        lineas.add(new LineaPresupuesto("43", "C-FARM MODIFICATIONS", false));
+        lineas.add(new LineaPresupuesto("44", "AY-FARM MODIFICATIONS", false));
+        lineas.add(new LineaPresupuesto("45", "EXPENSE PROCUREMENT", false));
+        lineas.add(new LineaPresupuesto("46", "FACILITY PREP", false));
+        lineas.add(new LineaPresupuesto("47", "CONSTRUCTION SERVICES", false));
+        lineas.add(new LineaPresupuesto("4", "CONSTRUCCION", true));
 
         // Categoría 5 - Otros costos
-        lineas.add(new LineaPresupuesto("51", "STARTUP ADMINISTRATION", 0, 0, 0, false));
-        lineas.add(new LineaPresupuesto("52", "STARTUP SUPPORT", 0, 0, 0, false));
-        lineas.add(new LineaPresupuesto("54", "STARTUP READINESS PREVIEW", 0, 0, 0, false));
-        lineas.add(new LineaPresupuesto("5", "OTROS COSTOS DEL PROYECTO", 0, 0, 0, true));
+        lineas.add(new LineaPresupuesto("51", "STARTUP ADMINISTRATION", false));
+        lineas.add(new LineaPresupuesto("52", "STARTUP SUPPORT", false));
+        lineas.add(new LineaPresupuesto("54", "STARTUP READINESS PREVIEW", false));
+        lineas.add(new LineaPresupuesto("5", "OTROS COSTOS DEL PROYECTO", true));
 
         // Categoría 6 - Seguridad
-        lineas.add(new LineaPresupuesto("61", "ENVIROMENTAL MANAGEMENT", 0, 0, 0, false));
-        lineas.add(new LineaPresupuesto("63", "SAFETY", 0, 0, 0, false));
-        lineas.add(new LineaPresupuesto("64", "NEPA", 0, 0, 0, false));
-        lineas.add(new LineaPresupuesto("65", "RCRA", 0, 0, 0, false));
-        lineas.add(new LineaPresupuesto("66", "CAA", 0, 0, 0, false));
-        lineas.add(new LineaPresupuesto("6", "SEGURIDAD & AMBIENTE", 0, 0, 0, true));
+        lineas.add(new LineaPresupuesto("61", "ENVIROMENTAL MANAGEMENT", false));
+        lineas.add(new LineaPresupuesto("63", "SAFETY", false));
+        lineas.add(new LineaPresupuesto("64", "NEPA", false));
+        lineas.add(new LineaPresupuesto("65", "RCRA", false));
+        lineas.add(new LineaPresupuesto("66", "CAA", false));
+        lineas.add(new LineaPresupuesto("6", "SEGURIDAD & AMBIENTE", true));
     }
 
     private void configurarUI() {
         setLayout(new BorderLayout(10, 10));
 
-        // Panel superior con tabla EDITABLE
         String[] columnas = {"Código", "Descripción", "Estimado", "Min", "Max", "Simulado"};
         modeloTabla = new DefaultTableModel(columnas, 0) {
             @Override
             public boolean isCellEditable(int row, int col) {
-                // Solo las columnas 2, 3, 4 (Estimado, Min, Max) son editables
-                return col >= 2 && col <= 4;
+                if (row >= lineas.size()) return false;
+
+                LineaPresupuesto linea = lineas.get(row);
+
+                // Subcategorías: solo columna Estimado (columna 2)
+                if (!linea.esCategoria) {
+                    return col == 2;
+                }
+
+                // Categorías: solo columnas Min y Max (columnas 3 y 4)
+                return col == 3 || col == 4;
             }
 
             @Override
@@ -137,12 +147,11 @@ public class SimuladorManual extends JFrame {
         llenarTabla();
 
         JScrollPane scrollTabla = new JScrollPane(tabla);
-        scrollTabla.setBorder(BorderFactory.createTitledBorder("Proyecto de Estimación de Costos (Editable)"));
+        scrollTabla.setBorder(BorderFactory.createTitledBorder(
+            "Proyecto de Estimación de Costos - Edite subcategorías (Estimado) y categorías (Min/Max)"));
 
-        // Panel de totales en tiempo real
         JPanel panelTotales = crearPanelTotales();
 
-        // Panel de botones
         JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
 
         JButton btnCargarEjemplo = new JButton("Cargar Datos de Ejemplo");
@@ -172,28 +181,26 @@ public class SimuladorManual extends JFrame {
         panelBotones.add(spinnerIteraciones);
         panelBotones.add(btnSimular);
 
-        // Panel de estadísticas
         JPanel panelEstadisticas = crearPanelEstadisticas();
 
-        // Panel central
         JPanel panelCentral = new JPanel(new BorderLayout(10, 10));
         panelCentral.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         panelCentral.add(scrollTabla, BorderLayout.NORTH);
         panelCentral.add(panelTotales, BorderLayout.CENTER);
         panelCentral.add(panelBotones, BorderLayout.SOUTH);
 
-        // Panel inferior con estadísticas
         add(panelCentral, BorderLayout.CENTER);
         add(panelEstadisticas, BorderLayout.SOUTH);
 
-        // Acciones de botones
         btnCargarEjemplo.addActionListener(e -> {
             cargarDatosEjemplo();
+            calcularSumas();
             actualizarTotales();
         });
 
         btnLimpiar.addActionListener(e -> {
             limpiarDatos();
+            calcularSumas();
             actualizarTotales();
         });
 
@@ -205,51 +212,109 @@ public class SimuladorManual extends JFrame {
             }
         });
 
-        // Listener para actualizar totales al editar
         modeloTabla.addTableModelListener(e -> {
-            SwingUtilities.invokeLater(() -> actualizarTotales());
+            if (!actualizandoAutomaticamente) {
+                SwingUtilities.invokeLater(() -> {
+                    calcularSumas();
+                    actualizarTotales();
+                });
+            }
         });
     }
 
+    private void calcularSumas() {
+        actualizandoAutomaticamente = true;
+
+        // Categoría 1: suma de Big Co. (índice 0)
+        double suma1 = getValorTabla(0, 2);
+        modeloTabla.setValueAt(suma1, 1, 2);
+
+        // Categoría 2: suma de índices 2-6
+        double suma2 = 0;
+        for (int i = 2; i <= 6; i++) {
+            suma2 += getValorTabla(i, 2);
+        }
+        modeloTabla.setValueAt(suma2, 7, 2);
+
+        // Categoría 3: suma de índices 8-10
+        double suma3 = 0;
+        for (int i = 8; i <= 10; i++) {
+            suma3 += getValorTabla(i, 2);
+        }
+        modeloTabla.setValueAt(suma3, 11, 2);
+
+        // Categoría 4: suma de índices 12-18
+        double suma4 = 0;
+        for (int i = 12; i <= 18; i++) {
+            suma4 += getValorTabla(i, 2);
+        }
+        modeloTabla.setValueAt(suma4, 19, 2);
+
+        // Categoría 5: suma de índices 20-22
+        double suma5 = 0;
+        for (int i = 20; i <= 22; i++) {
+            suma5 += getValorTabla(i, 2);
+        }
+        modeloTabla.setValueAt(suma5, 23, 2);
+
+        // Categoría 6: suma de índices 24-28
+        double suma6 = 0;
+        for (int i = 24; i <= 28; i++) {
+            suma6 += getValorTabla(i, 2);
+        }
+        modeloTabla.setValueAt(suma6, 29, 2);
+
+        actualizandoAutomaticamente = false;
+    }
+
+    private double getValorTabla(int fila, int columna) {
+        try {
+            Object val = modeloTabla.getValueAt(fila, columna);
+            if (val instanceof Number) {
+                return ((Number) val).doubleValue();
+            }
+        } catch (Exception e) {
+            // Ignorar
+        }
+        return 0.0;
+    }
+
     private void configurarTabla() {
-        tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tabla.setRowHeight(30);
-        tabla.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
-        tabla.getTableHeader().setBackground(new Color(30, 144, 255));
+        tabla.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        tabla.setRowHeight(25);
+        tabla.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+        tabla.getTableHeader().setBackground(new Color(255, 153, 51));
         tabla.getTableHeader().setForeground(Color.WHITE);
 
-        // Renderizador personalizado
         DefaultTableCellRenderer renderer = new DefaultTableCellRenderer() {
-            DecimalFormat formato = new DecimalFormat("$#,##0.00");
+            DecimalFormat formato = new DecimalFormat("$#,##0");
 
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int column) {
                 Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
-                // Verificar si es categoría
                 boolean esCategoria = false;
                 if (row < lineas.size()) {
                     esCategoria = lineas.get(row).esCategoria;
                 }
 
                 if (esCategoria) {
-                    setFont(new Font("Segoe UI", Font.BOLD, 13));
+                    setFont(new Font("Segoe UI", Font.BOLD, 12));
                     if (!isSelected) {
-                        comp.setBackground(new Color(173, 216, 230)); // Azul claro
+                        comp.setBackground(new Color(144, 238, 144)); // Verde claro
                     }
                 } else {
-                    setFont(new Font("Segoe UI", Font.PLAIN, 13));
+                    setFont(new Font("Segoe UI", Font.PLAIN, 12));
                     if (!isSelected) {
                         comp.setBackground(Color.WHITE);
                     }
                 }
 
-                // Formatear números
                 if (column >= 2 && value instanceof Number) {
                     setHorizontalAlignment(SwingConstants.RIGHT);
                     double val = ((Number) value).doubleValue();
-                    if (val == 0 && column <= 4) {
+                    if (val == 0) {
                         setText("");
                     } else {
                         setText(formato.format(val));
@@ -268,7 +333,6 @@ public class SimuladorManual extends JFrame {
             tabla.getColumnModel().getColumn(i).setCellRenderer(renderer);
         }
 
-        // Editor para números con formato
         for (int i = 2; i <= 4; i++) {
             tabla.getColumnModel().getColumn(i).setCellEditor(new DefaultCellEditor(new JTextField()) {
                 @Override
@@ -284,12 +348,12 @@ public class SimuladorManual extends JFrame {
             });
         }
 
-        tabla.getColumnModel().getColumn(0).setPreferredWidth(80);
-        tabla.getColumnModel().getColumn(1).setPreferredWidth(300);
-        tabla.getColumnModel().getColumn(2).setPreferredWidth(150);
-        tabla.getColumnModel().getColumn(3).setPreferredWidth(150);
-        tabla.getColumnModel().getColumn(4).setPreferredWidth(150);
-        tabla.getColumnModel().getColumn(5).setPreferredWidth(150);
+        tabla.getColumnModel().getColumn(0).setPreferredWidth(60);
+        tabla.getColumnModel().getColumn(1).setPreferredWidth(350);
+        tabla.getColumnModel().getColumn(2).setPreferredWidth(120);
+        tabla.getColumnModel().getColumn(3).setPreferredWidth(120);
+        tabla.getColumnModel().getColumn(4).setPreferredWidth(120);
+        tabla.getColumnModel().getColumn(5).setPreferredWidth(120);
     }
 
     private void llenarTabla() {
@@ -299,9 +363,9 @@ public class SimuladorManual extends JFrame {
             Object[] fila = new Object[6];
             fila[0] = linea.codigo;
             fila[1] = linea.descripcion;
-            fila[2] = linea.estimado;
-            fila[3] = linea.min;
-            fila[4] = linea.max;
+            fila[2] = 0.0;
+            fila[3] = 0.0;
+            fila[4] = 0.0;
             fila[5] = 0.0;
 
             modeloTabla.addRow(fila);
@@ -310,16 +374,16 @@ public class SimuladorManual extends JFrame {
 
     private JPanel crearPanelTotales() {
         JPanel panel = new JPanel(new GridLayout(1, 3, 20, 10));
-        panel.setBorder(BorderFactory.createTitledBorder("Totales Calculados (Solo Categorías Principales)"));
+        panel.setBorder(BorderFactory.createTitledBorder("Totales del Proyecto (Solo Categorías)"));
         panel.setBackground(Color.WHITE);
 
         Font fuenteLabel = new Font("Segoe UI", Font.BOLD, 14);
         Font fuenteValor = new Font("Segoe UI", Font.BOLD, 16);
         Color colorValor = new Color(0, 100, 0);
 
-        lblTotalEstimado = new JLabel("$0.00", SwingConstants.CENTER);
-        lblTotalMin = new JLabel("$0.00", SwingConstants.CENTER);
-        lblTotalMax = new JLabel("$0.00", SwingConstants.CENTER);
+        lblTotalEstimado = new JLabel("$0", SwingConstants.CENTER);
+        lblTotalMin = new JLabel("$0", SwingConstants.CENTER);
+        lblTotalMax = new JLabel("$0", SwingConstants.CENTER);
 
         lblTotalEstimado.setFont(fuenteValor);
         lblTotalMin.setFont(fuenteValor);
@@ -396,7 +460,7 @@ public class SimuladorManual extends JFrame {
     }
 
     private void actualizarTotales() {
-        DecimalFormat df = new DecimalFormat("$#,##0.00");
+        DecimalFormat df = new DecimalFormat("$#,##0");
 
         double totalEst = 0;
         double totalMin = 0;
@@ -404,17 +468,9 @@ public class SimuladorManual extends JFrame {
 
         for (int i = 0; i < lineas.size(); i++) {
             if (lineas.get(i).esCategoria) {
-                try {
-                    Object valEst = modeloTabla.getValueAt(i, 2);
-                    Object valMin = modeloTabla.getValueAt(i, 3);
-                    Object valMax = modeloTabla.getValueAt(i, 4);
-
-                    if (valEst instanceof Number) totalEst += ((Number) valEst).doubleValue();
-                    if (valMin instanceof Number) totalMin += ((Number) valMin).doubleValue();
-                    if (valMax instanceof Number) totalMax += ((Number) valMax).doubleValue();
-                } catch (Exception e) {
-                    // Ignorar errores durante edición
-                }
+                totalEst += getValorTabla(i, 2);
+                totalMin += getValorTabla(i, 3);
+                totalMax += getValorTabla(i, 4);
             }
         }
 
@@ -424,36 +480,70 @@ public class SimuladorManual extends JFrame {
     }
 
     private void cargarDatosEjemplo() {
-        // Datos de ejemplo (los originales de la imagen)
-        double[][] datos = {
-            {4719278, 4500000, 5500000},  // 1
-            {1344586, 0, 0}, {479725, 0, 0}, {10575071, 0, 0}, {5007916, 0, 0}, {2561272, 0, 0},
-            {19968570, 19000000, 22000000}, // 2
-            {668990, 0, 0}, {632731, 0, 0}, {902498, 0, 0},
-            {2204219, 2000000, 2500000},    // 3
-            {4976687, 0, 0}, {1307065, 0, 0}, {6602884, 0, 0}, {1636429, 0, 0},
-            {4054629, 0, 0}, {9536166, 0, 0}, {7041973, 0, 0},
-            {35155833, 34000000, 45000000}, // 4
-            {1676355, 0, 0}, {1944661, 0, 0}, {1042521, 0, 0},
-            {4663537, 4000000, 5500000},    // 5
-            {424013, 0, 0}, {3579477, 0, 0}, {64106, 0, 0}, {11474, 0, 0}, {176869, 0, 0},
-            {4255939, 4000000, 5000000}     // 6
-        };
+        actualizandoAutomaticamente = true;
 
-        for (int i = 0; i < datos.length && i < lineas.size(); i++) {
-            modeloTabla.setValueAt(datos[i][0], i, 2);
-            modeloTabla.setValueAt(datos[i][1], i, 3);
-            modeloTabla.setValueAt(datos[i][2], i, 4);
-        }
+        // Subcategorías con valores
+        modeloTabla.setValueAt(4719278.0, 0, 2); // Big Co
+
+        modeloTabla.setValueAt(1344586.0, 2, 2);
+        modeloTabla.setValueAt(479725.0, 3, 2);
+        modeloTabla.setValueAt(10575071.0, 4, 2);
+        modeloTabla.setValueAt(5007916.0, 5, 2);
+        modeloTabla.setValueAt(2561272.0, 6, 2);
+
+        modeloTabla.setValueAt(668990.0, 8, 2);
+        modeloTabla.setValueAt(632731.0, 9, 2);
+        modeloTabla.setValueAt(902498.0, 10, 2);
+
+        modeloTabla.setValueAt(4976687.0, 12, 2);
+        modeloTabla.setValueAt(1307065.0, 13, 2);
+        modeloTabla.setValueAt(6602884.0, 14, 2);
+        modeloTabla.setValueAt(1636429.0, 15, 2);
+        modeloTabla.setValueAt(4054629.0, 16, 2);
+        modeloTabla.setValueAt(9536166.0, 17, 2);
+        modeloTabla.setValueAt(7041973.0, 18, 2);
+
+        modeloTabla.setValueAt(1676355.0, 20, 2);
+        modeloTabla.setValueAt(1944661.0, 21, 2);
+        modeloTabla.setValueAt(1042521.0, 22, 2);
+
+        modeloTabla.setValueAt(424013.0, 24, 2);
+        modeloTabla.setValueAt(3579477.0, 25, 2);
+        modeloTabla.setValueAt(64106.0, 26, 2);
+        modeloTabla.setValueAt(11474.0, 27, 2);
+        modeloTabla.setValueAt(176869.0, 28, 2);
+
+        // Min y Max de categorías
+        modeloTabla.setValueAt(4500000.0, 1, 3);
+        modeloTabla.setValueAt(5500000.0, 1, 4);
+
+        modeloTabla.setValueAt(19000000.0, 7, 3);
+        modeloTabla.setValueAt(22000000.0, 7, 4);
+
+        modeloTabla.setValueAt(2000000.0, 11, 3);
+        modeloTabla.setValueAt(2500000.0, 11, 4);
+
+        modeloTabla.setValueAt(34000000.0, 19, 3);
+        modeloTabla.setValueAt(45000000.0, 19, 4);
+
+        modeloTabla.setValueAt(4000000.0, 23, 3);
+        modeloTabla.setValueAt(5500000.0, 23, 4);
+
+        modeloTabla.setValueAt(4000000.0, 29, 3);
+        modeloTabla.setValueAt(5000000.0, 29, 4);
+
+        actualizandoAutomaticamente = false;
     }
 
     private void limpiarDatos() {
+        actualizandoAutomaticamente = true;
         for (int i = 0; i < lineas.size(); i++) {
             modeloTabla.setValueAt(0.0, i, 2);
             modeloTabla.setValueAt(0.0, i, 3);
             modeloTabla.setValueAt(0.0, i, 4);
             modeloTabla.setValueAt(0.0, i, 5);
         }
+        actualizandoAutomaticamente = false;
 
         lblResultadoSimulacion.setText("Pendiente");
         lblResultadoSimulacion.setForeground(Color.GRAY);
@@ -464,35 +554,29 @@ public class SimuladorManual extends JFrame {
     }
 
     private boolean validarDatos() {
-        // Verificar que al menos una categoría tenga datos
         boolean hayDatos = false;
         for (int i = 0; i < lineas.size(); i++) {
             if (lineas.get(i).esCategoria) {
-                try {
-                    double est = ((Number) modeloTabla.getValueAt(i, 2)).doubleValue();
-                    double min = ((Number) modeloTabla.getValueAt(i, 3)).doubleValue();
-                    double max = ((Number) modeloTabla.getValueAt(i, 4)).doubleValue();
+                double est = getValorTabla(i, 2);
+                double min = getValorTabla(i, 3);
+                double max = getValorTabla(i, 4);
 
-                    if (est > 0 && min > 0 && max > 0) {
-                        hayDatos = true;
+                if (est > 0 && min > 0 && max > 0) {
+                    hayDatos = true;
 
-                        // Validar coherencia
-                        if (min > est || est > max) {
-                            JOptionPane.showMessageDialog(this,
-                                "Error en fila " + (i + 1) + ": El orden debe ser Min ≤ Estimado ≤ Max",
-                                "Error de Validación", JOptionPane.ERROR_MESSAGE);
-                            return false;
-                        }
+                    if (min > est || est > max) {
+                        JOptionPane.showMessageDialog(this,
+                            "Error en " + lineas.get(i).descripcion + ": Min ≤ Estimado ≤ Max",
+                            "Error de Validación", JOptionPane.ERROR_MESSAGE);
+                        return false;
                     }
-                } catch (Exception e) {
-                    // Ignorar filas vacías
                 }
             }
         }
 
         if (!hayDatos) {
             JOptionPane.showMessageDialog(this,
-                "Debe ingresar al menos una categoría con Min, Estimado y Max",
+                "Ingrese al menos una categoría completa (con Min, Estimado y Max)",
                 "Advertencia", JOptionPane.WARNING_MESSAGE);
             return false;
         }
@@ -502,13 +586,9 @@ public class SimuladorManual extends JFrame {
 
     private void sincronizarDatosTabla() {
         for (int i = 0; i < lineas.size(); i++) {
-            try {
-                lineas.get(i).estimado = ((Number) modeloTabla.getValueAt(i, 2)).doubleValue();
-                lineas.get(i).min = ((Number) modeloTabla.getValueAt(i, 3)).doubleValue();
-                lineas.get(i).max = ((Number) modeloTabla.getValueAt(i, 4)).doubleValue();
-            } catch (Exception e) {
-                // Ignorar errores
-            }
+            lineas.get(i).estimado = getValorTabla(i, 2);
+            lineas.get(i).min = getValorTabla(i, 3);
+            lineas.get(i).max = getValorTabla(i, 4);
         }
     }
 
@@ -558,7 +638,7 @@ public class SimuladorManual extends JFrame {
     }
 
     private void actualizarResultados(double[] resultados) {
-        DecimalFormat df = new DecimalFormat("$#,##0.00");
+        DecimalFormat df = new DecimalFormat("$#,##0");
 
         double suma = Arrays.stream(resultados).sum();
         double promedio = suma / resultados.length;
@@ -580,6 +660,7 @@ public class SimuladorManual extends JFrame {
     }
 
     private void actualizarTablaConSimulacion() {
+        actualizandoAutomaticamente = true;
         for (int i = 0; i < lineas.size(); i++) {
             LineaPresupuesto linea = lineas.get(i);
             if (linea.esCategoria && linea.min > 0 && linea.max > 0 && linea.estimado > 0) {
@@ -589,6 +670,7 @@ public class SimuladorManual extends JFrame {
                 modeloTabla.setValueAt(valorSimulado, i, 5);
             }
         }
+        actualizandoAutomaticamente = false;
     }
 
     private void mostrarHistograma(double[] datos, int numSimulaciones) {
@@ -618,7 +700,7 @@ public class SimuladorManual extends JFrame {
 
         chart.setBackgroundPaint(Color.WHITE);
 
-        DecimalFormat df = new DecimalFormat("#,##0.00");
+        DecimalFormat df = new DecimalFormat("#,##0");
         double promedio = Arrays.stream(datos).average().orElse(0);
         chart.addSubtitle(new org.jfree.chart.title.TextTitle(
             String.format("%d pruebas | Certeza: 100.00%% | Promedio: $%s",

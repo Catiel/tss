@@ -38,7 +38,6 @@ public class SimuladorAleatorio extends JFrame {
             this.codigo = codigo;
             this.descripcion = desc;
             this.esCategoria = cat;
-            // Los valores se generarán aleatoriamente
         }
     }
 
@@ -63,10 +62,10 @@ public class SimuladorAleatorio extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
     }
 
-    /**
-     * Define la estructura del proyecto sin valores
-     */
     private void inicializarEstructura() {
+        // 11 - Big Co. PROJECT MANAGEMENT
+        lineas.add(new LineaPresupuesto("11", "Big Co. PROYECT MANAGEMENT", false));
+
         // Categoría 1
         lineas.add(new LineaPresupuesto("1", "ADMINSTRACION DEL PROYECTO", true));
 
@@ -109,69 +108,79 @@ public class SimuladorAleatorio extends JFrame {
         lineas.add(new LineaPresupuesto("6", "SEGURIDAD & AMBIENTE", true));
     }
 
-    /**
-     * Genera valores aleatorios realistas para cada línea
-     * - Subcategorías: valores entre $100K - $15M
-     * - Categorías principales: suma de subcategorías con variación ±10-20%
-     */
     private void generarValoresAleatorios() {
-        LineaPresupuesto categoriaActual = null;
-        double sumaSubcategorias = 0;
-        int contadorSubcategorias = 0;
-
-        for (int i = 0; i < lineas.size(); i++) {
-            LineaPresupuesto linea = lineas.get(i);
-
-            if (linea.esCategoria) {
-                // Es una categoría principal
-                if (contadorSubcategorias > 0) {
-                    // Asignar valores a la categoría basados en subcategorías
-                    categoriaActual.estimado = sumaSubcategorias;
-
-                    // Min: 85-95% del estimado
-                    double factorMin = 0.85 + random.nextDouble() * 0.10;
-                    categoriaActual.min = Math.round(categoriaActual.estimado * factorMin / 100000) * 100000;
-
-                    // Max: 110-130% del estimado
-                    double factorMax = 1.10 + random.nextDouble() * 0.20;
-                    categoriaActual.max = Math.round(categoriaActual.estimado * factorMax / 100000) * 100000;
-                }
-
-                // Preparar para la siguiente categoría
-                categoriaActual = linea;
-                sumaSubcategorias = 0;
-                contadorSubcategorias = 0;
-
-            } else {
-                // Es una subcategoría
+        // Primero generar valores para todas las subcategorías
+        for (LineaPresupuesto linea : lineas) {
+            if (!linea.esCategoria) {
                 // Generar valor estimado entre $100,000 y $12,000,000
                 double baseMin = 100000;
                 double baseMax = 12000000;
                 linea.estimado = Math.round((baseMin + random.nextDouble() * (baseMax - baseMin)) / 10000) * 10000;
-
-                // Las subcategorías no tienen min/max propios
                 linea.min = 0;
                 linea.max = 0;
-
-                sumaSubcategorias += linea.estimado;
-                contadorSubcategorias++;
             }
         }
 
-        // Procesar la última categoría
-        if (categoriaActual != null && contadorSubcategorias > 0) {
-            categoriaActual.estimado = sumaSubcategorias;
-            double factorMin = 0.85 + random.nextDouble() * 0.10;
-            categoriaActual.min = Math.round(categoriaActual.estimado * factorMin / 100000) * 100000;
-            double factorMax = 1.10 + random.nextDouble() * 0.20;
-            categoriaActual.max = Math.round(categoriaActual.estimado * factorMax / 100000) * 100000;
+        // Ahora calcular los totales de las categorías
+        // Categoría 1: ADMINISTRACION DEL PROYECTO (suma de línea 11)
+        LineaPresupuesto cat1 = lineas.get(1); // índice 1 es la categoría 1
+        cat1.estimado = lineas.get(0).estimado; // suma de Big Co. (índice 0)
+        calcularMinMax(cat1);
+
+        // Categoría 2: INGENIERIA (suma de líneas 21-25)
+        LineaPresupuesto cat2 = lineas.get(7); // índice 7 es la categoría 2
+        cat2.estimado = 0;
+        for (int i = 2; i <= 6; i++) { // índices 2-6 son las subcategorías de ingeniería
+            cat2.estimado += lineas.get(i).estimado;
         }
+        calcularMinMax(cat2);
+
+        // Categoría 3: CENRTC (suma de líneas 31-33)
+        LineaPresupuesto cat3 = lineas.get(11); // índice 11 es la categoría 3
+        cat3.estimado = 0;
+        for (int i = 8; i <= 10; i++) { // índices 8-10 son las subcategorías de CENRTC
+            cat3.estimado += lineas.get(i).estimado;
+        }
+        calcularMinMax(cat3);
+
+        // Categoría 4: CONSTRUCCION (suma de líneas 41-47)
+        LineaPresupuesto cat4 = lineas.get(19); // índice 19 es la categoría 4
+        cat4.estimado = 0;
+        for (int i = 12; i <= 18; i++) { // índices 12-18 son las subcategorías de construcción
+            cat4.estimado += lineas.get(i).estimado;
+        }
+        calcularMinMax(cat4);
+
+        // Categoría 5: OTROS COSTOS (suma de líneas 51, 52, 54)
+        LineaPresupuesto cat5 = lineas.get(23); // índice 23 es la categoría 5
+        cat5.estimado = 0;
+        for (int i = 20; i <= 22; i++) { // índices 20-22 son las subcategorías
+            cat5.estimado += lineas.get(i).estimado;
+        }
+        calcularMinMax(cat5);
+
+        // Categoría 6: SEGURIDAD & AMBIENTE (suma de líneas 61, 63-66)
+        LineaPresupuesto cat6 = lineas.get(29); // índice 29 es la categoría 6
+        cat6.estimado = 0;
+        for (int i = 24; i <= 28; i++) { // índices 24-28 son las subcategorías
+            cat6.estimado += lineas.get(i).estimado;
+        }
+        calcularMinMax(cat6);
+    }
+
+    private void calcularMinMax(LineaPresupuesto categoria) {
+        // Min: 85-95% del estimado
+        double factorMin = 0.85 + random.nextDouble() * 0.10;
+        categoria.min = Math.round(categoria.estimado * factorMin / 100000) * 100000;
+
+        // Max: 110-130% del estimado
+        double factorMax = 1.10 + random.nextDouble() * 0.20;
+        categoria.max = Math.round(categoria.estimado * factorMax / 100000) * 100000;
     }
 
     private void configurarUI() {
         setLayout(new BorderLayout(10, 10));
 
-        // Panel superior con tabla
         String[] columnas = {"Código", "Descripción", "Estimado", "Min", "Max", "Simulado"};
         modeloTabla = new DefaultTableModel(columnas, 0) {
             @Override
@@ -187,7 +196,6 @@ public class SimuladorAleatorio extends JFrame {
         JScrollPane scrollTabla = new JScrollPane(tabla);
         scrollTabla.setBorder(BorderFactory.createTitledBorder("Proyecto de Estimación de Costos (Valores Aleatorios)"));
 
-        // Panel de botones
         JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
 
         JButton btnRegenerar = new JButton("Regenerar Valores Aleatorios");
@@ -210,10 +218,8 @@ public class SimuladorAleatorio extends JFrame {
         panelBotones.add(spinnerIteraciones);
         panelBotones.add(btnSimular);
 
-        // Panel de estadísticas
         JPanel panelEstadisticas = crearPanelEstadisticas();
 
-        // Panel central
         JPanel panelCentral = new JPanel(new BorderLayout(10, 10));
         panelCentral.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         panelCentral.add(scrollTabla, BorderLayout.NORTH);
@@ -222,7 +228,6 @@ public class SimuladorAleatorio extends JFrame {
 
         add(panelCentral, BorderLayout.CENTER);
 
-        // Acciones de botones
         btnRegenerar.addActionListener(e -> {
             generarValoresAleatorios();
             actualizarTabla();
@@ -241,55 +246,57 @@ public class SimuladorAleatorio extends JFrame {
     }
 
     private void configurarTabla() {
-        tabla.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        tabla.setRowHeight(28);
-        tabla.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
-        tabla.getTableHeader().setBackground(new Color(30, 144, 255));
+        tabla.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        tabla.setRowHeight(25);
+        tabla.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+        tabla.getTableHeader().setBackground(new Color(255, 153, 51));
         tabla.getTableHeader().setForeground(Color.WHITE);
 
-        // Renderizador para categorías (negrita y fondo)
-        DefaultTableCellRenderer categoriaRenderer = new DefaultTableCellRenderer() {
-            DecimalFormat formato = new DecimalFormat("$#,##0.00");
+        DefaultTableCellRenderer moneyRenderer = new DefaultTableCellRenderer() {
+            DecimalFormat formato = new DecimalFormat("$#,##0");
             @Override
-            public Component getTableCellRendererComponent(JTable table, Object value,
-                    boolean isSelected, boolean hasFocus, int row, int column) {
-                Component comp = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-
-                // Verificar si es categoría
-                boolean esCategoria = false;
-                if (row < lineas.size()) {
-                    esCategoria = lineas.get(row).esCategoria;
-                } else if (row >= lineas.size()) {
-                    esCategoria = true; // Filas totales
-                }
-
-                if (esCategoria) {
-                    setFont(new Font("Segoe UI", Font.BOLD, 13));
-                    comp.setBackground(new Color(144, 238, 144)); // Verde claro
-                } else {
-                    setFont(new Font("Segoe UI", Font.PLAIN, 13));
-                    comp.setBackground(Color.WHITE);
-                }
-
-                if (column >= 2 && value instanceof Number) {
+            protected void setValue(Object value) {
+                if (value instanceof Number) {
                     setHorizontalAlignment(SwingConstants.RIGHT);
                     setText(formato.format(value));
-                } else if (column >= 2 && value != null && !value.toString().isEmpty()) {
-                    setHorizontalAlignment(SwingConstants.RIGHT);
                 } else {
-                    setHorizontalAlignment(SwingConstants.LEFT);
+                    super.setValue(value);
                 }
-
-                return comp;
             }
         };
 
-        for (int i = 0; i < 6; i++) {
-            tabla.getColumnModel().getColumn(i).setCellRenderer(categoriaRenderer);
+        DefaultTableCellRenderer categoryRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+                String codigo = (String) table.getValueAt(row, 0);
+                boolean esCategoria = codigo.length() == 1 && !codigo.isEmpty();
+
+                if (esCategoria) {
+                    setFont(new Font("Segoe UI", Font.BOLD, 12));
+                } else {
+                    setFont(new Font("Segoe UI", Font.PLAIN, 12));
+                }
+
+                return c;
+            }
+        };
+
+        tabla.getColumnModel().getColumn(0).setCellRenderer(categoryRenderer);
+        tabla.getColumnModel().getColumn(1).setCellRenderer(categoryRenderer);
+
+        for (int i = 2; i < 6; i++) {
+            tabla.getColumnModel().getColumn(i).setCellRenderer(moneyRenderer);
         }
 
-        tabla.getColumnModel().getColumn(0).setPreferredWidth(80);
-        tabla.getColumnModel().getColumn(1).setPreferredWidth(300);
+        tabla.getColumnModel().getColumn(0).setPreferredWidth(60);
+        tabla.getColumnModel().getColumn(1).setPreferredWidth(350);
+        tabla.getColumnModel().getColumn(2).setPreferredWidth(120);
+        tabla.getColumnModel().getColumn(3).setPreferredWidth(120);
+        tabla.getColumnModel().getColumn(4).setPreferredWidth(120);
+        tabla.getColumnModel().getColumn(5).setPreferredWidth(120);
     }
 
     private void llenarTabla() {
@@ -302,12 +309,11 @@ public class SimuladorAleatorio extends JFrame {
             fila[2] = linea.estimado;
             fila[3] = linea.min > 0 ? linea.min : "";
             fila[4] = linea.max > 0 ? linea.max : "";
-            fila[5] = "";
+            fila[5] = linea.esCategoria ? linea.estimado : "";
 
             modeloTabla.addRow(fila);
         }
 
-        // Calcular totales
         double totalEstimado = lineas.stream()
             .filter(l -> l.esCategoria)
             .mapToDouble(l -> l.estimado)
@@ -323,27 +329,24 @@ public class SimuladorAleatorio extends JFrame {
             .mapToDouble(l -> l.max)
             .sum();
 
-        // Fila de TOTAL PROYECTO
         Object[] filaTotal = new Object[6];
         filaTotal[0] = "";
         filaTotal[1] = "TOTAL PROYECTO";
         filaTotal[2] = totalEstimado;
         filaTotal[3] = totalMin;
         filaTotal[4] = totalMax;
-        filaTotal[5] = "";
+        filaTotal[5] = totalEstimado;
         modeloTabla.addRow(filaTotal);
 
-        // Fila de CONTINGENCIA
         Object[] filaConting = new Object[6];
         filaConting[0] = "";
         filaConting[1] = "CONTINGENCIA";
-        filaConting[2] = "";
+        filaConting[2] = "20%";
         filaConting[3] = "";
-        filaConting[4] = "20%";
+        filaConting[4] = "";
         filaConting[5] = "";
         modeloTabla.addRow(filaConting);
 
-        // Fila de TOTAL CON CONTINGENCIA
         Object[] filaTotalConting = new Object[6];
         filaTotalConting[0] = "";
         filaTotalConting[1] = "PROYECTO TOTAL CON CONTINGENCIA";
@@ -450,7 +453,7 @@ public class SimuladorAleatorio extends JFrame {
     }
 
     private void actualizarResultados(double[] resultados) {
-        DecimalFormat df = new DecimalFormat("$#,##0.00");
+        DecimalFormat df = new DecimalFormat("$#,##0");
 
         double suma = Arrays.stream(resultados).sum();
         double promedio = suma / resultados.length;
@@ -472,8 +475,6 @@ public class SimuladorAleatorio extends JFrame {
     }
 
     private void actualizarTablaConSimulacion() {
-        DecimalFormat df = new DecimalFormat("#,##0.00");
-
         int filaIdx = 0;
         for (LineaPresupuesto linea : lineas) {
             if (linea.esCategoria && linea.min > 0 && linea.max > 0) {
@@ -488,6 +489,31 @@ public class SimuladorAleatorio extends JFrame {
         if (resultadosSimulacion != null && resultadosSimulacion.length > 0) {
             double promedioTotal = Arrays.stream(resultadosSimulacion).average().orElse(0);
             modeloTabla.setValueAt(promedioTotal, lineas.size(), 5);
+
+            tabla.getColumnModel().getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
+                DecimalFormat formato = new DecimalFormat("$#,##0");
+                @Override
+                public Component getTableCellRendererComponent(JTable table, Object value,
+                        boolean isSelected, boolean hasFocus, int row, int column) {
+                    Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+                    setHorizontalAlignment(SwingConstants.RIGHT);
+
+                    if (value instanceof Number) {
+                        setText(formato.format(value));
+                        if (!isSelected) {
+                            setBackground(new Color(144, 238, 144));
+                        }
+                    } else {
+                        setText("");
+                        if (!isSelected) {
+                            setBackground(Color.WHITE);
+                        }
+                    }
+
+                    return c;
+                }
+            });
         }
     }
 
@@ -518,7 +544,7 @@ public class SimuladorAleatorio extends JFrame {
 
         chart.setBackgroundPaint(Color.WHITE);
 
-        DecimalFormat df = new DecimalFormat("#,##0.00");
+        DecimalFormat df = new DecimalFormat("#,##0");
         double promedio = Arrays.stream(datos).average().orElse(0);
         chart.addSubtitle(new org.jfree.chart.title.TextTitle(
             String.format("%d pruebas | Certeza: 100.00%% | Promedio: $%s",
