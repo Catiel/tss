@@ -1,4 +1,4 @@
-package actividad_8.ejercicio_5.predeterminado;
+package actividad_8.ejercicio_5;
 
 import com.formdev.flatlaf.FlatLightLaf;
 import org.jfree.chart.ChartFactory;
