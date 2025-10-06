@@ -1,150 +1,144 @@
-package actividad_8.OPTQuest1;
+package actividad_8.OPTQuest1; // Declaración del paquete
 
-import com.formdev.flatlaf.FlatLightLaf;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.chart.plot.ValueMarker;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.xy.XYBarRenderer;
-import org.jfree.data.statistics.HistogramDataset;
+import com.formdev.flatlaf.FlatLightLaf; // Tema visual moderno para la interfaz
+import org.jfree.chart.ChartFactory; // Fábrica para crear gráficos
+import org.jfree.chart.ChartPanel; // Panel que contiene el gráfico
+import org.jfree.chart.JFreeChart; // Clase principal del gráfico
+import org.jfree.chart.axis.NumberAxis; // Eje numérico para gráficos
+import org.jfree.chart.plot.PlotOrientation; // Orientación del gráfico
+import org.jfree.chart.plot.ValueMarker; // Marcador de valor en el gráfico
+import org.jfree.chart.plot.XYPlot; // Plot para gráficos XY
+import org.jfree.chart.renderer.xy.XYBarRenderer; // Renderizador de barras XY
+import org.jfree.data.statistics.HistogramDataset; // Dataset para histogramas
 
-import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
-import java.awt.*;
-import java.text.DecimalFormat;
-import java.util.*;
-import java.util.List;
+import javax.swing.*; // Componentes de interfaz gráfica Swing
+import javax.swing.table.DefaultTableCellRenderer; // Renderizador de celdas de tabla
+import javax.swing.table.DefaultTableModel; // Modelo de datos para tablas
+import java.awt.*; // Componentes gráficos y layouts
+import java.text.DecimalFormat; // Formateo de números decimales
+import java.util.*; // Utilidades generales de Java
+import java.util.List; // Interfaz List
 
-public class OptimizadorPreciosHotelAleatorio extends JFrame {
+public class OptimizadorPreciosHotelAleatorio extends JFrame { // Clase principal que extiende JFrame
 
-    // Parámetros aleatorios
-    private double[] preciosInicial = new double[3];
-    private double[] demandaPromedio = new double[3];
+    private double[] preciosInicial = new double[3]; // Array de precios iniciales (generados aleatoriamente)
+    private double[] demandaPromedio = new double[3]; // Array de demandas promedio (generadas aleatoriamente)
 
-    private double[][] elasticidadLimites = new double[3][2];
-    private double[][] precioLimites = new double[3][2];
+    private double[][] elasticidadLimites = new double[3][2]; // Matriz de límites de elasticidad (generados aleatoriamente)
+    private double[][] precioLimites = new double[3][2]; // Matriz de límites de precios (generados aleatoriamente)
 
-    private int capacidadMaxima;
-    private double percentilObjetivo = 0.80;
-    private int numSimulaciones = 1000;
-    private int numPruebasMC = 5000;
+    private int capacidadMaxima; // Capacidad máxima del hotel (generada aleatoriamente)
+    private double percentilObjetivo = 0.80; // Percentil 80% para restricción
+    private int numSimulaciones = 1000; // Número de iteraciones de optimización
+    private int numPruebasMC = 5000; // Pruebas Monte Carlo por simulación
 
-    private JTable tablaHotel;
-    private DefaultTableModel modeloTabla;
-    private JLabel lblTotalDemanda;
-    private JLabel lblTotalGanancia;
-    private JLabel lblCapacidad;
-    private JProgressBar progressBar;
-    private JProgressBar progressBarPruebas;
-    private JLabel lblSimulacionesActual;
-    private JLabel lblPruebasActual;
-    private JButton btnOptimizar;
-    private JButton btnGraficas;
-    private JButton btnGenerar;
+    private JTable tablaHotel; // Tabla para mostrar datos del hotel
+    private DefaultTableModel modeloTabla; // Modelo de datos de la tabla
+    private JLabel lblTotalDemanda; // Etiqueta para mostrar demanda total
+    private JLabel lblTotalGanancia; // Etiqueta para mostrar ganancia total
+    private JLabel lblCapacidad; // Etiqueta para mostrar capacidad
+    private JProgressBar progressBar; // Barra de progreso para simulaciones
+    private JProgressBar progressBarPruebas; // Barra de progreso para pruebas MC
+    private JLabel lblSimulacionesActual; // Etiqueta de simulaciones actuales
+    private JLabel lblPruebasActual; // Etiqueta de pruebas actuales
+    private JButton btnOptimizar; // Botón para ejecutar optimización
+    private JButton btnGraficas; // Botón para ver gráficas
+    private JButton btnGenerar; // Botón para generar nuevos valores aleatorios
 
-    private double mejorGananciaTotal = Double.NEGATIVE_INFINITY;
-    private double mejorDemandaTotal = 0;
-    private double[] mejoresPrecios = new double[3];
-    private double[] mejoresElasticidades = new double[3];
-    private double[] mejoresProyeccionesDemanda = new double[3];
-    private double[] mejoresProyeccionesGanancia = new double[3];
+    private double mejorGananciaTotal = Double.NEGATIVE_INFINITY; // Mejor ganancia encontrada (inicializada en infinito negativo)
+    private double mejorDemandaTotal = 0; // Mejor demanda total encontrada
+    private double[] mejoresPrecios = new double[3]; // Array con mejores precios encontrados
+    private double[] mejoresElasticidades = new double[3]; // Array con mejores elasticidades
+    private double[] mejoresProyeccionesDemanda = new double[3]; // Array con mejores proyecciones de demanda
+    private double[] mejoresProyeccionesGanancia = new double[3]; // Array con mejores proyecciones de ganancia
 
-    private List<ResultadoSimulacion> historialMejoras;
-    private List<Double> gananciasFinales;
-    private List<Double> demandasFinales;
+    private List<ResultadoSimulacion> historialMejoras; // Lista con historial de mejoras
+    private List<Double> gananciasFinales; // Lista de ganancias de la mejor solución (para histograma)
+    private List<Double> demandasFinales; // Lista de demandas de la mejor solución (para histograma)
 
-    private Random random;
+    private Random random; // Generador de números aleatorios
 
-    public OptimizadorPreciosHotelAleatorio() {
-        super("Problema: precios de cuartos de hotel - Valores Aleatorios");
-        random = new Random();
-        historialMejoras = new ArrayList<>();
-        gananciasFinales = new ArrayList<>();
-        demandasFinales = new ArrayList<>();
+    public OptimizadorPreciosHotelAleatorio() { // Constructor de la clase principal
+        super("Problema: precios de cuartos de hotel - Valores Aleatorios"); // Título de la ventana
+        random = new Random(); // Inicializar generador aleatorio
+        historialMejoras = new ArrayList<>(); // Inicializar lista de historial
+        gananciasFinales = new ArrayList<>(); // Inicializar lista de ganancias finales
+        demandasFinales = new ArrayList<>(); // Inicializar lista de demandas finales
 
-        generarValoresAleatorios();
-        configurarUI();
+        generarValoresAleatorios(); // Generar valores aleatorios iniciales
+        configurarUI(); // Configurar interfaz de usuario
 
-        setSize(1400, 750);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setSize(1400, 750); // Establecer tamaño de ventana
+        setLocationRelativeTo(null); // Centrar ventana en pantalla
+        setDefaultCloseOperation(EXIT_ON_CLOSE); // Cerrar aplicación al cerrar ventana
     }
 
-    private void generarValoresAleatorios() {
-        // Precios iniciales aleatorios
-        preciosInicial[0] = 70 + random.nextInt(30);  // Standard: $70-$100
-        preciosInicial[1] = 90 + random.nextInt(30);  // Gold: $90-$120
-        preciosInicial[2] = 120 + random.nextInt(40); // Platinum: $120-$160
+    private void generarValoresAleatorios() { // Método para generar valores aleatorios
+        preciosInicial[0] = 70 + random.nextInt(30); // Precio Standard aleatorio: $70-$100
+        preciosInicial[1] = 90 + random.nextInt(30); // Precio Gold aleatorio: $90-$120
+        preciosInicial[2] = 120 + random.nextInt(40); // Precio Platinum aleatorio: $120-$160
 
-        // Demandas aleatorias
-        demandaPromedio[0] = 150 + random.nextInt(200); // Standard: 150-350
-        demandaPromedio[1] = 50 + random.nextInt(100);  // Gold: 50-150
-        demandaPromedio[2] = 20 + random.nextInt(80);   // Platinum: 20-100
+        demandaPromedio[0] = 150 + random.nextInt(200); // Demanda Standard aleatoria: 150-350
+        demandaPromedio[1] = 50 + random.nextInt(100); // Demanda Gold aleatoria: 50-150
+        demandaPromedio[2] = 20 + random.nextInt(80); // Demanda Platinum aleatoria: 20-100
 
-        // Elasticidades aleatorias (siempre negativas)
-        elasticidadLimites[0][0] = -5.0 + random.nextDouble() * 0.5; // Min: -5.0 a -4.5
-        elasticidadLimites[0][1] = -2.0 + random.nextDouble() * 0.5; // Max: -2.0 a -1.5
+        elasticidadLimites[0][0] = -5.0 + random.nextDouble() * 0.5; // Elasticidad Standard mínima: -5.0 a -4.5
+        elasticidadLimites[0][1] = -2.0 + random.nextDouble() * 0.5; // Elasticidad Standard máxima: -2.0 a -1.5
 
-        elasticidadLimites[1][0] = -2.0 + random.nextDouble() * 0.5; // Min: -2.0 a -1.5
-        elasticidadLimites[1][1] = -1.0 + random.nextDouble() * 0.5; // Max: -1.0 a -0.5
+        elasticidadLimites[1][0] = -2.0 + random.nextDouble() * 0.5; // Elasticidad Gold mínima: -2.0 a -1.5
+        elasticidadLimites[1][1] = -1.0 + random.nextDouble() * 0.5; // Elasticidad Gold máxima: -1.0 a -0.5
 
-        elasticidadLimites[2][0] = -3.5 + random.nextDouble() * 0.5; // Min: -3.5 a -3.0
-        elasticidadLimites[2][1] = -1.5 + random.nextDouble() * 0.5; // Max: -1.5 a -1.0
+        elasticidadLimites[2][0] = -3.5 + random.nextDouble() * 0.5; // Elasticidad Platinum mínima: -3.5 a -3.0
+        elasticidadLimites[2][1] = -1.5 + random.nextDouble() * 0.5; // Elasticidad Platinum máxima: -1.5 a -1.0
 
-        // Límites de precios para optimización (alrededor del precio inicial ±20%)
-        for (int i = 0; i < 3; i++) {
-            double rango = preciosInicial[i] * 0.20;
-            precioLimites[i][0] = Math.max(50, preciosInicial[i] - rango);
-            precioLimites[i][1] = preciosInicial[i] + rango;
+        for (int i = 0; i < 3; i++) { // Iterar sobre los 3 tipos de habitación
+            double rango = preciosInicial[i] * 0.20; // Calcular rango de ±20% del precio inicial
+            precioLimites[i][0] = Math.max(50, preciosInicial[i] - rango); // Límite inferior (mínimo $50)
+            precioLimites[i][1] = preciosInicial[i] + rango; // Límite superior
         }
 
-        // Capacidad aleatoria basada en demanda total
-        double demandaTotal = demandaPromedio[0] + demandaPromedio[1] + demandaPromedio[2];
-        capacidadMaxima = (int)(demandaTotal * (0.8 + random.nextDouble() * 0.4)); // 80%-120% de demanda
+        double demandaTotal = demandaPromedio[0] + demandaPromedio[1] + demandaPromedio[2]; // Calcular demanda total
+        capacidadMaxima = (int)(demandaTotal * (0.8 + random.nextDouble() * 0.4)); // Capacidad: 80%-120% de demanda total
     }
 
-    private void configurarUI() {
-        setLayout(new BorderLayout(20, 20));
-        getContentPane().setBackground(Color.WHITE);
+    private void configurarUI() { // Método para configurar interfaz de usuario
+        setLayout(new BorderLayout(20, 20)); // Establecer layout BorderLayout con espaciado
+        getContentPane().setBackground(Color.WHITE); // Establecer fondo blanco
 
-        JPanel panelPrincipal = new JPanel(new BorderLayout(20, 20));
-        panelPrincipal.setBackground(Color.WHITE);
-        panelPrincipal.setBorder(BorderFactory.createEmptyBorder(30, 40, 30, 40));
+        JPanel panelPrincipal = new JPanel(new BorderLayout(20, 20)); // Panel principal con BorderLayout
+        panelPrincipal.setBackground(Color.WHITE); // Fondo blanco
+        panelPrincipal.setBorder(BorderFactory.createEmptyBorder(30, 40, 30, 40)); // Agregar margen vacío
 
-        JLabel lblTitulo = new JLabel("Problema: precios de cuartos de hotel (Valores Aleatorios)");
-        lblTitulo.setFont(new Font("Calibri", Font.BOLD, 26));
-        lblTitulo.setForeground(new Color(31, 78, 120));
+        JLabel lblTitulo = new JLabel("Problema: precios de cuartos de hotel (Valores Aleatorios)"); // Crear etiqueta de título
+        lblTitulo.setFont(new Font("Calibri", Font.BOLD, 26)); // Establecer fuente grande y negrita
+        lblTitulo.setForeground(new Color(31, 78, 120)); // Color azul oscuro
 
-        JPanel panelTitulo = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        panelTitulo.setBackground(Color.WHITE);
-        panelTitulo.add(lblTitulo);
+        JPanel panelTitulo = new JPanel(new FlowLayout(FlowLayout.LEFT)); // Panel para título con FlowLayout
+        panelTitulo.setBackground(Color.WHITE); // Fondo blanco
+        panelTitulo.add(lblTitulo); // Agregar etiqueta de título
 
-        JPanel panelTotales = crearPanelTotales();
-        JPanel panelTabla = crearTablaPrincipal();
-        JPanel panelControl = crearPanelControl();
+        JPanel panelTotales = crearPanelTotales(); // Crear panel de totales
+        JPanel panelTabla = crearTablaPrincipal(); // Crear panel con tabla principal
+        JPanel panelControl = crearPanelControl(); // Crear panel de controles
 
-        panelPrincipal.add(panelTitulo, BorderLayout.NORTH);
-        panelPrincipal.add(panelTabla, BorderLayout.CENTER);
+        panelPrincipal.add(panelTitulo, BorderLayout.NORTH); // Agregar título al norte
+        panelPrincipal.add(panelTabla, BorderLayout.CENTER); // Agregar tabla al centro
 
-        JPanel panelSur = new JPanel(new BorderLayout(10, 10));
-        panelSur.setBackground(Color.WHITE);
-        panelSur.add(panelTotales, BorderLayout.NORTH);
-        panelSur.add(panelControl, BorderLayout.CENTER);
+        JPanel panelSur = new JPanel(new BorderLayout(10, 10)); // Panel sur con BorderLayout
+        panelSur.setBackground(Color.WHITE); // Fondo blanco
+        panelSur.add(panelTotales, BorderLayout.NORTH); // Agregar totales al norte del panel sur
+        panelSur.add(panelControl, BorderLayout.CENTER); // Agregar controles al centro del panel sur
 
-        panelPrincipal.add(panelSur, BorderLayout.SOUTH);
+        panelPrincipal.add(panelSur, BorderLayout.SOUTH); // Agregar panel sur al sur del principal
 
-        add(panelPrincipal);
+        add(panelPrincipal); // Agregar panel principal a la ventana
     }
 
-    private JPanel crearTablaPrincipal() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
+    private JPanel crearTablaPrincipal() { // Método para crear panel con tabla principal
+        JPanel panel = new JPanel(new BorderLayout()); // Panel con BorderLayout
+        panel.setBackground(Color.WHITE); // Fondo blanco
 
-        String[] columnas = {
+        String[] columnas = { // Array con nombres de columnas
             "Tipo de habitación",
             "Precio",
             "Demanda\ndiaria\npromedio",
@@ -155,87 +149,87 @@ public class OptimizadorPreciosHotelAleatorio extends JFrame {
             "Proyección\nde\nganancia"
         };
 
-        modeloTabla = new DefaultTableModel(columnas, 0) {
+        modeloTabla = new DefaultTableModel(columnas, 0) { // Crear modelo de tabla
             @Override
-            public boolean isCellEditable(int row, int col) {
-                return false;
+            public boolean isCellEditable(int row, int col) { // Sobrescribir método de edición
+                return false; // Hacer todas las celdas no editables
             }
         };
 
-        tablaHotel = new JTable(modeloTabla);
-        configurarTabla();
-        llenarTablaInicial();
+        tablaHotel = new JTable(modeloTabla); // Crear tabla con el modelo
+        configurarTabla(); // Configurar formato de tabla
+        llenarTablaInicial(); // Llenar tabla con datos iniciales
 
-        JScrollPane scrollTabla = new JScrollPane(tablaHotel);
-        scrollTabla.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
-        scrollTabla.setBackground(Color.WHITE);
+        JScrollPane scrollTabla = new JScrollPane(tablaHotel); // Crear scroll para tabla
+        scrollTabla.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1)); // Agregar borde gris
+        scrollTabla.setBackground(Color.WHITE); // Fondo blanco
 
-        panel.add(scrollTabla, BorderLayout.CENTER);
+        panel.add(scrollTabla, BorderLayout.CENTER); // Agregar scroll al centro
 
-        return panel;
+        return panel; // Retornar panel completo
     }
 
-    private void configurarTabla() {
-        tablaHotel.setFont(new Font("Calibri", Font.PLAIN, 14));
-        tablaHotel.setRowHeight(45);
-        tablaHotel.getTableHeader().setFont(new Font("Calibri", Font.BOLD, 13));
-        tablaHotel.getTableHeader().setBackground(new Color(242, 220, 219));
-        tablaHotel.getTableHeader().setForeground(Color.BLACK);
-        tablaHotel.getTableHeader().setReorderingAllowed(false);
-        tablaHotel.setGridColor(new Color(200, 200, 200));
+    private void configurarTabla() { // Método para configurar apariencia de tabla
+        tablaHotel.setFont(new Font("Calibri", Font.PLAIN, 14)); // Fuente de la tabla
+        tablaHotel.setRowHeight(45); // Altura de filas
+        tablaHotel.getTableHeader().setFont(new Font("Calibri", Font.BOLD, 13)); // Fuente del encabezado
+        tablaHotel.getTableHeader().setBackground(new Color(242, 220, 219)); // Color de fondo encabezado (rosa claro)
+        tablaHotel.getTableHeader().setForeground(Color.BLACK); // Color de texto encabezado (negro)
+        tablaHotel.getTableHeader().setReorderingAllowed(false); // No permitir reordenar columnas
+        tablaHotel.setGridColor(new Color(200, 200, 200)); // Color de líneas de cuadrícula
 
-        DefaultTableCellRenderer renderer = new DefaultTableCellRenderer() {
+        DefaultTableCellRenderer renderer = new DefaultTableCellRenderer() { // Renderizador personalizado
             @Override
-            public Component getTableCellRendererComponent(JTable table, Object value,
+            public Component getTableCellRendererComponent(JTable table, Object value, // Sobrescribir método
                     boolean isSelected, boolean hasFocus, int row, int column) {
-                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column); // Obtener componente
 
-                setHorizontalAlignment(SwingConstants.CENTER);
-                setFont(new Font("Calibri", Font.PLAIN, 14));
+                setHorizontalAlignment(SwingConstants.CENTER); // Alinear al centro
+                setFont(new Font("Calibri", Font.PLAIN, 14)); // Fuente normal
 
-                if (column == 0) {
-                    setFont(new Font("Calibri", Font.BOLD | Font.ITALIC, 14));
-                    setHorizontalAlignment(SwingConstants.LEFT);
-                    setBackground(Color.WHITE);
+                if (column == 0) { // Si es primera columna (nombres)
+                    setFont(new Font("Calibri", Font.BOLD | Font.ITALIC, 14)); // Fuente negrita e itálica
+                    setHorizontalAlignment(SwingConstants.LEFT); // Alinear a la izquierda
+                    setBackground(Color.WHITE); // Fondo blanco
                 }
-                else if (column == 4) {
-                    setBackground(new Color(0, 176, 80));
-                    setForeground(Color.BLACK);
-                    setFont(new Font("Calibri", Font.BOLD, 14));
+                else if (column == 4) { // Si es columna Elasticidad
+                    setBackground(new Color(0, 176, 80)); // Fondo verde
+                    setForeground(Color.BLACK); // Texto negro
+                    setFont(new Font("Calibri", Font.BOLD, 14)); // Fuente negrita
                 }
-                else if (column == 5) {
-                    setBackground(new Color(255, 255, 0));
-                    setForeground(Color.BLACK);
-                    setFont(new Font("Calibri", Font.BOLD, 14));
+                else if (column == 5) { // Si es columna Nuevo precio
+                    setBackground(new Color(255, 255, 0)); // Fondo amarillo
+                    setForeground(Color.BLACK); // Texto negro
+                    setFont(new Font("Calibri", Font.BOLD, 14)); // Fuente negrita
                 }
-                else {
-                    setBackground(Color.WHITE);
-                    setForeground(Color.BLACK);
+                else { // Otras columnas
+                    setBackground(Color.WHITE); // Fondo blanco
+                    setForeground(Color.BLACK); // Texto negro
                 }
 
-                setBorder(BorderFactory.createMatteBorder(0, 0, 1, 1, new Color(200, 200, 200)));
+                setBorder(BorderFactory.createMatteBorder(0, 0, 1, 1, new Color(200, 200, 200))); // Agregar borde
 
-                return c;
+                return c; // Retornar componente
             }
         };
 
-        for (int i = 0; i < tablaHotel.getColumnCount(); i++) {
-            tablaHotel.getColumnModel().getColumn(i).setCellRenderer(renderer);
+        for (int i = 0; i < tablaHotel.getColumnCount(); i++) { // Iterar sobre todas las columnas
+            tablaHotel.getColumnModel().getColumn(i).setCellRenderer(renderer); // Aplicar renderizador a cada columna
         }
 
-        tablaHotel.getColumnModel().getColumn(0).setPreferredWidth(180);
+        tablaHotel.getColumnModel().getColumn(0).setPreferredWidth(180); // Establecer ancho preferido columna 0
     }
 
-    private void llenarTablaInicial() {
-        modeloTabla.setRowCount(0);
-        DecimalFormat dfMoney = new DecimalFormat("$#,##0.00");
-        DecimalFormat dfInt = new DecimalFormat("0");
+    private void llenarTablaInicial() { // Método para llenar tabla con datos iniciales
+        modeloTabla.setRowCount(0); // Limpiar todas las filas
+        DecimalFormat dfMoney = new DecimalFormat("$#,##0.00"); // Formato monetario
+        DecimalFormat dfInt = new DecimalFormat("0"); // Formato entero
 
-        String[] tipos = {"Standard", "Gold", "Platinum"};
+        String[] tipos = {"Standard", "Gold", "Platinum"}; // Tipos de habitaciones
 
-        for (int i = 0; i < 3; i++) {
-            double ganancia = preciosInicial[i] * demandaPromedio[i];
-            modeloTabla.addRow(new Object[]{
+        for (int i = 0; i < 3; i++) { // Iterar sobre los 3 tipos
+            double ganancia = preciosInicial[i] * demandaPromedio[i]; // Calcular ganancia inicial
+            modeloTabla.addRow(new Object[]{ // Agregar fila con datos
                 tipos[i],
                 dfMoney.format(preciosInicial[i]),
                 dfInt.format(demandaPromedio[i]),
@@ -247,116 +241,116 @@ public class OptimizadorPreciosHotelAleatorio extends JFrame {
             });
         }
 
-        actualizarTotales();
+        actualizarTotales(); // Actualizar totales
     }
 
-    private void actualizarTotales() {
-        double totalDemanda = demandaPromedio[0] + demandaPromedio[1] + demandaPromedio[2];
-        double totalGanancia = (preciosInicial[0] * demandaPromedio[0]) +
+    private void actualizarTotales() { // Método para actualizar etiquetas de totales
+        double totalDemanda = demandaPromedio[0] + demandaPromedio[1] + demandaPromedio[2]; // Sumar demanda total
+        double totalGanancia = (preciosInicial[0] * demandaPromedio[0]) + // Calcular ganancia total
                                (preciosInicial[1] * demandaPromedio[1]) +
                                (preciosInicial[2] * demandaPromedio[2]);
 
-        DecimalFormat dfMoney = new DecimalFormat("$#,##0.00");
-        DecimalFormat dfInt = new DecimalFormat("0");
+        DecimalFormat dfMoney = new DecimalFormat("$#,##0.00"); // Formato monetario
+        DecimalFormat dfInt = new DecimalFormat("0"); // Formato entero
 
-        lblTotalDemanda.setText(dfInt.format(totalDemanda));
-        lblTotalGanancia.setText(dfMoney.format(totalGanancia));
-        lblCapacidad.setText(String.valueOf(capacidadMaxima));
+        lblTotalDemanda.setText(dfInt.format(totalDemanda)); // Actualizar etiqueta demanda
+        lblTotalGanancia.setText(dfMoney.format(totalGanancia)); // Actualizar etiqueta ganancia
+        lblCapacidad.setText(String.valueOf(capacidadMaxima)); // Actualizar etiqueta capacidad
     }
 
-    private JPanel crearPanelTotales() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 30, 10));
-        panel.setBackground(Color.WHITE);
+    private JPanel crearPanelTotales() { // Método para crear panel de totales
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 30, 10)); // Panel con FlowLayout alineado a la derecha
+        panel.setBackground(Color.WHITE); // Fondo blanco
 
-        JPanel panelTotal = new JPanel(new BorderLayout(10, 5));
-        panelTotal.setBackground(Color.WHITE);
+        JPanel panelTotal = new JPanel(new BorderLayout(10, 5)); // Panel para total con BorderLayout
+        panelTotal.setBackground(Color.WHITE); // Fondo blanco
 
-        JLabel lblTotal = new JLabel("Total", SwingConstants.CENTER);
-        lblTotal.setFont(new Font("Calibri", Font.BOLD, 14));
+        JLabel lblTotal = new JLabel("Total", SwingConstants.CENTER); // Etiqueta "Total"
+        lblTotal.setFont(new Font("Calibri", Font.BOLD, 14)); // Fuente negrita
 
-        JPanel panelValoresTotal = new JPanel(new GridLayout(1, 2, 10, 0));
-        panelValoresTotal.setBackground(Color.WHITE);
+        JPanel panelValoresTotal = new JPanel(new GridLayout(1, 2, 10, 0)); // Panel para valores con GridLayout
+        panelValoresTotal.setBackground(Color.WHITE); // Fondo blanco
 
-        lblTotalDemanda = new JLabel("400", SwingConstants.CENTER);
-        lblTotalDemanda.setFont(new Font("Calibri", Font.BOLD, 16));
-        lblTotalDemanda.setBackground(new Color(0, 255, 255));
-        lblTotalDemanda.setOpaque(true);
-        lblTotalDemanda.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
-        lblTotalDemanda.setPreferredSize(new Dimension(80, 35));
+        lblTotalDemanda = new JLabel("400", SwingConstants.CENTER); // Etiqueta demanda total
+        lblTotalDemanda.setFont(new Font("Calibri", Font.BOLD, 16)); // Fuente grande y negrita
+        lblTotalDemanda.setBackground(new Color(0, 255, 255)); // Fondo cian
+        lblTotalDemanda.setOpaque(true); // Hacer opaco
+        lblTotalDemanda.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1)); // Borde negro
+        lblTotalDemanda.setPreferredSize(new Dimension(80, 35)); // Tamaño preferido
 
-        lblTotalGanancia = new JLabel("$38.000,00", SwingConstants.CENTER);
-        lblTotalGanancia.setFont(new Font("Calibri", Font.BOLD, 16));
-        lblTotalGanancia.setBackground(new Color(0, 255, 255));
-        lblTotalGanancia.setOpaque(true);
-        lblTotalGanancia.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
-        lblTotalGanancia.setPreferredSize(new Dimension(120, 35));
+        lblTotalGanancia = new JLabel("$38.000,00", SwingConstants.CENTER); // Etiqueta ganancia total
+        lblTotalGanancia.setFont(new Font("Calibri", Font.BOLD, 16)); // Fuente grande y negrita
+        lblTotalGanancia.setBackground(new Color(0, 255, 255)); // Fondo cian
+        lblTotalGanancia.setOpaque(true); // Hacer opaco
+        lblTotalGanancia.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1)); // Borde negro
+        lblTotalGanancia.setPreferredSize(new Dimension(120, 35)); // Tamaño preferido
 
-        panelValoresTotal.add(lblTotalDemanda);
-        panelValoresTotal.add(lblTotalGanancia);
+        panelValoresTotal.add(lblTotalDemanda); // Agregar etiqueta demanda
+        panelValoresTotal.add(lblTotalGanancia); // Agregar etiqueta ganancia
 
-        panelTotal.add(lblTotal, BorderLayout.NORTH);
-        panelTotal.add(panelValoresTotal, BorderLayout.CENTER);
+        panelTotal.add(lblTotal, BorderLayout.NORTH); // Agregar etiqueta "Total" al norte
+        panelTotal.add(panelValoresTotal, BorderLayout.CENTER); // Agregar valores al centro
 
-        JPanel panelCapacity = new JPanel(new BorderLayout(10, 5));
-        panelCapacity.setBackground(Color.WHITE);
+        JPanel panelCapacity = new JPanel(new BorderLayout(10, 5)); // Panel para capacidad
+        panelCapacity.setBackground(Color.WHITE); // Fondo blanco
 
-        JLabel lblCapacityLabel = new JLabel("Capacity", SwingConstants.CENTER);
-        lblCapacityLabel.setFont(new Font("Calibri", Font.BOLD, 14));
+        JLabel lblCapacityLabel = new JLabel("Capacity", SwingConstants.CENTER); // Etiqueta "Capacity"
+        lblCapacityLabel.setFont(new Font("Calibri", Font.BOLD, 14)); // Fuente negrita
 
-        lblCapacidad = new JLabel("450", SwingConstants.CENTER);
-        lblCapacidad.setFont(new Font("Calibri", Font.BOLD, 16));
-        lblCapacidad.setForeground(new Color(255, 102, 0));
-        lblCapacidad.setBackground(Color.WHITE);
-        lblCapacidad.setOpaque(true);
-        lblCapacidad.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
-        lblCapacidad.setPreferredSize(new Dimension(80, 35));
+        lblCapacidad = new JLabel("450", SwingConstants.CENTER); // Etiqueta capacidad
+        lblCapacidad.setFont(new Font("Calibri", Font.BOLD, 16)); // Fuente grande y negrita
+        lblCapacidad.setForeground(new Color(255, 102, 0)); // Color naranja
+        lblCapacidad.setBackground(Color.WHITE); // Fondo blanco
+        lblCapacidad.setOpaque(true); // Hacer opaco
+        lblCapacidad.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1)); // Borde negro
+        lblCapacidad.setPreferredSize(new Dimension(80, 35)); // Tamaño preferido
 
-        panelCapacity.add(lblCapacityLabel, BorderLayout.NORTH);
-        panelCapacity.add(lblCapacidad, BorderLayout.CENTER);
+        panelCapacity.add(lblCapacityLabel, BorderLayout.NORTH); // Agregar etiqueta "Capacity" al norte
+        panelCapacity.add(lblCapacidad, BorderLayout.CENTER); // Agregar valor al centro
 
-        panel.add(panelTotal);
-        panel.add(panelCapacity);
+        panel.add(panelTotal); // Agregar panel total
+        panel.add(panelCapacity); // Agregar panel capacidad
 
-        return panel;
+        return panel; // Retornar panel completo
     }
 
-    private JPanel crearPanelControl() {
-        JPanel panel = new JPanel(new GridLayout(2, 1, 10, 15));
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 0, 10, 0));
+    private JPanel crearPanelControl() { // Método para crear panel de controles
+        JPanel panel = new JPanel(new GridLayout(2, 1, 10, 15)); // Panel con GridLayout de 2 filas
+        panel.setBackground(Color.WHITE); // Fondo blanco
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 0, 10, 0)); // Agregar margen vacío
 
-        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0));
-        panelBotones.setBackground(Color.WHITE);
+        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 0)); // Panel para botones con FlowLayout
+        panelBotones.setBackground(Color.WHITE); // Fondo blanco
 
-        btnGenerar = new JButton("🎲 Generar Nuevos Valores");
-        btnGenerar.setFont(new Font("Calibri", Font.BOLD, 14));
-        btnGenerar.setBackground(new Color(255, 153, 0));
-        btnGenerar.setForeground(Color.WHITE);
-        btnGenerar.setFocusPainted(false);
-        btnGenerar.setPreferredSize(new Dimension(250, 45));
+        btnGenerar = new JButton("🎲 Generar Nuevos Valores"); // Botón para generar nuevos valores
+        btnGenerar.setFont(new Font("Calibri", Font.BOLD, 14)); // Fuente negrita
+        btnGenerar.setBackground(new Color(255, 153, 0)); // Color de fondo naranja
+        btnGenerar.setForeground(Color.WHITE); // Color de texto blanco
+        btnGenerar.setFocusPainted(false); // Quitar borde de foco
+        btnGenerar.setPreferredSize(new Dimension(250, 45)); // Establecer tamaño preferido
 
-        btnOptimizar = new JButton("Ejecutar Optimización (OptQuest)");
-        btnOptimizar.setFont(new Font("Calibri", Font.BOLD, 16));
-        btnOptimizar.setBackground(new Color(68, 114, 196));
-        btnOptimizar.setForeground(Color.WHITE);
-        btnOptimizar.setFocusPainted(false);
-        btnOptimizar.setPreferredSize(new Dimension(350, 50));
+        btnOptimizar = new JButton("Ejecutar Optimización (OptQuest)"); // Botón para ejecutar optimización
+        btnOptimizar.setFont(new Font("Calibri", Font.BOLD, 16)); // Fuente grande y negrita
+        btnOptimizar.setBackground(new Color(68, 114, 196)); // Color de fondo azul
+        btnOptimizar.setForeground(Color.WHITE); // Color de texto blanco
+        btnOptimizar.setFocusPainted(false); // Quitar borde de foco
+        btnOptimizar.setPreferredSize(new Dimension(350, 50)); // Establecer tamaño preferido
 
-        btnGraficas = new JButton("Ver Gráficas");
-        btnGraficas.setFont(new Font("Calibri", Font.BOLD, 14));
-        btnGraficas.setBackground(new Color(112, 173, 71));
-        btnGraficas.setForeground(Color.WHITE);
-        btnGraficas.setFocusPainted(false);
-        btnGraficas.setPreferredSize(new Dimension(200, 40));
-        btnGraficas.setEnabled(false);
+        btnGraficas = new JButton("Ver Gráficas"); // Botón para ver gráficas
+        btnGraficas.setFont(new Font("Calibri", Font.BOLD, 14)); // Fuente negrita
+        btnGraficas.setBackground(new Color(112, 173, 71)); // Color de fondo verde
+        btnGraficas.setForeground(Color.WHITE); // Color de texto blanco
+        btnGraficas.setFocusPainted(false); // Quitar borde de foco
+        btnGraficas.setPreferredSize(new Dimension(200, 40)); // Establecer tamaño preferido
+        btnGraficas.setEnabled(false); // Deshabilitar inicialmente
 
-        panelBotones.add(btnGenerar);
-        panelBotones.add(btnOptimizar);
-        panelBotones.add(btnGraficas);
+        panelBotones.add(btnGenerar); // Agregar botón generar
+        panelBotones.add(btnOptimizar); // Agregar botón optimizar
+        panelBotones.add(btnGraficas); // Agregar botón gráficas
 
-        JPanel panelProgress = new JPanel(new BorderLayout(10, 10));
-        panelProgress.setBackground(Color.WHITE);
-        panelProgress.setBorder(BorderFactory.createTitledBorder(
+        JPanel panelProgress = new JPanel(new BorderLayout(10, 10)); // Panel para barras de progreso
+        panelProgress.setBackground(Color.WHITE); // Fondo blanco
+        panelProgress.setBorder(BorderFactory.createTitledBorder( // Agregar borde con título
             BorderFactory.createLineBorder(Color.GRAY),
             "Panel de control: OptQuest",
             javax.swing.border.TitledBorder.LEFT,
@@ -364,150 +358,150 @@ public class OptimizadorPreciosHotelAleatorio extends JFrame {
             new Font("Calibri", Font.BOLD, 12)
         ));
 
-        JPanel panelBarras = new JPanel(new GridLayout(2, 1, 5, 10));
-        panelBarras.setBackground(Color.WHITE);
-        panelBarras.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        JPanel panelBarras = new JPanel(new GridLayout(2, 1, 5, 10)); // Panel con GridLayout para las barras
+        panelBarras.setBackground(Color.WHITE); // Fondo blanco
+        panelBarras.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20)); // Agregar margen vacío
 
-        JPanel panelSim = new JPanel(new BorderLayout(5, 5));
-        panelSim.setBackground(Color.WHITE);
+        JPanel panelSim = new JPanel(new BorderLayout(5, 5)); // Panel para barra de simulaciones
+        panelSim.setBackground(Color.WHITE); // Fondo blanco
 
-        lblSimulacionesActual = new JLabel("Simulaciones totales: 0 / " + numSimulaciones);
-        lblSimulacionesActual.setFont(new Font("Calibri", Font.PLAIN, 11));
+        lblSimulacionesActual = new JLabel("Simulaciones totales: 0 / " + numSimulaciones); // Etiqueta de simulaciones
+        lblSimulacionesActual.setFont(new Font("Calibri", Font.PLAIN, 11)); // Fuente pequeña
 
-        progressBar = new JProgressBar(0, numSimulaciones);
-        progressBar.setStringPainted(false);
-        progressBar.setPreferredSize(new Dimension(500, 25));
-        progressBar.setForeground(new Color(0, 32, 96));
-        progressBar.setBackground(Color.WHITE);
+        progressBar = new JProgressBar(0, numSimulaciones); // Crear barra de progreso para simulaciones
+        progressBar.setStringPainted(false); // No mostrar texto en barra
+        progressBar.setPreferredSize(new Dimension(500, 25)); // Establecer tamaño preferido
+        progressBar.setForeground(new Color(0, 32, 96)); // Color azul oscuro
+        progressBar.setBackground(Color.WHITE); // Fondo blanco
 
-        panelSim.add(lblSimulacionesActual, BorderLayout.WEST);
-        panelSim.add(progressBar, BorderLayout.CENTER);
-        JLabel lblMaxSim = new JLabel(numSimulaciones + "  ");
-        lblMaxSim.setFont(new Font("Calibri", Font.PLAIN, 11));
-        panelSim.add(lblMaxSim, BorderLayout.EAST);
+        panelSim.add(lblSimulacionesActual, BorderLayout.WEST); // Agregar etiqueta al oeste
+        panelSim.add(progressBar, BorderLayout.CENTER); // Agregar barra al centro
+        JLabel lblMaxSim = new JLabel(numSimulaciones + "  "); // Etiqueta con máximo de simulaciones
+        lblMaxSim.setFont(new Font("Calibri", Font.PLAIN, 11)); // Fuente pequeña
+        panelSim.add(lblMaxSim, BorderLayout.EAST); // Agregar al este
 
-        JPanel panelPruebas = new JPanel(new BorderLayout(5, 5));
-        panelPruebas.setBackground(Color.WHITE);
+        JPanel panelPruebas = new JPanel(new BorderLayout(5, 5)); // Panel para barra de pruebas
+        panelPruebas.setBackground(Color.WHITE); // Fondo blanco
 
-        lblPruebasActual = new JLabel("Pruebas: 0 / " + numPruebasMC);
-        lblPruebasActual.setFont(new Font("Calibri", Font.PLAIN, 11));
+        lblPruebasActual = new JLabel("Pruebas: 0 / " + numPruebasMC); // Etiqueta de pruebas
+        lblPruebasActual.setFont(new Font("Calibri", Font.PLAIN, 11)); // Fuente pequeña
 
-        progressBarPruebas = new JProgressBar(0, numPruebasMC);
-        progressBarPruebas.setStringPainted(false);
-        progressBarPruebas.setPreferredSize(new Dimension(500, 25));
-        progressBarPruebas.setForeground(new Color(0, 176, 80));
-        progressBarPruebas.setBackground(Color.WHITE);
+        progressBarPruebas = new JProgressBar(0, numPruebasMC); // Crear barra de progreso para pruebas
+        progressBarPruebas.setStringPainted(false); // No mostrar texto en barra
+        progressBarPruebas.setPreferredSize(new Dimension(500, 25)); // Establecer tamaño preferido
+        progressBarPruebas.setForeground(new Color(0, 176, 80)); // Color verde
+        progressBarPruebas.setBackground(Color.WHITE); // Fondo blanco
 
-        panelPruebas.add(lblPruebasActual, BorderLayout.WEST);
-        panelPruebas.add(progressBarPruebas, BorderLayout.CENTER);
-        JLabel lblMaxPruebas = new JLabel(numPruebasMC + "  ");
-        lblMaxPruebas.setFont(new Font("Calibri", Font.PLAIN, 11));
-        panelPruebas.add(lblMaxPruebas, BorderLayout.EAST);
+        panelPruebas.add(lblPruebasActual, BorderLayout.WEST); // Agregar etiqueta al oeste
+        panelPruebas.add(progressBarPruebas, BorderLayout.CENTER); // Agregar barra al centro
+        JLabel lblMaxPruebas = new JLabel(numPruebasMC + "  "); // Etiqueta con máximo de pruebas
+        lblMaxPruebas.setFont(new Font("Calibri", Font.PLAIN, 11)); // Fuente pequeña
+        panelPruebas.add(lblMaxPruebas, BorderLayout.EAST); // Agregar al este
 
-        panelBarras.add(panelSim);
-        panelBarras.add(panelPruebas);
+        panelBarras.add(panelSim); // Agregar panel de simulaciones
+        panelBarras.add(panelPruebas); // Agregar panel de pruebas
 
-        panelProgress.add(panelBarras, BorderLayout.CENTER);
+        panelProgress.add(panelBarras, BorderLayout.CENTER); // Agregar barras al panel de progreso
 
-        panel.add(panelBotones);
-        panel.add(panelProgress);
+        panel.add(panelBotones); // Agregar panel de botones
+        panel.add(panelProgress); // Agregar panel de progreso
 
-        btnGenerar.addActionListener(e -> {
-            generarValoresAleatorios();
-            llenarTablaInicial();
-            gananciasFinales.clear();
-            demandasFinales.clear();
-            btnGraficas.setEnabled(false);
-            JOptionPane.showMessageDialog(this,
+        btnGenerar.addActionListener(e -> { // Agregar listener al botón generar
+            generarValoresAleatorios(); // Generar nuevos valores aleatorios
+            llenarTablaInicial(); // Actualizar tabla con nuevos valores
+            gananciasFinales.clear(); // Limpiar ganancias finales
+            demandasFinales.clear(); // Limpiar demandas finales
+            btnGraficas.setEnabled(false); // Deshabilitar botón gráficas
+            JOptionPane.showMessageDialog(this, // Mostrar diálogo de confirmación
                 "Nuevos valores aleatorios generados",
                 "Valores Actualizados",
                 JOptionPane.INFORMATION_MESSAGE);
         });
 
-        btnOptimizar.addActionListener(e -> {
-            btnOptimizar.setEnabled(false);
-            btnGraficas.setEnabled(false);
-            btnGenerar.setEnabled(false);
-            ejecutarOptimizacion();
+        btnOptimizar.addActionListener(e -> { // Agregar listener al botón optimizar
+            btnOptimizar.setEnabled(false); // Deshabilitar botón optimizar
+            btnGraficas.setEnabled(false); // Deshabilitar botón gráficas
+            btnGenerar.setEnabled(false); // Deshabilitar botón generar
+            ejecutarOptimizacion(); // Ejecutar optimización
         });
 
-        btnGraficas.addActionListener(e -> mostrarGraficas());
+        btnGraficas.addActionListener(e -> mostrarGraficas()); // Agregar listener al botón gráficas
 
-        return panel;
+        return panel; // Retornar panel completo
     }
 
-    private void ejecutarOptimizacion() {
-        progressBar.setValue(0);
-        progressBarPruebas.setValue(0);
-        historialMejoras.clear();
-        gananciasFinales.clear();
-        demandasFinales.clear();
-        mejorGananciaTotal = Double.NEGATIVE_INFINITY;
+    private void ejecutarOptimizacion() { // Método para ejecutar optimización OptQuest
+        progressBar.setValue(0); // Reiniciar barra de simulaciones
+        progressBarPruebas.setValue(0); // Reiniciar barra de pruebas
+        historialMejoras.clear(); // Limpiar historial de mejoras
+        gananciasFinales.clear(); // Limpiar ganancias finales
+        demandasFinales.clear(); // Limpiar demandas finales
+        mejorGananciaTotal = Double.NEGATIVE_INFINITY; // Reiniciar mejor ganancia
 
-        SwingWorker<Void, ProgressUpdate> worker = new SwingWorker<>() {
-            private long totalPruebasEjecutadas = 0;
+        SwingWorker<Void, ProgressUpdate> worker = new SwingWorker<>() { // Worker para ejecutar en segundo plano
+            private long totalPruebasEjecutadas = 0; // Contador de pruebas ejecutadas
 
             @Override
-            protected Void doInBackground() {
-                Random random = new Random();
+            protected Void doInBackground() { // Método ejecutado en hilo separado
+                Random random = new Random(); // Crear generador aleatorio
 
-                for (int iter = 0; iter < numSimulaciones; iter++) {
-                    double precioStandard = generarPrecioAleatorio(precioLimites[0], random);
-                    double precioGold = generarPrecioAleatorio(precioLimites[1], random);
-                    double precioPlatinum = generarPrecioAleatorio(precioLimites[2], random);
+                for (int iter = 0; iter < numSimulaciones; iter++) { // Ejecutar simulaciones
+                    double precioStandard = generarPrecioAleatorio(precioLimites[0], random); // Generar precio aleatorio Standard
+                    double precioGold = generarPrecioAleatorio(precioLimites[1], random); // Generar precio aleatorio Gold
+                    double precioPlatinum = generarPrecioAleatorio(precioLimites[2], random); // Generar precio aleatorio Platinum
 
-                    double sumaGanancias = 0;
-                    double sumaDemandas = 0;
-                    int simulacionesValidas = 0;
+                    double sumaGanancias = 0; // Acumulador de ganancias
+                    double sumaDemandas = 0; // Acumulador de demandas
+                    int simulacionesValidas = 0; // Contador de simulaciones válidas
 
-                    ResultadoOptimizacion ultimoResultado = null;
-                    List<Double> gananciasTemp = new ArrayList<>();
-                    List<Double> demandasTemp = new ArrayList<>();
+                    ResultadoOptimizacion ultimoResultado = null; // Variable para último resultado
+                    List<Double> gananciasTemp = new ArrayList<>(); // Lista temporal de ganancias
+                    List<Double> demandasTemp = new ArrayList<>(); // Lista temporal de demandas
 
-                    for (int mc = 0; mc < numPruebasMC; mc++) {
-                        ResultadoOptimizacion resultado = simularConPrecios(
+                    for (int mc = 0; mc < numPruebasMC; mc++) { // EJECUTAR PRUEBAS Monte Carlo
+                        ResultadoOptimizacion resultado = simularConPrecios( // Simular con precios
                             precioStandard, precioGold, precioPlatinum, random);
 
-                        totalPruebasEjecutadas++;
+                        totalPruebasEjecutadas++; // Incrementar contador de pruebas
 
-                        gananciasTemp.add(resultado.gananciaTotal);
-                        demandasTemp.add(resultado.demandaTotal);
+                        gananciasTemp.add(resultado.gananciaTotal); // Guardar ganancia
+                        demandasTemp.add(resultado.demandaTotal); // Guardar demanda
 
-                        if (resultado.demandaTotal <= capacidadMaxima) {
-                            sumaGanancias += resultado.gananciaTotal;
-                            sumaDemandas += resultado.demandaTotal;
-                            simulacionesValidas++;
-                            ultimoResultado = resultado;
+                        if (resultado.demandaTotal <= capacidadMaxima) { // Si cumple restricción de capacidad
+                            sumaGanancias += resultado.gananciaTotal; // Sumar ganancia
+                            sumaDemandas += resultado.demandaTotal; // Sumar demanda
+                            simulacionesValidas++; // Incrementar contador válidas
+                            ultimoResultado = resultado; // Guardar último resultado
                         }
 
-                        if (mc % 250 == 0 || mc == numPruebasMC - 1) {
-                            publish(new ProgressUpdate(iter + 1, mc + 1));
+                        if (mc % 250 == 0 || mc == numPruebasMC - 1) { // Actualizar progreso cada 250 pruebas
+                            publish(new ProgressUpdate(iter + 1, mc + 1)); // Publicar actualización de progreso
                         }
                     }
 
-                    if (simulacionesValidas > 0) {
-                        double gananciaMedia = sumaGanancias / simulacionesValidas;
-                        double demandaMedia = sumaDemandas / simulacionesValidas;
+                    if (simulacionesValidas > 0) { // Si hay simulaciones válidas
+                        double gananciaMedia = sumaGanancias / simulacionesValidas; // Calcular ganancia media
+                        double demandaMedia = sumaDemandas / simulacionesValidas; // Calcular demanda media
 
-                        if (gananciaMedia > mejorGananciaTotal) {
-                            mejorGananciaTotal = gananciaMedia;
-                            mejorDemandaTotal = demandaMedia;
-                            mejoresPrecios[0] = precioStandard;
-                            mejoresPrecios[1] = precioGold;
-                            mejoresPrecios[2] = precioPlatinum;
+                        if (gananciaMedia > mejorGananciaTotal) { // Si esta combinación es mejor
+                            mejorGananciaTotal = gananciaMedia; // Actualizar mejor ganancia
+                            mejorDemandaTotal = demandaMedia; // Actualizar mejor demanda
+                            mejoresPrecios[0] = precioStandard; // Guardar mejor precio Standard
+                            mejoresPrecios[1] = precioGold; // Guardar mejor precio Gold
+                            mejoresPrecios[2] = precioPlatinum; // Guardar mejor precio Platinum
 
-                            gananciasFinales.clear();
-                            demandasFinales.clear();
-                            gananciasFinales.addAll(gananciasTemp);
-                            demandasFinales.addAll(demandasTemp);
+                            gananciasFinales.clear(); // Limpiar ganancias finales
+                            demandasFinales.clear(); // Limpiar demandas finales
+                            gananciasFinales.addAll(gananciasTemp); // Guardar resultados de esta mejor simulación
+                            demandasFinales.addAll(demandasTemp); // Guardar demandas de esta mejor simulación
 
-                            if (ultimoResultado != null) {
-                                mejoresElasticidades = ultimoResultado.elasticidades.clone();
-                                mejoresProyeccionesDemanda = ultimoResultado.proyeccionesDemanda.clone();
-                                mejoresProyeccionesGanancia = ultimoResultado.proyeccionesGanancia.clone();
+                            if (ultimoResultado != null) { // Si hay resultado válido
+                                mejoresElasticidades = ultimoResultado.elasticidades.clone(); // Guardar elasticidades
+                                mejoresProyeccionesDemanda = ultimoResultado.proyeccionesDemanda.clone(); // Guardar proyecciones demanda
+                                mejoresProyeccionesGanancia = ultimoResultado.proyeccionesGanancia.clone(); // Guardar proyecciones ganancia
                             }
 
-                            historialMejoras.add(new ResultadoSimulacion(
+                            historialMejoras.add(new ResultadoSimulacion( // Agregar al historial
                                 iter + 1, gananciaMedia, demandaMedia,
                                 precioStandard, precioGold, precioPlatinum
                             ));
@@ -515,394 +509,394 @@ public class OptimizadorPreciosHotelAleatorio extends JFrame {
                     }
                 }
 
-                System.out.println("Total pruebas ejecutadas: " + totalPruebasEjecutadas);
+                System.out.println("Total pruebas ejecutadas: " + totalPruebasEjecutadas); // Log de pruebas totales
 
-                return null;
+                return null; // Retornar null
             }
 
             @Override
-            protected void process(List<ProgressUpdate> chunks) {
-                ProgressUpdate ultimo = chunks.get(chunks.size() - 1);
+            protected void process(List<ProgressUpdate> chunks) { // Método para procesar actualizaciones de progreso
+                ProgressUpdate ultimo = chunks.get(chunks.size() - 1); // Obtener última actualización
 
-                progressBar.setValue(ultimo.simulacion);
-                lblSimulacionesActual.setText(String.format("Simulaciones totales: %d / %d",
+                progressBar.setValue(ultimo.simulacion); // Actualizar barra de simulaciones
+                lblSimulacionesActual.setText(String.format("Simulaciones totales: %d / %d", // Actualizar etiqueta
                     ultimo.simulacion, numSimulaciones));
 
-                progressBarPruebas.setValue(ultimo.prueba);
-                lblPruebasActual.setText(String.format("Pruebas: %d / %d",
+                progressBarPruebas.setValue(ultimo.prueba); // Actualizar barra de pruebas
+                lblPruebasActual.setText(String.format("Pruebas: %d / %d", // Actualizar etiqueta
                     ultimo.prueba, numPruebasMC));
             }
 
             @Override
-            protected void done() {
-                actualizarTablaConMejoresResultados();
-                btnOptimizar.setEnabled(true);
-                btnGraficas.setEnabled(true);
-                btnGenerar.setEnabled(true);
-                mostrarVentanaResultados();
+            protected void done() { // Método ejecutado al terminar (en hilo de UI)
+                actualizarTablaConMejoresResultados(); // Actualizar tabla con mejores resultados
+                btnOptimizar.setEnabled(true); // Habilitar botón optimizar
+                btnGraficas.setEnabled(true); // Habilitar botón gráficas
+                btnGenerar.setEnabled(true); // Habilitar botón generar
+                mostrarVentanaResultados(); // Mostrar ventana de resultados
             }
         };
 
-        worker.execute();
+        worker.execute(); // Iniciar ejecución del worker
     }
 
-    private double generarPrecioAleatorio(double[] limites, Random random) {
-        int minimo = (int) limites[0];
-        int maximo = (int) limites[1];
-        return minimo + random.nextInt(maximo - minimo + 1);
+    private double generarPrecioAleatorio(double[] limites, Random random) { // Método para generar precio aleatorio
+        int minimo = (int) limites[0]; // Obtener límite mínimo
+        int maximo = (int) limites[1]; // Obtener límite máximo
+        return minimo + random.nextInt(maximo - minimo + 1); // Retornar precio aleatorio en el rango
     }
 
-    private ResultadoOptimizacion simularConPrecios(
+    private ResultadoOptimizacion simularConPrecios( // Método para simular con precios dados
             double precioStd, double precioGold, double precioPlt, Random random) {
 
-        double[] elasticidades = new double[3];
-        double[] proyeccionesDemanda = new double[3];
-        double[] proyeccionesGanancia = new double[3];
+        double[] elasticidades = new double[3]; // Array para elasticidades
+        double[] proyeccionesDemanda = new double[3]; // Array para proyecciones de demanda
+        double[] proyeccionesGanancia = new double[3]; // Array para proyecciones de ganancia
 
-        for (int i = 0; i < 3; i++) {
-            elasticidades[i] = elasticidadLimites[i][0] +
+        for (int i = 0; i < 3; i++) { // Generar elasticidades aleatorias para cada tipo
+            elasticidades[i] = elasticidadLimites[i][0] + // Elasticidad aleatoria en rango
                 random.nextDouble() * (elasticidadLimites[i][1] - elasticidadLimites[i][0]);
         }
 
-        double[] nuevosPrecios = {precioStd, precioGold, precioPlt};
+        double[] nuevosPrecios = {precioStd, precioGold, precioPlt}; // Array con nuevos precios
 
-        for (int i = 0; i < 3; i++) {
-            proyeccionesDemanda[i] = demandaPromedio[i] +
+        for (int i = 0; i < 3; i++) { // Calcular proyecciones para cada tipo
+            proyeccionesDemanda[i] = demandaPromedio[i] + // Fórmula de elasticidad
                 elasticidades[i] * (nuevosPrecios[i] - preciosInicial[i]) *
                 (demandaPromedio[i] / preciosInicial[i]);
 
-            proyeccionesDemanda[i] = Math.max(0, proyeccionesDemanda[i]);
-            proyeccionesGanancia[i] = nuevosPrecios[i] * proyeccionesDemanda[i];
+            proyeccionesDemanda[i] = Math.max(0, proyeccionesDemanda[i]); // Asegurar que demanda no sea negativa
+            proyeccionesGanancia[i] = nuevosPrecios[i] * proyeccionesDemanda[i]; // Calcular ganancia (precio * demanda)
         }
 
-        double demandaTotal = proyeccionesDemanda[0] + proyeccionesDemanda[1] + proyeccionesDemanda[2];
-        double gananciaTotal = proyeccionesGanancia[0] + proyeccionesGanancia[1] + proyeccionesGanancia[2];
+        double demandaTotal = proyeccionesDemanda[0] + proyeccionesDemanda[1] + proyeccionesDemanda[2]; // Sumar demanda total
+        double gananciaTotal = proyeccionesGanancia[0] + proyeccionesGanancia[1] + proyeccionesGanancia[2]; // Sumar ganancia total
 
-        return new ResultadoOptimizacion(
+        return new ResultadoOptimizacion( // Retornar resultado
             nuevosPrecios, elasticidades, proyeccionesDemanda,
             proyeccionesGanancia, demandaTotal, gananciaTotal
         );
     }
 
-    private void actualizarTablaConMejoresResultados() {
-        DecimalFormat dfMoney = new DecimalFormat("$#,##0.00");
-        DecimalFormat dfDemanda = new DecimalFormat("0");
-        DecimalFormat dfElast = new DecimalFormat("0.00");
+    private void actualizarTablaConMejoresResultados() { // Método para actualizar tabla con mejores resultados
+        DecimalFormat dfMoney = new DecimalFormat("$#,##0.00"); // Formato monetario
+        DecimalFormat dfDemanda = new DecimalFormat("0"); // Formato entero
+        DecimalFormat dfElast = new DecimalFormat("0.00"); // Formato con 2 decimales
 
-        for (int i = 0; i < 3; i++) {
-            modeloTabla.setValueAt(dfElast.format(mejoresElasticidades[i]), i, 4);
-            modeloTabla.setValueAt(dfMoney.format(mejoresPrecios[i]), i, 5);
-            modeloTabla.setValueAt(dfDemanda.format(mejoresProyeccionesDemanda[i]), i, 6);
-            modeloTabla.setValueAt(dfMoney.format(mejoresProyeccionesGanancia[i]), i, 7);
+        for (int i = 0; i < 3; i++) { // Iterar sobre los 3 tipos de habitación
+            modeloTabla.setValueAt(dfElast.format(mejoresElasticidades[i]), i, 4); // Actualizar elasticidad
+            modeloTabla.setValueAt(dfMoney.format(mejoresPrecios[i]), i, 5); // Actualizar nuevo precio
+            modeloTabla.setValueAt(dfDemanda.format(mejoresProyeccionesDemanda[i]), i, 6); // Actualizar proyección demanda
+            modeloTabla.setValueAt(dfMoney.format(mejoresProyeccionesGanancia[i]), i, 7); // Actualizar proyección ganancia
         }
 
-        lblTotalDemanda.setText(dfDemanda.format(mejorDemandaTotal));
-        lblTotalGanancia.setText(dfMoney.format(mejorGananciaTotal));
+        lblTotalDemanda.setText(dfDemanda.format(mejorDemandaTotal)); // Actualizar demanda total
+        lblTotalGanancia.setText(dfMoney.format(mejorGananciaTotal)); // Actualizar ganancia total
     }
 
-    private void mostrarVentanaResultados() {
-        JDialog dialogo = new JDialog(this, "Resultados de OptQuest", false);
-        dialogo.setLayout(new BorderLayout(10, 10));
-        dialogo.getContentPane().setBackground(Color.WHITE);
+        private void mostrarVentanaResultados() { // Método para mostrar ventana de resultados
+        JDialog dialogo = new JDialog(this, "Resultados de OptQuest", false); // Crear diálogo no modal
+        dialogo.setLayout(new BorderLayout(10, 10)); // Establecer layout
+        dialogo.getContentPane().setBackground(Color.WHITE); // Fondo blanco
 
-        JPanel panelPrincipal = new JPanel(new BorderLayout(10, 10));
-        panelPrincipal.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-        panelPrincipal.setBackground(Color.WHITE);
+        JPanel panelPrincipal = new JPanel(new BorderLayout(10, 10)); // Panel principal
+        panelPrincipal.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15)); // Agregar margen
+        panelPrincipal.setBackground(Color.WHITE); // Fondo blanco
 
-        JLabel lblTitulo = new JLabel(numSimulaciones + " simulaciones", SwingConstants.LEFT);
-        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        JLabel lblTitulo = new JLabel(numSimulaciones + " simulaciones", SwingConstants.LEFT); // Etiqueta de título
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 13)); // Fuente negrita
 
-        JPanel panelTablas = new JPanel(new GridLayout(4, 1, 5, 5));
-        panelTablas.setBackground(Color.WHITE);
+        JPanel panelTablas = new JPanel(new GridLayout(4, 1, 5, 5)); // Panel con GridLayout para tablas
+        panelTablas.setBackground(Color.WHITE); // Fondo blanco
 
-        DecimalFormat df = new DecimalFormat("$#,##0.00");
+        DecimalFormat df = new DecimalFormat("$#,##0.00"); // Formato monetario
 
-        panelTablas.add(crearTablaResultado("Objetivos", "Valor",
+        panelTablas.add(crearTablaResultado("Objetivos", "Valor", // Tabla de objetivos
             new String[]{"Maximizar el/la Media de Total Revenue"},
             new String[]{df.format(mejorGananciaTotal)}));
 
-        panelTablas.add(crearTablaResultado("Requisitos", "Valor",
+        panelTablas.add(crearTablaResultado("Requisitos", "Valor", // Tabla de requisitos
             new String[]{"El/la Percentil 80% de Total room demand debe ser menor que"},
             new String[]{String.valueOf(capacidadMaxima)}));
 
-        panelTablas.add(crearTablaResultado("Restricciones", "Lado izquierdo    Lado derecho",
+        panelTablas.add(crearTablaResultado("Restricciones", "Lado izquierdo    Lado derecho", // Tabla de restricciones (vacía)
             new String[]{}, new String[]{}));
 
-        String[][] variables = {
+        String[][] variables = { // Datos de variables de decisión
             {"Standard price", df.format(mejoresPrecios[0])},
             {"Gold price", df.format(mejoresPrecios[1])},
             {"Platinum price", df.format(mejoresPrecios[2])}
         };
 
-        JPanel panelVars = crearTablaVariables(variables);
-        panelTablas.add(panelVars);
+        JPanel panelVars = crearTablaVariables(variables); // Crear tabla de variables
+        panelTablas.add(panelVars); // Agregar tabla
 
-        panelPrincipal.add(lblTitulo, BorderLayout.NORTH);
-        panelPrincipal.add(panelTablas, BorderLayout.CENTER);
+        panelPrincipal.add(lblTitulo, BorderLayout.NORTH); // Agregar título al norte
+        panelPrincipal.add(panelTablas, BorderLayout.CENTER); // Agregar tablas al centro
 
-        dialogo.add(panelPrincipal);
-        dialogo.setSize(650, 450);
-        dialogo.setLocationRelativeTo(this);
-        dialogo.setVisible(true);
+        dialogo.add(panelPrincipal); // Agregar panel principal al diálogo
+        dialogo.setSize(650, 450); // Establecer tamaño
+        dialogo.setLocationRelativeTo(this); // Centrar respecto a ventana principal
+        dialogo.setVisible(true); // Hacer visible
     }
 
-    private JPanel crearTablaResultado(String titulo, String columna, String[] filas, String[] valores) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+    private JPanel crearTablaResultado(String titulo, String columna, String[] filas, String[] valores) { // Método para crear tabla de resultado
+        JPanel panel = new JPanel(new BorderLayout()); // Panel con BorderLayout
+        panel.setBackground(Color.WHITE); // Fondo blanco
+        panel.setBorder(BorderFactory.createLineBorder(Color.GRAY)); // Borde gris
 
-        JLabel lblTitulo = new JLabel(" " + titulo);
-        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        lblTitulo.setBackground(new Color(220, 220, 220));
-        lblTitulo.setOpaque(true);
-        lblTitulo.setBorder(BorderFactory.createEmptyBorder(3, 5, 3, 5));
+        JLabel lblTitulo = new JLabel(" " + titulo); // Etiqueta de título
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 11)); // Fuente negrita
+        lblTitulo.setBackground(new Color(220, 220, 220)); // Fondo gris claro
+        lblTitulo.setOpaque(true); // Hacer opaco
+        lblTitulo.setBorder(BorderFactory.createEmptyBorder(3, 5, 3, 5)); // Agregar margen
 
-        JPanel panelContenido = new JPanel(new BorderLayout());
-        panelContenido.setBackground(Color.WHITE);
-        panelContenido.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        JPanel panelContenido = new JPanel(new BorderLayout()); // Panel para contenido
+        panelContenido.setBackground(Color.WHITE); // Fondo blanco
+        panelContenido.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5)); // Agregar margen
 
-        if (filas.length > 0) {
-            JPanel panelDatos = new JPanel(new GridLayout(filas.length + 1, 2, 5, 3));
-            panelDatos.setBackground(Color.WHITE);
+        if (filas.length > 0) { // Si hay filas de datos
+            JPanel panelDatos = new JPanel(new GridLayout(filas.length + 1, 2, 5, 3)); // Panel con GridLayout
+            panelDatos.setBackground(Color.WHITE); // Fondo blanco
 
-            JLabel lblCol1 = new JLabel("");
-            JLabel lblCol2 = new JLabel(columna);
-            lblCol2.setFont(new Font("Segoe UI", Font.BOLD, 10));
-            panelDatos.add(lblCol1);
-            panelDatos.add(lblCol2);
+            JLabel lblCol1 = new JLabel(""); // Etiqueta vacía primera columna
+            JLabel lblCol2 = new JLabel(columna); // Etiqueta segunda columna
+            lblCol2.setFont(new Font("Segoe UI", Font.BOLD, 10)); // Fuente negrita
+            panelDatos.add(lblCol1); // Agregar columna 1
+            panelDatos.add(lblCol2); // Agregar columna 2
 
-            for (int i = 0; i < filas.length; i++) {
-                JLabel lblFila = new JLabel(filas[i]);
-                lblFila.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+            for (int i = 0; i < filas.length; i++) { // Iterar sobre filas
+                JLabel lblFila = new JLabel(filas[i]); // Etiqueta de fila
+                lblFila.setFont(new Font("Segoe UI", Font.PLAIN, 10)); // Fuente normal
 
-                JLabel lblValor = new JLabel(valores[i], SwingConstants.RIGHT);
-                lblValor.setFont(new Font("Segoe UI", Font.PLAIN, 10));
+                JLabel lblValor = new JLabel(valores[i], SwingConstants.RIGHT); // Etiqueta de valor alineada a la derecha
+                lblValor.setFont(new Font("Segoe UI", Font.PLAIN, 10)); // Fuente normal
 
-                panelDatos.add(lblFila);
-                panelDatos.add(lblValor);
+                panelDatos.add(lblFila); // Agregar fila
+                panelDatos.add(lblValor); // Agregar valor
             }
 
-            panelContenido.add(panelDatos);
-        } else {
-            JLabel lblVacio = new JLabel(columna);
-            lblVacio.setFont(new Font("Segoe UI", Font.BOLD, 10));
-            panelContenido.add(lblVacio);
+            panelContenido.add(panelDatos); // Agregar datos al contenido
+        } else { // Si no hay filas
+            JLabel lblVacio = new JLabel(columna); // Etiqueta con nombre de columna
+            lblVacio.setFont(new Font("Segoe UI", Font.BOLD, 10)); // Fuente negrita
+            panelContenido.add(lblVacio); // Agregar etiqueta vacía
         }
 
-        panel.add(lblTitulo, BorderLayout.NORTH);
-        panel.add(panelContenido, BorderLayout.CENTER);
+        panel.add(lblTitulo, BorderLayout.NORTH); // Agregar título al norte
+        panel.add(panelContenido, BorderLayout.CENTER); // Agregar contenido al centro
 
-        return panel;
+        return panel; // Retornar panel completo
     }
 
-    private JPanel crearTablaVariables(String[][] datos) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+    private JPanel crearTablaVariables(String[][] datos) { // Método para crear tabla de variables
+        JPanel panel = new JPanel(new BorderLayout()); // Panel con BorderLayout
+        panel.setBackground(Color.WHITE); // Fondo blanco
+        panel.setBorder(BorderFactory.createLineBorder(Color.GRAY)); // Borde gris
 
-        JLabel lblTitulo = new JLabel(" Variables de decisión", SwingConstants.LEFT);
-        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        lblTitulo.setBackground(new Color(220, 220, 220));
-        lblTitulo.setOpaque(true);
-        lblTitulo.setBorder(BorderFactory.createEmptyBorder(3, 5, 3, 5));
+        JLabel lblTitulo = new JLabel(" Variables de decisión", SwingConstants.LEFT); // Etiqueta de título
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 11)); // Fuente negrita
+        lblTitulo.setBackground(new Color(220, 220, 220)); // Fondo gris claro
+        lblTitulo.setOpaque(true); // Hacer opaco
+        lblTitulo.setBorder(BorderFactory.createEmptyBorder(3, 5, 3, 5)); // Agregar margen
 
-        String[] columnas = {"", "Valor"};
-        DefaultTableModel modelo = new DefaultTableModel(columnas, 0);
+        String[] columnas = {"", "Valor"}; // Nombres de columnas
+        DefaultTableModel modelo = new DefaultTableModel(columnas, 0); // Crear modelo de tabla
 
-        for (String[] fila : datos) {
-            modelo.addRow(fila);
+        for (String[] fila : datos) { // Iterar sobre datos
+            modelo.addRow(fila); // Agregar fila
         }
 
-        JTable tabla = new JTable(modelo);
-        tabla.setFont(new Font("Segoe UI", Font.PLAIN, 10));
-        tabla.setRowHeight(20);
-        tabla.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 10));
+        JTable tabla = new JTable(modelo); // Crear tabla con modelo
+        tabla.setFont(new Font("Segoe UI", Font.PLAIN, 10)); // Fuente normal
+        tabla.setRowHeight(20); // Altura de filas
+        tabla.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 10)); // Fuente del encabezado
 
-        panel.add(lblTitulo, BorderLayout.NORTH);
-        panel.add(new JScrollPane(tabla), BorderLayout.CENTER);
+        panel.add(lblTitulo, BorderLayout.NORTH); // Agregar título al norte
+        panel.add(new JScrollPane(tabla), BorderLayout.CENTER); // Agregar tabla con scroll al centro
 
-        return panel;
+        return panel; // Retornar panel completo
     }
 
-    private void mostrarGraficas() {
-        mostrarHistogramaRevenue();
-        mostrarHistogramaDemanda();
+    private void mostrarGraficas() { // Método para mostrar gráficas
+        mostrarHistogramaRevenue(); // Mostrar histograma de revenue
+        mostrarHistogramaDemanda(); // Mostrar histograma de demanda
     }
 
-    private void mostrarHistogramaRevenue() {
-        double[] datos = gananciasFinales.stream().mapToDouble(Double::doubleValue).toArray();
+    private void mostrarHistogramaRevenue() { // Método para mostrar histograma de Revenue
+        double[] datos = gananciasFinales.stream().mapToDouble(Double::doubleValue).toArray(); // Convertir lista a array
 
-        if (datos.length == 0) {
-            JOptionPane.showMessageDialog(this, "No hay datos para mostrar", "Aviso", JOptionPane.WARNING_MESSAGE);
-            return;
+        if (datos.length == 0) { // Si no hay datos
+            JOptionPane.showMessageDialog(this, "No hay datos para mostrar", "Aviso", JOptionPane.WARNING_MESSAGE); // Mostrar mensaje de aviso
+            return; // Salir
         }
 
-        HistogramDataset dataset = new HistogramDataset();
-        dataset.addSeries("Total Revenue", datos, 50);
+        HistogramDataset dataset = new HistogramDataset(); // Crear dataset de histograma
+        dataset.addSeries("Total Revenue", datos, 50); // Agregar serie con 50 bins
 
-        JFreeChart chart = ChartFactory.createHistogram(
-            "Total Revenue",
-            "Dollars",
-            "Frecuencia",
-            dataset,
-            PlotOrientation.VERTICAL,
-            false,
-            true,
-            false
+        JFreeChart chart = ChartFactory.createHistogram( // Crear gráfico de histograma
+            "Total Revenue", // Título
+            "Dollars", // Etiqueta eje X
+            "Frecuencia", // Etiqueta eje Y
+            dataset, // Dataset
+            PlotOrientation.VERTICAL, // Orientación vertical
+            false, // Sin leyenda
+            true, // Con tooltips
+            false // Sin URLs
         );
 
-        XYPlot plot = chart.getXYPlot();
-        plot.setBackgroundPaint(Color.WHITE);
-        plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
-        plot.setRangeGridlinePaint(Color.LIGHT_GRAY);
+        XYPlot plot = chart.getXYPlot(); // Obtener plot del gráfico
+        plot.setBackgroundPaint(Color.WHITE); // Color de fondo blanco
+        plot.setDomainGridlinePaint(Color.LIGHT_GRAY); // Color de líneas de cuadrícula eje X
+        plot.setRangeGridlinePaint(Color.LIGHT_GRAY); // Color de líneas de cuadrícula eje Y
 
-        XYBarRenderer renderer = (XYBarRenderer) plot.getRenderer();
-        renderer.setSeriesPaint(0, new Color(0, 112, 192));
-        renderer.setBarPainter(new org.jfree.chart.renderer.xy.StandardXYBarPainter());
-        renderer.setShadowVisible(false);
+        XYBarRenderer renderer = (XYBarRenderer) plot.getRenderer(); // Obtener renderizador de barras
+        renderer.setSeriesPaint(0, new Color(0, 112, 192)); // Color de barras (azul)
+        renderer.setBarPainter(new org.jfree.chart.renderer.xy.StandardXYBarPainter()); // Pintor estándar
+        renderer.setShadowVisible(false); // Desactivar sombras
 
-        double media = Arrays.stream(datos).average().orElse(0);
-        ValueMarker marker = new ValueMarker(media);
-        marker.setPaint(Color.BLACK);
-        marker.setLabel(String.format("Media = $%.2f", media));
-        marker.setLabelAnchor(org.jfree.chart.ui.RectangleAnchor.TOP_RIGHT);
-        marker.setLabelTextAnchor(org.jfree.chart.ui.TextAnchor.BOTTOM_RIGHT);
-        plot.addDomainMarker(marker);
+        double media = Arrays.stream(datos).average().orElse(0); // Calcular media
+        ValueMarker marker = new ValueMarker(media); // Crear marcador en la media
+        marker.setPaint(Color.BLACK); // Color negro
+        marker.setLabel(String.format("Media = $%.2f", media)); // Etiqueta con valor de media
+        marker.setLabelAnchor(org.jfree.chart.ui.RectangleAnchor.TOP_RIGHT); // Anclar etiqueta arriba derecha
+        marker.setLabelTextAnchor(org.jfree.chart.ui.TextAnchor.BOTTOM_RIGHT); // Anclar texto abajo derecha
+        plot.addDomainMarker(marker); // Agregar marcador al plot
 
-        NumberAxis domainAxis = (NumberAxis) plot.getDomainAxis();
-        domainAxis.setNumberFormatOverride(new DecimalFormat("$#,##0"));
+        NumberAxis domainAxis = (NumberAxis) plot.getDomainAxis(); // Obtener eje de dominio
+        domainAxis.setNumberFormatOverride(new DecimalFormat("$#,##0")); // Establecer formato monetario
 
-        chart.setBackgroundPaint(Color.WHITE);
+        chart.setBackgroundPaint(Color.WHITE); // Color de fondo del gráfico (blanco)
 
-        mostrarVentanaGrafico(chart, "Previsión: Total Revenue - " + datos.length + " pruebas", 900, 600);
+        mostrarVentanaGrafico(chart, "Previsión: Total Revenue - " + datos.length + " pruebas", 900, 600); // Mostrar ventana con gráfico
     }
 
-    private void mostrarHistogramaDemanda() {
-        double[] datos = demandasFinales.stream().mapToDouble(Double::doubleValue).toArray();
+    private void mostrarHistogramaDemanda() { // Método para mostrar histograma de Demanda
+        double[] datos = demandasFinales.stream().mapToDouble(Double::doubleValue).toArray(); // Convertir lista a array
 
-        if (datos.length == 0) {
-            JOptionPane.showMessageDialog(this, "No hay datos para mostrar", "Aviso", JOptionPane.WARNING_MESSAGE);
-            return;
+        if (datos.length == 0) { // Si no hay datos
+            JOptionPane.showMessageDialog(this, "No hay datos para mostrar", "Aviso", JOptionPane.WARNING_MESSAGE); // Mostrar mensaje de aviso
+            return; // Salir
         }
 
-        HistogramDataset dataset = new HistogramDataset();
-        dataset.addSeries("Total room demand", datos, 50);
+        HistogramDataset dataset = new HistogramDataset(); // Crear dataset de histograma
+        dataset.addSeries("Total room demand", datos, 50); // Agregar serie con 50 bins
 
-        JFreeChart chart = ChartFactory.createHistogram(
-            "Total room demand",
-            "Habitaciones",
-            "Frecuencia",
-            dataset,
-            PlotOrientation.VERTICAL,
-            false,
-            true,
-            false
+        JFreeChart chart = ChartFactory.createHistogram( // Crear gráfico de histograma
+            "Total room demand", // Título
+            "Habitaciones", // Etiqueta eje X
+            "Frecuencia", // Etiqueta eje Y
+            dataset, // Dataset
+            PlotOrientation.VERTICAL, // Orientación vertical
+            false, // Sin leyenda
+            true, // Con tooltips
+            false // Sin URLs
         );
 
-        XYPlot plot = chart.getXYPlot();
-        plot.setBackgroundPaint(Color.WHITE);
-        plot.setDomainGridlinePaint(Color.LIGHT_GRAY);
-        plot.setRangeGridlinePaint(Color.LIGHT_GRAY);
+        XYPlot plot = chart.getXYPlot(); // Obtener plot del gráfico
+        plot.setBackgroundPaint(Color.WHITE); // Color de fondo blanco
+        plot.setDomainGridlinePaint(Color.LIGHT_GRAY); // Color de líneas de cuadrícula eje X
+        plot.setRangeGridlinePaint(Color.LIGHT_GRAY); // Color de líneas de cuadrícula eje Y
 
-        XYBarRenderer renderer = (XYBarRenderer) plot.getRenderer();
-        renderer.setBarPainter(new org.jfree.chart.renderer.xy.StandardXYBarPainter());
-        renderer.setShadowVisible(false);
-        renderer.setSeriesPaint(0, new Color(0, 112, 192));
+        XYBarRenderer renderer = (XYBarRenderer) plot.getRenderer(); // Obtener renderizador de barras
+        renderer.setBarPainter(new org.jfree.chart.renderer.xy.StandardXYBarPainter()); // Pintor estándar
+        renderer.setShadowVisible(false); // Desactivar sombras
+        renderer.setSeriesPaint(0, new Color(0, 112, 192)); // Color de barras (azul)
 
-        double[] datosOrdenados = datos.clone();
-        Arrays.sort(datosOrdenados);
-        int indicePercentil = (int) Math.ceil(percentilObjetivo * datosOrdenados.length) - 1;
-        double percentil80 = datosOrdenados[indicePercentil];
+        double[] datosOrdenados = datos.clone(); // Clonar array de datos
+        Arrays.sort(datosOrdenados); // Ordenar array
+        int indicePercentil = (int) Math.ceil(percentilObjetivo * datosOrdenados.length) - 1; // Calcular índice del percentil 80
+        double percentil80 = datosOrdenados[indicePercentil]; // Obtener valor del percentil 80
 
-        ValueMarker marker = new ValueMarker(percentil80);
-        marker.setPaint(Color.BLACK);
-        marker.setLabel(String.format("80%% = %.2f", percentil80));
-        marker.setLabelAnchor(org.jfree.chart.ui.RectangleAnchor.TOP_RIGHT);
-        marker.setLabelTextAnchor(org.jfree.chart.ui.TextAnchor.TOP_LEFT);
-        plot.addDomainMarker(marker);
+        ValueMarker marker = new ValueMarker(percentil80); // Crear marcador en el percentil 80
+        marker.setPaint(Color.BLACK); // Color negro
+        marker.setLabel(String.format("80%% = %.2f", percentil80)); // Etiqueta con valor del percentil
+        marker.setLabelAnchor(org.jfree.chart.ui.RectangleAnchor.TOP_RIGHT); // Anclar etiqueta arriba derecha
+        marker.setLabelTextAnchor(org.jfree.chart.ui.TextAnchor.TOP_LEFT); // Anclar texto arriba izquierda
+        plot.addDomainMarker(marker); // Agregar marcador al plot
 
-        org.jfree.chart.plot.IntervalMarker intervalo = new org.jfree.chart.plot.IntervalMarker(
-            percentil80,
-            datosOrdenados[datosOrdenados.length - 1] + 10
+        org.jfree.chart.plot.IntervalMarker intervalo = new org.jfree.chart.plot.IntervalMarker( // Crear intervalo marcado
+            percentil80, // Desde percentil 80
+            datosOrdenados[datosOrdenados.length - 1] + 10 // Hasta el final más 10
         );
-        intervalo.setPaint(new Color(255, 150, 150, 120));
-        plot.addDomainMarker(intervalo);
+        intervalo.setPaint(new Color(255, 150, 150, 120)); // Color rojo claro transparente
+        plot.addDomainMarker(intervalo); // Agregar intervalo al plot
 
-        chart.setBackgroundPaint(Color.WHITE);
+        chart.setBackgroundPaint(Color.WHITE); // Color de fondo del gráfico (blanco)
 
-        mostrarVentanaGrafico(chart, "Previsión: Total room demand - " + datos.length + " pruebas", 900, 600);
+        mostrarVentanaGrafico(chart, "Previsión: Total room demand - " + datos.length + " pruebas", 900, 600); // Mostrar ventana con gráfico
     }
 
-    private void mostrarVentanaGrafico(JFreeChart chart, String titulo, int ancho, int alto) {
-        JFrame frame = new JFrame(titulo);
-        ChartPanel chartPanel = new ChartPanel(chart);
-        chartPanel.setPreferredSize(new Dimension(ancho, alto));
+    private void mostrarVentanaGrafico(JFreeChart chart, String titulo, int ancho, int alto) { // Método para mostrar ventana con gráfico
+        JFrame frame = new JFrame(titulo); // Crear ventana con título
+        ChartPanel chartPanel = new ChartPanel(chart); // Crear panel del gráfico
+        chartPanel.setPreferredSize(new Dimension(ancho, alto)); // Establecer tamaño preferido
 
-        frame.setContentPane(chartPanel);
-        frame.pack();
-        frame.setLocationRelativeTo(this);
-        frame.setVisible(true);
+        frame.setContentPane(chartPanel); // Establecer panel como contenido
+        frame.pack(); // Ajustar tamaño al contenido
+        frame.setLocationRelativeTo(this); // Centrar respecto a ventana principal
+        frame.setVisible(true); // Hacer visible
     }
 
-    private static class ResultadoOptimizacion {
-        double[] precios;
-        double[] elasticidades;
-        double[] proyeccionesDemanda;
-        double[] proyeccionesGanancia;
-        double demandaTotal;
-        double gananciaTotal;
+    private static class ResultadoOptimizacion { // Clase interna para resultado de optimización
+        double[] precios; // Array de precios
+        double[] elasticidades; // Array de elasticidades
+        double[] proyeccionesDemanda; // Array de proyecciones de demanda
+        double[] proyeccionesGanancia; // Array de proyecciones de ganancia
+        double demandaTotal; // Demanda total
+        double gananciaTotal; // Ganancia total
 
-        ResultadoOptimizacion(double[] precios, double[] elasticidades,
+        ResultadoOptimizacion(double[] precios, double[] elasticidades, // Constructor
                              double[] proyeccionesDemanda, double[] proyeccionesGanancia,
                              double demandaTotal, double gananciaTotal) {
-            this.precios = precios;
-            this.elasticidades = elasticidades;
-            this.proyeccionesDemanda = proyeccionesDemanda;
-            this.proyeccionesGanancia = proyeccionesGanancia;
-            this.demandaTotal = demandaTotal;
-            this.gananciaTotal = gananciaTotal;
+            this.precios = precios; // Asignar precios
+            this.elasticidades = elasticidades; // Asignar elasticidades
+            this.proyeccionesDemanda = proyeccionesDemanda; // Asignar proyecciones demanda
+            this.proyeccionesGanancia = proyeccionesGanancia; // Asignar proyecciones ganancia
+            this.demandaTotal = demandaTotal; // Asignar demanda total
+            this.gananciaTotal = gananciaTotal; // Asignar ganancia total
         }
     }
 
-    private static class ResultadoSimulacion {
-        int iteracion;
-        double ganancia;
-        double demanda;
-        double precioStandard;
-        double precioGold;
-        double precioPlatinum;
+    private static class ResultadoSimulacion { // Clase interna para resultado de simulación
+        int iteracion; // Número de iteración
+        double ganancia; // Ganancia obtenida
+        double demanda; // Demanda obtenida
+        double precioStandard; // Precio Standard
+        double precioGold; // Precio Gold
+        double precioPlatinum; // Precio Platinum
 
-        ResultadoSimulacion(int iter, double gan, double dem,
+        ResultadoSimulacion(int iter, double gan, double dem, // Constructor
                           double pStd, double pGold, double pPlt) {
-            this.iteracion = iter;
-            this.ganancia = gan;
-            this.demanda = dem;
-            this.precioStandard = pStd;
-            this.precioGold = pGold;
-            this.precioPlatinum = pPlt;
+            this.iteracion = iter; // Asignar iteración
+            this.ganancia = gan; // Asignar ganancia
+            this.demanda = dem; // Asignar demanda
+            this.precioStandard = pStd; // Asignar precio Standard
+            this.precioGold = pGold; // Asignar precio Gold
+            this.precioPlatinum = pPlt; // Asignar precio Platinum
         }
     }
 
-    private static class ProgressUpdate {
-        int simulacion;
-        int prueba;
+    private static class ProgressUpdate { // Clase auxiliar para actualizaciones de progreso
+        int simulacion; // Número de simulación actual
+        int prueba; // Número de prueba actual
 
-        ProgressUpdate(int sim, int pr) {
-            this.simulacion = sim;
-            this.prueba = pr;
+        ProgressUpdate(int sim, int pr) { // Constructor
+            this.simulacion = sim; // Asignar simulación
+            this.prueba = pr; // Asignar prueba
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) { // Método main - punto de entrada
         try {
-            UIManager.setLookAndFeel(new FlatLightLaf());
-        } catch (Exception e) {
-            e.printStackTrace();
+            UIManager.setLookAndFeel(new FlatLightLaf()); // Establecer Look and Feel FlatLaf
+        } catch (Exception e) { // Capturar excepciones
+            e.printStackTrace(); // Imprimir error
         }
 
-        SwingUtilities.invokeLater(() -> {
-            OptimizadorPreciosHotelAleatorio optimizador = new OptimizadorPreciosHotelAleatorio();
-            optimizador.setVisible(true);
+        SwingUtilities.invokeLater(() -> { // Ejecutar en hilo de eventos de Swing
+            OptimizadorPreciosHotelAleatorio optimizador = new OptimizadorPreciosHotelAleatorio(); // Crear instancia del optimizador
+            optimizador.setVisible(true); // Hacer visible la ventana
         });
     }
 }
