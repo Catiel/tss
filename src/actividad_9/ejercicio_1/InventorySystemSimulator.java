@@ -58,6 +58,8 @@ public class InventorySystemSimulator extends JFrame {
     public InventorySystemSimulator() {
         super("Simulación de inventario con ventas perdidas");
         configurarUI();
+        // Mostrar datos por defecto al iniciar
+        simularYMostrarEnTabla(250, 250);
         setSize(1600, 850);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -119,17 +121,20 @@ public class InventorySystemSimulator extends JFrame {
         parametros.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
 
         parametros.add(crearLabelParametro("Cantidad de pedido"));
-        parametros.add(lblCantidadPedido = crearLabelValor("250", new Color(255, 255, 0)));
+        lblCantidadPedido = crearLabelValor("250", new Color(255, 255, 0));
+        parametros.add(lblCantidadPedido);
         parametros.add(crearLabelParametro("Costo del pedido"));
         parametros.add(crearLabelValor("$ 50", Color.WHITE));
 
         parametros.add(crearLabelParametro("Punto de reorden"));
-        parametros.add(lblPuntoReorden = crearLabelValor("250", new Color(255, 255, 0)));
+        lblPuntoReorden = crearLabelValor("250", new Color(255, 255, 0));
+        parametros.add(lblPuntoReorden);
         parametros.add(crearLabelParametro("Costo de tenencia"));
         parametros.add(crearLabelValor("$ 0,20", Color.WHITE));
 
         parametros.add(crearLabelParametro("Inventario inicial"));
-        parametros.add(lblInventarioInicial = crearLabelValor("250", Color.WHITE));
+        lblInventarioInicial = crearLabelValor("250", Color.WHITE);
+        parametros.add(lblInventarioInicial);
         parametros.add(crearLabelParametro("Costo de ventas perdidas"));
         parametros.add(crearLabelValor("$ 100", Color.WHITE));
 
@@ -415,15 +420,15 @@ public class InventorySystemSimulator extends JFrame {
         unidadesRecibidas[1] = 0;
         demanda[1] = poissonDist.sample();
 
+        int projected1 = posicionInventario[1] - demanda[1];
+        pedidoRealizado[1] = projected1 <= puntoReorden;
+
         int satisfied1 = Math.min(demanda[1], inventarioInicial[1] + unidadesRecibidas[1]);
         ventasPerdidas[1] = demanda[1] - satisfied1;
 
         inventarioFinal[1] = Math.max(0, inventarioInicial[1] + unidadesRecibidas[1] - demanda[1]);
 
-        int posAfterDemand1 = posicionInventario[1] - satisfied1;
-        pedidoRealizado[1] = posAfterDemand1 <= puntoReorden;
-
-        posicionInventarioFinal[1] = posAfterDemand1 + (pedidoRealizado[1] ? cantidadPedido : 0);
+        posicionInventarioFinal[1] = posicionInventario[1] - satisfied1 + (pedidoRealizado[1] ? cantidadPedido : 0);
 
         if (pedidoRealizado[1]) {
             semanaVencimiento[1] = 1 + Config.DUE_OFFSET;
@@ -452,15 +457,15 @@ public class InventorySystemSimulator extends JFrame {
             unidadesRecibidas[sem] = numArriving * cantidadPedido;
             demanda[sem] = poissonDist.sample();
 
+            int projected = posicionInventario[sem] - demanda[sem];
+            pedidoRealizado[sem] = projected <= puntoReorden;
+
             int satisfied = Math.min(demanda[sem], inventarioInicial[sem] + unidadesRecibidas[sem]);
             ventasPerdidas[sem] = demanda[sem] - satisfied;
 
             inventarioFinal[sem] = Math.max(0, inventarioInicial[sem] + unidadesRecibidas[sem] - demanda[sem]);
 
-            int posAfterDemand = posicionInventario[sem] - satisfied;
-            pedidoRealizado[sem] = posAfterDemand <= puntoReorden;
-
-            posicionInventarioFinal[sem] = posAfterDemand + (pedidoRealizado[sem] ? cantidadPedido : 0);
+            posicionInventarioFinal[sem] = posicionInventario[sem] - satisfied + (pedidoRealizado[sem] ? cantidadPedido : 0);
 
             if (pedidoRealizado[sem]) {
                 semanaVencimiento[sem] = sem + Config.DUE_OFFSET;
@@ -514,15 +519,15 @@ public class InventorySystemSimulator extends JFrame {
         unidadesRecibidas[1] = 0;
         demanda[1] = fixedDemand;
 
+        int projected1 = posicionInventario[1] - demanda[1];
+        pedidoRealizado[1] = projected1 <= puntoReorden;
+
         int satisfied1 = Math.min(demanda[1], inventarioInicial[1] + unidadesRecibidas[1]);
         ventasPerdidas[1] = demanda[1] - satisfied1;
 
         inventarioFinal[1] = Math.max(0, inventarioInicial[1] + unidadesRecibidas[1] - demanda[1]);
 
-        int posAfterDemand1 = posicionInventario[1] - satisfied1;
-        pedidoRealizado[1] = posAfterDemand1 <= puntoReorden;
-
-        posicionInventarioFinal[1] = posAfterDemand1 + (pedidoRealizado[1] ? cantidadPedido : 0);
+        posicionInventarioFinal[1] = posicionInventario[1] - satisfied1 + (pedidoRealizado[1] ? cantidadPedido : 0);
 
         if (pedidoRealizado[1]) {
             semanaVencimiento[1] = 1 + Config.DUE_OFFSET;
@@ -570,15 +575,15 @@ public class InventorySystemSimulator extends JFrame {
             unidadesRecibidas[sem] = numArriving * cantidadPedido;
             demanda[sem] = fixedDemand;
 
+            int projected = posicionInventario[sem] - demanda[sem];
+            pedidoRealizado[sem] = projected <= puntoReorden;
+
             int satisfied = Math.min(demanda[sem], inventarioInicial[sem] + unidadesRecibidas[sem]);
             ventasPerdidas[sem] = demanda[sem] - satisfied;
 
             inventarioFinal[sem] = Math.max(0, inventarioInicial[sem] + unidadesRecibidas[sem] - demanda[sem]);
 
-            int posAfterDemand = posicionInventario[sem] - satisfied;
-            pedidoRealizado[sem] = posAfterDemand <= puntoReorden;
-
-            posicionInventarioFinal[sem] = posAfterDemand + (pedidoRealizado[sem] ? cantidadPedido : 0);
+            posicionInventarioFinal[sem] = posicionInventario[sem] - satisfied + (pedidoRealizado[sem] ? cantidadPedido : 0);
 
             if (pedidoRealizado[sem]) {
                 semanaVencimiento[sem] = sem + Config.DUE_OFFSET;
