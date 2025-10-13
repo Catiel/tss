@@ -12,7 +12,7 @@ import org.apache.commons.math3.distribution.*;
 public class OilReservesSimulator extends JFrame {
     private static final int NUM_SIMULACIONES = 563;
     private static final int NUM_PRUEBAS_MC = 1000;
-    private static final int AÑOS = 50;
+    private static final int ANOS = 50;
     private static final int MIN_TRIALS_FOR_CHECK = 500;
     private static final int CHECK_INTERVAL = 500;
     private static final int NUM_BINS_HISTOGRAMA = 50;
@@ -33,7 +33,7 @@ public class OilReservesSimulator extends JFrame {
     private int pozosPerforar = 25;
     private double factorDescuento = 10.0;
     private double buenCosto = 10.0;
-    private double tamañoInstalacion = 250.0;
+    private double tamanoInstalacion = 250.0;
     private double plateauRateIs = 10.0;
 
     private final double timeToPlateau = 2.0;
@@ -57,7 +57,7 @@ public class OilReservesSimulator extends JFrame {
     private double npv;
 
     private JTextField txtStoiip, txtRecuperacion, txtBuenaTasa, txtPozos;
-    private JTextField txtFactorDescuento, txtBuenCosto, txtTamañoInstalacion, txtPlateauRateIs;
+    private JTextField txtFactorDescuento, txtBuenCosto, txtTamanoInstalacion, txtPlateauRateIs;
     private JLabel lblReservas, lblMaxPlateau, lblPlateauRate, lblAumentar;
     private JLabel lblPlateauProd, lblPlateauEnds, lblFactorDeclive, lblVidaProd;
     private JLabel lblReservasDesc, lblCostosPozo, lblCostosInst, lblNPV;
@@ -68,7 +68,7 @@ public class OilReservesSimulator extends JFrame {
 
     private double mejorNPV = Double.NEGATIVE_INFINITY;
     private int mejorPozos = 25;
-    private double mejorTamañoInst = 250.0;
+    private double mejorTamanoInst = 250.0;
     private double mejorPlateauRateIs = 10.0;
     private List<Double> todosNPV = new ArrayList<>();
     private List<Double> mejorSimulacionNPVs = new ArrayList<>();
@@ -152,7 +152,7 @@ public class OilReservesSimulator extends JFrame {
         addGridRow(grid, gbc, row++, "Tarifa mínima", crearLabelFijo("10.00"), "mbd", Color.WHITE);
         addGridRow(grid, gbc, row++, "Factor de descuento", txtFactorDescuento = crearTextField("10.00", COLOR_SUPOSICION), "%", COLOR_SUPOSICION);
         addGridRow(grid, gbc, row++, "Buen costo", txtBuenCosto = crearTextField("10.00", COLOR_SUPOSICION), "$mm", COLOR_SUPOSICION);
-        addGridRow(grid, gbc, row++, "Tamaño instalación", txtTamañoInstalacion = crearTextField("250.00", COLOR_DECISION), "mbd", COLOR_DECISION);
+        addGridRow(grid, gbc, row++, "Tamaño instalación", txtTamanoInstalacion = crearTextField("250.00", COLOR_DECISION), "mbd", COLOR_DECISION);
         addGridRow(grid, gbc, row++, "Margen petróleo", crearLabelFijo("2.00"), "$/bbl", Color.WHITE);
         addGridRow(grid, gbc, row++, "Plateau ends at", crearLabelFijo("65.0"), "% reservas", Color.WHITE);
         addGridRow(grid, gbc, row++, "Plateau rate is", txtPlateauRateIs = crearTextField("10.0", COLOR_DECISION), "% res./año", COLOR_DECISION);
@@ -568,7 +568,7 @@ public class OilReservesSimulator extends JFrame {
             pozosPerforar = Integer.parseInt(txtPozos.getText().replace(",", ""));
             factorDescuento = Double.parseDouble(txtFactorDescuento.getText().replace(",", ""));
             buenCosto = Double.parseDouble(txtBuenCosto.getText().replace(",", ""));
-            tamañoInstalacion = Double.parseDouble(txtTamañoInstalacion.getText().replace(",", ""));
+            tamanoInstalacion = Double.parseDouble(txtTamanoInstalacion.getText().replace(",", ""));
             plateauRateIs = Double.parseDouble(txtPlateauRateIs.getText().replace(",", ""));
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Error al leer valores: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -578,7 +578,7 @@ public class OilReservesSimulator extends JFrame {
     private void calcularValores() {
         reservas = stoiip * recuperacion / 100.0;
         maxPlateauRate = (plateauRateIs / 100.0) * reservas / 0.365;
-        plateauRate = Math.min(maxPlateauRate, Math.min(buenaTasa * pozosPerforar, tamañoInstalacion));
+        plateauRate = Math.min(maxPlateauRate, Math.min(buenaTasa * pozosPerforar, tamanoInstalacion));
         aumentarProduccion = 0.365 * plateauRate * 0.5 * timeToPlateau;
         plateauProduction = Math.max(0, plateauEndsAt * (reservas / 100.0) - aumentarProduccion);
         plateauEndsAtCalc = plateauProduction / (0.365 * plateauRate) + timeToPlateau;
@@ -591,7 +591,7 @@ public class OilReservesSimulator extends JFrame {
         }
 
         costosPozo = buenCosto * pozosPerforar;
-        costosInstalacionesCalc = buscarCostoInstalacion(tamañoInstalacion);
+        costosInstalacionesCalc = buscarCostoInstalacion(tamanoInstalacion);
     }
 
     private double buscarCostoInstalacion(double produccion) {
@@ -606,50 +606,50 @@ public class OilReservesSimulator extends JFrame {
     private void calcularTablaProduccion() {
         modeloTabla.setRowCount(0);
 
-        double[] tasaAnualizada = new double[AÑOS + 1];
-        double[] produccionAnual = new double[AÑOS + 1];
-        double[] petroleoAcumulado = new double[AÑOS + 1];
-        double[] petroleoDescuentoAcum = new double[AÑOS + 1];
+        double[] tasaAnualizada = new double[ANOS + 1];
+        double[] produccionAnual = new double[ANOS + 1];
+        double[] petroleoAcumulado = new double[ANOS + 1];
+        double[] petroleoDescuentoAcum = new double[ANOS + 1];
 
-        for (int año = 1; año <= AÑOS; año++) {
-            if (año < timeToPlateau + 1) {
-                produccionAnual[año] = año * 0.365 * plateauRate / (timeToPlateau + 1);
+        for (int ano = 1; ano <= ANOS; ano++) {
+            if (ano < timeToPlateau + 1) {
+                produccionAnual[ano] = ano * 0.365 * plateauRate / (timeToPlateau + 1);
             } else {
-                double maxMin1 = Math.min(plateauEndsAtCalc + 1 - año, 1);
+                double maxMin1 = Math.min(plateauEndsAtCalc + 1 - ano, 1);
                 double part1 = 0.365 * plateauRate * Math.max(0, maxMin1);
 
-                double minVidaAño1 = Math.min(vidaProduccion, año - 1);
+                double minVidaAño1 = Math.min(vidaProduccion, ano - 1);
                 double maxExp1 = Math.max(0, minVidaAño1 - plateauEndsAtCalc);
                 double exp1 = Math.exp(-factorDeclive * maxExp1);
 
-                double minVidaAño = Math.min(vidaProduccion, año);
+                double minVidaAño = Math.min(vidaProduccion, ano);
                 double maxExp2 = Math.max(minVidaAño - plateauEndsAtCalc, 0);
                 double exp2 = Math.exp(-factorDeclive * maxExp2);
 
                 double part2 = 0.365 * plateauRate * (exp1 - exp2) / factorDeclive;
 
-                produccionAnual[año] = part1 + part2;
+                produccionAnual[ano] = part1 + part2;
             }
 
-            tasaAnualizada[año] = produccionAnual[año] / 0.365;
+            tasaAnualizada[ano] = produccionAnual[ano] / 0.365;
 
-            if (año == 1) {
-                petroleoAcumulado[año] = produccionAnual[año];
+            if (ano == 1) {
+                petroleoAcumulado[ano] = produccionAnual[ano];
             } else {
-                petroleoAcumulado[año] = petroleoAcumulado[año - 1] + produccionAnual[año];
+                petroleoAcumulado[ano] = petroleoAcumulado[ano - 1] + produccionAnual[ano];
             }
 
-            if (año == 1) {
-                petroleoDescuentoAcum[año] = produccionAnual[año];
+            if (ano == 1) {
+                petroleoDescuentoAcum[ano] = produccionAnual[ano];
             } else {
-                double descuento = Math.pow(1.0 + 0.01 * factorDescuento, año - 1);
-                petroleoDescuentoAcum[año] = petroleoDescuentoAcum[año - 1] + (produccionAnual[año] / descuento);
+                double descuento = Math.pow(1.0 + 0.01 * factorDescuento, ano - 1);
+                petroleoDescuentoAcum[ano] = petroleoDescuentoAcum[ano - 1] + (produccionAnual[ano] / descuento);
             }
 
-            modeloTabla.addRow(new Object[]{año, FMT2.format(tasaAnualizada[año]), FMT2.format(produccionAnual[año]), FMT2.format(petroleoAcumulado[año]), FMT2.format(petroleoDescuentoAcum[año])});
+            modeloTabla.addRow(new Object[]{ano, FMT2.format(tasaAnualizada[ano]), FMT2.format(produccionAnual[ano]), FMT2.format(petroleoAcumulado[ano]), FMT2.format(petroleoDescuentoAcum[ano])});
         }
 
-        reservasDescontadas = petroleoDescuentoAcum[AÑOS];
+        reservasDescontadas = petroleoDescuentoAcum[ANOS];
         npv = reservasDescontadas * margenPetroleo - costosPozo - costosInstalacionesCalc;
     }
 
@@ -683,7 +683,7 @@ public class OilReservesSimulator extends JFrame {
                 for (int sim = 1; sim <= NUM_SIMULACIONES; sim++) {
                     int pozos = rand.nextInt(49) + 2;
                     int instIndex = rand.nextInt(7);
-                    double tamañoInst = 50 + 50 * instIndex;
+                    double tamanoInst = 50 + 50 * instIndex;
                     double plateauIs = 4.5 + rand.nextDouble() * (15.0 - 4.5);
 
                     List<Double> npvsPrueba = new ArrayList<>();
@@ -701,7 +701,7 @@ public class OilReservesSimulator extends JFrame {
                         double descSample = descDist.sample();
                         double costoSample = costoDist.sample();
 
-                        double npvSample = calcularNPVSimulacion(stoiipSample, recupSample, tasaSample, pozos, descSample, costoSample, tamañoInst, plateauIs);
+                        double npvSample = calcularNPVSimulacion(stoiipSample, recupSample, tasaSample, pozos, descSample, costoSample, tamanoInst, plateauIs);
 
                         npvsPrueba.add(npvSample);
                         todosNPV.add(npvSample);
@@ -723,7 +723,7 @@ public class OilReservesSimulator extends JFrame {
                     if (percentil10 > mejorNPV) {
                         mejorNPV = percentil10;
                         mejorPozos = pozos;
-                        mejorTamañoInst = tamañoInst;
+                        mejorTamanoInst = tamanoInst;
                         mejorPlateauRateIs = plateauIs;
                         mejorSimulacionNPVs = new ArrayList<>(npvsPrueba);
                     }
@@ -748,11 +748,11 @@ public class OilReservesSimulator extends JFrame {
                 lblProgreso.setText("✅ Optimización completada - " + NUM_SIMULACIONES + " simulaciones");
 
                 txtPozos.setText(String.valueOf(mejorPozos));
-                txtTamañoInstalacion.setText(FMT2.format(mejorTamañoInst));
+                txtTamanoInstalacion.setText(FMT2.format(mejorTamanoInst));
                 txtPlateauRateIs.setText(FMT2.format(mejorPlateauRateIs));
 
                 pozosPerforar = mejorPozos;
-                tamañoInstalacion = mejorTamañoInst;
+                tamanoInstalacion = mejorTamanoInst;
                 plateauRateIs = mejorPlateauRateIs;
 
                 calcularValores();
@@ -764,10 +764,10 @@ public class OilReservesSimulator extends JFrame {
         }.execute();
     }
 
-    private double calcularNPVSimulacion(double stoiip, double recup, double buenaTasa, int pozos, double descuento, double costo, double tamañoInst, double plateauIs) {
+    private double calcularNPVSimulacion(double stoiip, double recup, double buenaTasa, int pozos, double descuento, double costo, double tamanoInst, double plateauIs) {
         double res = stoiip * recup / 100.0;
         double maxPR = (plateauIs / 100.0) * res / 0.365;
-        double pr = Math.min(maxPR, Math.min(buenaTasa * pozos, tamañoInst));
+        double pr = Math.min(maxPR, Math.min(buenaTasa * pozos, tamanoInst));
         double aum = 0.365 * pr * 0.5 * timeToPlateau;
         double pp = Math.max(0, plateauEndsAt * (res / 100.0) - aum);
         double pea = pp / (0.365 * pr) + timeToPlateau;
@@ -776,29 +776,29 @@ public class OilReservesSimulator extends JFrame {
 
         double resDesc = 0;
 
-        for (int año = 1; año <= AÑOS; año++) {
+        for (int ano = 1; ano <= ANOS; ano++) {
             double prodAnual;
 
-            if (año < timeToPlateau + 1) {
-                prodAnual = año * 0.365 * pr / (timeToPlateau + 1);
+            if (ano < timeToPlateau + 1) {
+                prodAnual = ano * 0.365 * pr / (timeToPlateau + 1);
             } else {
-                double term1 = 0.365 * pr * Math.max(0, Math.min(pea + 1 - año, 1));
-                double exp1 = Math.exp(-fd * Math.max(0, Math.min(vp, año - 1) - pea));
-                double exp2 = Math.exp(-fd * Math.max(Math.min(vp, año) - pea, 0));
+                double term1 = 0.365 * pr * Math.max(0, Math.min(pea + 1 - ano, 1));
+                double exp1 = Math.exp(-fd * Math.max(0, Math.min(vp, ano - 1) - pea));
+                double exp2 = Math.exp(-fd * Math.max(Math.min(vp, ano) - pea, 0));
                 double term2 = 0.365 * pr * (exp1 - exp2) / fd;
                 prodAnual = term1 + term2;
             }
 
-            if (año == 1) {
+            if (ano == 1) {
                 resDesc = prodAnual;
             } else {
-                double desc = Math.pow(1.0 + 0.01 * descuento, año - 1);
+                double desc = Math.pow(1.0 + 0.01 * descuento, ano - 1);
                 resDesc += prodAnual / desc;
             }
         }
 
         double costoPozos = costo * pozos;
-        double costoInst = buscarCostoInstalacion(tamañoInst);
+        double costoInst = buscarCostoInstalacion(tamanoInst);
 
         return resDesc * margenPetroleo - costoPozos - costoInst;
     }
@@ -854,7 +854,7 @@ public class OilReservesSimulator extends JFrame {
         JPanel botonesPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
         botonesPanel.setBackground(Color.WHITE);
 
-        JButton btnHistograma = crearBoton("📊 Ver Histograma NPV", new Color(33, 150, 243), 200, 35);
+        JButton btnHistograma = crearBoton("Ver Histograma NPV", new Color(33, 150, 243), 200, 35);
         btnHistograma.addActionListener(e -> mostrarDistribucionNPV());
 
         JButton btnCerrar = crearBoton("✓ Cerrar", new Color(76, 175, 80), 120, 35);
@@ -881,7 +881,7 @@ public class OilReservesSimulator extends JFrame {
         titulo.setForeground(COLOR_HEADER);
         panel.add(titulo, BorderLayout.NORTH);
 
-        String[][] datos = {{"Pozos a perforar", String.valueOf(mejorPozos), "pozos"}, {"Tamaño de instalación", FMT2.format(mejorTamañoInst), "mbd"}, {"Plateau rate is", FMT2.format(mejorPlateauRateIs), "% reservas/año"}};
+        String[][] datos = {{"Pozos a perforar", String.valueOf(mejorPozos), "pozos"}, {"Tamaño de instalación", FMT2.format(mejorTamanoInst), "mbd"}, {"Plateau rate is", FMT2.format(mejorPlateauRateIs), "% reservas/año"}};
 
         JPanel grid = new JPanel(new GridLayout(3, 3, 10, 8));
         grid.setBackground(Color.WHITE);
