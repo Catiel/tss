@@ -1,4 +1,4 @@
-package actividad_9.ejercicio_2; // Define el paquete donde se encuentra esta clase
+package actividad_9.ejercicio_2;
 
 import javax.swing.*;
 import javax.swing.table.*;
@@ -11,10 +11,10 @@ import org.apache.commons.math3.distribution.*;
 
 public class OilReservesSimulator extends JFrame {
     private static final int NUM_SIMULACIONES = 563;
-    private static final int NUM_PRUEBAS_MC = 1000;  // Reducido para eficiencia, basado en sugerencias del documento (500-2000 trials)
+    private static final int NUM_PRUEBAS_MC = 1000;
     private static final int AÑOS = 50;
-    private static final int MIN_TRIALS_FOR_CHECK = 500;  // Para la prueba de confianza, empezar a chequear después de 500 trials
-    private static final int CHECK_INTERVAL = 500;  // Chequear cada 500 trials adicionales
+    private static final int MIN_TRIALS_FOR_CHECK = 500;
+    private static final int CHECK_INTERVAL = 500;
 
     private static final DecimalFormat FMT2 = new DecimalFormat("#,##0.00");
     private static final DecimalFormat FMT0 = new DecimalFormat("#,##0");
@@ -73,6 +73,7 @@ public class OilReservesSimulator extends JFrame {
     private double mejorTamañoInst = 250.0;
     private double mejorPlateauRateIs = 10.0;
     private List<Double> todosNPV = new ArrayList<>();
+    private List<Double> mejorSimulacionNPVs = new ArrayList<>();
 
     public OilReservesSimulator() {
         super("Simulación de Reservas Petroleras - Crystal Ball");
@@ -720,6 +721,7 @@ public class OilReservesSimulator extends JFrame {
 
     private void ejecutarOptimizacion() {
         todosNPV.clear();
+        mejorSimulacionNPVs.clear();
         mejorNPV = Double.NEGATIVE_INFINITY;
 
         progressBar.setValue(0);
@@ -727,15 +729,14 @@ public class OilReservesSimulator extends JFrame {
 
         new SwingWorker<Void, Integer>() {
             protected Void doInBackground() {
-                Random rand = new Random(12345);  // Semilla fija para reproducibilidad
+                Random rand = new Random(12345);
                 int sim = 0;
 
                 for (sim = 1; sim <= NUM_SIMULACIONES; sim++) {
-                    // Muestreo aleatorio de variables de decisión según configuración de OptQuest
-                    int pozos = rand.nextInt(49) + 2;  // Discrete: 2 to 50, step 1 (random int in range)
-                    int instIndex = rand.nextInt(7);  // 0 to 6 for discrete steps of 50
-                    double tamañoInst = 50 + 50 * instIndex;  // 50,100,150,200,250,300,350
-                    double plateauIs = 4.5 + rand.nextDouble() * (15.0 - 4.5);  // Continuous: 4.5 to 15.0
+                    int pozos = rand.nextInt(49) + 2;
+                    int instIndex = rand.nextInt(7);
+                    double tamañoInst = 50 + 50 * instIndex;
+                    double plateauIs = 4.5 + rand.nextDouble() * (15.0 - 4.5);
 
                     List<Double> npvsPrueba = new ArrayList<>();
 
@@ -761,15 +762,12 @@ public class OilReservesSimulator extends JFrame {
                         npvsPrueba.add(npvSample);
                         todosNPV.add(npvSample);
 
-                        // Prueba de poca confianza: Chequear periódicamente si parece inferior y detener temprano
                         if (mc + 1 >= MIN_TRIALS_FOR_CHECK && (mc + 1) % CHECK_INTERVAL == 0) {
                             List<Double> temp = new ArrayList<>(npvsPrueba);
                             Collections.sort(temp);
                             double currentP10 = temp.get((int)(temp.size() * 0.10));
 
-                            // Si el P10 actual es significativamente inferior al mejor (umbral arbitrario, ajustable),
-                            // asumir que no mejorará y detener la simulación MC
-                            if (currentP10 < mejorNPV - 50.0) {  // Margen de 50 mm como ejemplo de "inferior"
+                            if (currentP10 < mejorNPV - 50.0) {
                                 break;
                             }
                         }
@@ -783,6 +781,7 @@ public class OilReservesSimulator extends JFrame {
                         mejorPozos = pozos;
                         mejorTamañoInst = tamañoInst;
                         mejorPlateauRateIs = plateauIs;
+                        mejorSimulacionNPVs = new ArrayList<>(npvsPrueba);
                     }
 
                     if (sim % 5 == 0) {
@@ -993,20 +992,21 @@ public class OilReservesSimulator extends JFrame {
             BorderFactory.createLineBorder(new Color(255, 152, 0), 2),
             BorderFactory.createEmptyBorder(10, 10, 10, 10)));
 
-        JLabel titulo = new JLabel("Estadísticas NPV (Todas las simulaciones)", SwingConstants.CENTER);
+        JLabel titulo = new JLabel("Estadísticas NPV (Mejor simulación)", SwingConstants.CENTER);
         titulo.setFont(new Font("Segoe UI", Font.BOLD, 13));
         titulo.setForeground(new Color(230, 81, 0));
         panel.add(titulo, BorderLayout.NORTH);
 
-        if (!todosNPV.isEmpty()) {
-            Collections.sort(todosNPV);
+        if (!mejorSimulacionNPVs.isEmpty()) {
+            List<Double> npvs = new ArrayList<>(mejorSimulacionNPVs);
+            Collections.sort(npvs);
 
-            double media = todosNPV.stream().mapToDouble(d -> d).average().orElse(0);
-            double min = todosNPV.get(0);
-            double max = todosNPV.get(todosNPV.size() - 1);
-            double p10 = todosNPV.get((int)(todosNPV.size() * 0.10));
-            double p50 = todosNPV.get((int)(todosNPV.size() * 0.50));
-            double p90 = todosNPV.get((int)(todosNPV.size() * 0.90));
+            double media = npvs.stream().mapToDouble(d -> d).average().orElse(0);
+            double min = npvs.get(0);
+            double max = npvs.get(npvs.size() - 1);
+            double p10 = npvs.get((int)(npvs.size() * 0.10));
+            double p50 = npvs.get((int)(npvs.size() * 0.50));
+            double p90 = npvs.get((int)(npvs.size() * 0.90));
 
             JPanel grid = new JPanel(new GridLayout(6, 2, 8, 6));
             grid.setBackground(Color.WHITE);
@@ -1055,7 +1055,7 @@ public class OilReservesSimulator extends JFrame {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                if (!todosNPV.isEmpty()) {
+                if (!mejorSimulacionNPVs.isEmpty()) {
                     dibujarHistograma(g, getWidth(), getHeight());
                 }
             }
@@ -1066,10 +1066,11 @@ public class OilReservesSimulator extends JFrame {
 
         main.add(histograma, BorderLayout.CENTER);
 
-        if (!todosNPV.isEmpty()) {
-            Collections.sort(todosNPV);
-            double media = todosNPV.stream().mapToDouble(d -> d).average().orElse(0);
-            double p10 = todosNPV.get((int)(todosNPV.size() * 0.10));
+        if (!mejorSimulacionNPVs.isEmpty()) {
+            List<Double> npvs = new ArrayList<>(mejorSimulacionNPVs);
+            Collections.sort(npvs);
+            double media = npvs.stream().mapToDouble(d -> d).average().orElse(0);
+            double p10 = npvs.get((int)(npvs.size() * 0.10));
 
             JPanel stats = new JPanel(new GridLayout(1, 3, 20, 5));
             stats.setBackground(Color.WHITE);
@@ -1077,7 +1078,7 @@ public class OilReservesSimulator extends JFrame {
 
             stats.add(crearStatLabel("10% = $ " + FMT2.format(p10) + " mm"));
             stats.add(crearStatLabel("Media = $ " + FMT2.format(media) + " mm"));
-            stats.add(crearStatLabel(FMT0.format(todosNPV.size()) + " muestras"));
+            stats.add(crearStatLabel(FMT0.format(npvs.size()) + " muestras"));
 
             main.add(stats, BorderLayout.SOUTH);
         }
@@ -1096,7 +1097,7 @@ public class OilReservesSimulator extends JFrame {
     }
 
     private void dibujarHistograma(Graphics g, int width, int height) {
-        if (todosNPV.isEmpty()) return;
+        if (mejorSimulacionNPVs.isEmpty()) return;
 
         Graphics2D g2 = (Graphics2D) g;
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -1106,13 +1107,14 @@ public class OilReservesSimulator extends JFrame {
         int chartHeight = height - 2 * margin;
 
         int numBins = 50;
-        Collections.sort(todosNPV);
-        double minVal = todosNPV.get(0);
-        double maxVal = todosNPV.get(todosNPV.size() - 1);
+        List<Double> npvs = new ArrayList<>(mejorSimulacionNPVs);
+        Collections.sort(npvs);
+        double minVal = npvs.get(0);
+        double maxVal = npvs.get(npvs.size() - 1);
         double binWidth = (maxVal - minVal) / numBins;
 
         int[] bins = new int[numBins];
-        for (double val : todosNPV) {
+        for (double val : npvs) {
             int binIndex = (int)((val - minVal) / binWidth);
             if (binIndex >= numBins) binIndex = numBins - 1;
             bins[binIndex]++;
@@ -1161,8 +1163,8 @@ public class OilReservesSimulator extends JFrame {
         g2.drawString("Frecuencia", -height / 2 - 30, 15);
         g2.rotate(Math.PI / 2);
 
-        double p10 = todosNPV.get((int)(todosNPV.size() * 0.10));
-        double media = todosNPV.stream().mapToDouble(d -> d).average().orElse(0);
+        double p10 = npvs.get((int)(npvs.size() * 0.10));
+        double media = npvs.stream().mapToDouble(d -> d).average().orElse(0);
 
         int xP10 = margin + (int)((p10 - minVal) / (maxVal - minVal) * chartWidth);
         g2.setColor(new Color(244, 67, 54));
