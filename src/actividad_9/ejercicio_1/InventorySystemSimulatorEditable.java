@@ -713,7 +713,6 @@ public class InventorySystemSimulatorEditable extends JFrame { // Declara clase 
         tablas.setBackground(Color.WHITE); // Fondo blanco
 
         JPanel graficoPanel = new JPanel(new BorderLayout()); // Panel de gráfico (placeholder)
-        graficoPanel.setBorder(BorderFactory.createTitledBorder("Gráfico de rendimiento")); // Borde con título
         graficoPanel.setBackground(Color.WHITE); // Fondo blanco
         graficoPanel.setPreferredSize(new Dimension(600, 150)); // Tamaño
 

@@ -863,7 +863,6 @@ public class InventorySystemSimulatorAleatorio extends JFrame { // Declara clase
         tablas.setBackground(Color.WHITE); // Establece fondo blanco
 
         JPanel graficoPanel = new JPanel(new BorderLayout()); // Crea panel para gráfico de rendimiento (placeholder - no se implementa gráfico real)
-        graficoPanel.setBorder(BorderFactory.createTitledBorder("Gráfico de rendimiento")); // Crea borde con título "Gráfico de rendimiento"
         graficoPanel.setBackground(Color.WHITE); // Establece fondo blanco
         graficoPanel.setPreferredSize(new Dimension(600, 150)); // Establece tamaño preferido: 600 píxeles de ancho x 150 de alto
 

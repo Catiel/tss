@@ -6,9 +6,12 @@ import org.jfree.chart.*; // Importa todas las clases principales de JFreeChart
 import org.jfree.chart.axis.NumberAxis; // Importa clase para ejes numéricos en gráficos
 import org.jfree.chart.plot.*; // Importa clases para configurar plots de gráficos
 import org.jfree.chart.renderer.xy.XYBarRenderer; // Importa renderizador para gráficos de barras XY
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer; // Importa renderizador para líneas y puntos
 import org.jfree.chart.ui.RectangleAnchor; // Importa clase para anclaje de rectángulos en gráficos
 import org.jfree.chart.ui.TextAnchor; // Importa clase para anclaje de texto en gráficos
 import org.jfree.data.statistics.HistogramDataset; // Importa dataset especializado para histogramas
+import org.jfree.data.xy.XYSeries; // Importa serie de datos XY
+import org.jfree.data.xy.XYSeriesCollection; // Importa colección de series XY
 
 import javax.swing.*; // Importa todos los componentes de interfaz gráfica Swing
 import javax.swing.table.*; // Importa componentes de tablas de Swing
@@ -37,6 +40,7 @@ public class InventorySystemSimulator extends JFrame { // Declara clase pública
 
         static final int NUM_SIMULACIONES = 563; // Define número total de combinaciones a simular (OptQuest)
         static final int NUM_PRUEBAS_MC = 5000; // Define número de pruebas Monte Carlo por cada combinación
+        static final int INTERVALO_ACTUALIZACION_GRAFICO = 5; // Actualizar gráfico cada 5 simulaciones
     }
 
     private static final DecimalFormat FMT_NUMBER = new DecimalFormat("#,##0.00"); // Define formato decimal con 2 decimales y separador de miles
@@ -53,14 +57,91 @@ public class InventorySystemSimulator extends JFrame { // Declara clase pública
     private int mejorCantidadPedido = 250; // Inicializa mejor cantidad de pedido en 250 (valor por defecto)
     private int mejorPuntoReorden = 250; // Inicializa mejor punto de reorden en 250 (valor por defecto)
     private List<Double> costosFinales = new ArrayList<>(); // Inicializa lista vacía para almacenar costos de la mejor solución
+    
+    // Variables para gráfico en tiempo real
+    private XYSeries serieMejoresCostos; // Serie para almacenar mejores costos encontrados
+    private XYSeriesCollection datasetGrafico; // Dataset para el gráfico
+    private JFreeChart chartTiempoReal; // Gráfico en tiempo real
+    private ChartPanel chartPanel; // Panel que contiene el gráfico
+    private JDialog ventanaGrafico; // Ventana del gráfico en tiempo real
 
     public InventorySystemSimulator() { // Constructor de la clase
         super("Simulación de inventario con ventas perdidas"); // Llama al constructor de JFrame con el título de la ventana
+        inicializarGrafico(); // Inicializa el gráfico en tiempo real
         configurarUI(); // Llama al método para configurar la interfaz de usuario
         simularYMostrarEnTabla(250, 250); // Simula y muestra datos por defecto con cantidad pedido=250 y punto reorden=250
         setSize(1600, 850); // Establece el tamaño de la ventana: 1600x850 píxeles
         setLocationRelativeTo(null); // Centra la ventana en la pantalla
         setDefaultCloseOperation(EXIT_ON_CLOSE); // Define que al cerrar la ventana se cierre la aplicación
+    }
+
+    private void inicializarGrafico() { // Método para inicializar el gráfico en tiempo real
+        serieMejoresCostos = new XYSeries("Mejores Costos Encontrados"); // Crea serie para mejores costos
+        datasetGrafico = new XYSeriesCollection(); // Crea dataset
+        datasetGrafico.addSeries(serieMejoresCostos); // Agrega serie al dataset
+        
+        chartTiempoReal = ChartFactory.createXYLineChart( // Crea gráfico de líneas
+            "Optimización en Tiempo Real", // Título del gráfico
+            "Número de Simulación", // Etiqueta del eje X
+            "Costo Total Anual ($)", // Etiqueta del eje Y
+            datasetGrafico, // Dataset
+            PlotOrientation.VERTICAL, // Orientación vertical
+            true, // Mostrar leyenda
+            true, // Mostrar tooltips
+            false // No mostrar URLs
+        );
+        
+        // Configurar el gráfico
+        chartTiempoReal.setBackgroundPaint(Color.WHITE); // Fondo blanco
+        XYPlot plot = chartTiempoReal.getXYPlot(); // Obtener el plot
+        plot.setBackgroundPaint(Color.WHITE); // Fondo blanco del plot
+        plot.setDomainGridlinePaint(Color.LIGHT_GRAY); // Color de líneas de cuadrícula X
+        plot.setRangeGridlinePaint(Color.LIGHT_GRAY); // Color de líneas de cuadrícula Y
+        
+        // Configurar el renderizador
+        XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer(true, true); // Líneas y puntos visibles
+        renderer.setSeriesPaint(0, new Color(0, 112, 192)); // Color azul para la línea
+        renderer.setSeriesStroke(0, new BasicStroke(2.0f)); // Grosor de línea 2px
+        renderer.setSeriesShapesVisible(0, true); // Mostrar puntos
+        renderer.setSeriesShape(0, new java.awt.geom.Ellipse2D.Double(-3, -3, 6, 6)); // Forma de los puntos
+        plot.setRenderer(renderer);
+        
+        // Configurar ejes
+        NumberAxis domainAxis = (NumberAxis) plot.getDomainAxis(); // Eje X
+        domainAxis.setNumberFormatOverride(new DecimalFormat("#,##0")); // Formato de números
+        domainAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits()); // Unidades enteras
+        
+        NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis(); // Eje Y
+        rangeAxis.setNumberFormatOverride(new DecimalFormat("$#,##0")); // Formato monetario
+        
+        chartPanel = new ChartPanel(chartTiempoReal); // Crear panel del gráfico
+        chartPanel.setPreferredSize(new Dimension(800, 400)); // Tamaño preferido
+        
+        // Crear ventana del gráfico
+        ventanaGrafico = new JDialog(this, "Gráfico de Optimización en Tiempo Real", false); // Diálogo no modal
+        ventanaGrafico.setLayout(new BorderLayout()); // Layout
+        ventanaGrafico.add(chartPanel, BorderLayout.CENTER); // Agregar gráfico al centro
+        ventanaGrafico.setSize(850, 500); // Tamaño de la ventana
+        ventanaGrafico.setLocationRelativeTo(this); // Centrar respecto a ventana principal
+    }
+
+    private void actualizarGraficoTiempoReal(int numeroSimulacion, double costo) { // Método para actualizar el gráfico en tiempo real
+        SwingUtilities.invokeLater(() -> { // Ejecutar en el hilo de UI
+            serieMejoresCostos.add(numeroSimulacion, costo); // Agregar punto al gráfico
+            chartPanel.repaint(); // Repintar el gráfico
+        });
+    }
+
+    private void mostrarGraficoTiempoReal() { // Método para mostrar la ventana del gráfico
+        ventanaGrafico.setVisible(true); // Hacer visible la ventana
+    }
+
+    private void ocultarGraficoTiempoReal() { // Método para ocultar la ventana del gráfico
+        ventanaGrafico.setVisible(false); // Ocultar la ventana
+    }
+
+    private void limpiarGraficoTiempoReal() { // Método para limpiar el gráfico
+        serieMejoresCostos.clear(); // Limpiar la serie
     }
 
     private void configurarUI() { // Método para configurar la interfaz de usuario completa
@@ -342,6 +423,8 @@ public class InventorySystemSimulator extends JFrame { // Declara clase pública
         costosFinales.clear(); // Limpia lista de costos finales de ejecuciones anteriores
         mejorCosto = Double.POSITIVE_INFINITY; // Reinicia mejor costo a infinito positivo (para minimizar)
         modeloTabla.setRowCount(0); // Limpia todas las filas de la tabla
+        limpiarGraficoTiempoReal(); // Limpia el gráfico en tiempo real
+        mostrarGraficoTiempoReal(); // Muestra la ventana del gráfico en tiempo real
 
         new SwingWorker<Void, int[]>() { // Crea SwingWorker para ejecutar optimización en hilo separado (no bloquea UI)
             protected Void doInBackground() { // Método ejecutado en hilo de fondo
@@ -368,6 +451,9 @@ public class InventorySystemSimulator extends JFrame { // Declara clase pública
                             mejorCantidadPedido = cantPedido; // Guarda mejor cantidad de pedido
                             mejorPuntoReorden = puntoReorden; // Guarda mejor punto de reorden
                             costosFinales = new ArrayList<>(costosSim); // Guarda copia de todos los costos para el histograma
+                            
+                            // Actualizar gráfico en tiempo real con la nueva mejor solución
+                            actualizarGraficoTiempoReal(simCount, costoMedio);
                         }
 
                         simCount++; // Incrementa contador de simulaciones
@@ -390,92 +476,91 @@ public class InventorySystemSimulator extends JFrame { // Declara clase pública
                 actualizarResultados(); // Actualiza interfaz con mejores resultados encontrados
                 btnOptimizar.setEnabled(true); // Habilita botón de optimización
                 btnGraficas.setEnabled(true); // Habilita botón de gráficas
+                ocultarGraficoTiempoReal(); // Oculta el gráfico en tiempo real
                 mostrarVentanaResultados(); // Muestra ventana emergente con resultados
             }
         }.execute(); // Inicia la ejecución del SwingWorker
     }
 
-    private double simularInventario(int cantidadPedido, int puntoReorden, Random rand) { // Método que simula el sistema de inventario por 52 semanas y retorna costo total
-        PoissonDistribution poissonDist = new PoissonDistribution(Config.DEMANDA_MEDIA); // Crea distribución de Poisson con media 100 para generar demanda aleatoria
-
-        int[] posicionInventario = new int[Config.NUM_SEMANAS + 1]; // Array para posición de inventario (índices 1 a 52, índice 0 no se usa)
-        int[] inventarioInicial = new int[Config.NUM_SEMANAS + 1]; // Array para inventario inicial de cada semana
-        int[] unidadesRecibidas = new int[Config.NUM_SEMANAS + 1]; // Array para unidades recibidas de pedidos
-        int[] demanda = new int[Config.NUM_SEMANAS + 1]; // Array para demanda de cada semana
-        int[] inventarioFinal = new int[Config.NUM_SEMANAS + 1]; // Array para inventario final de cada semana
-        int[] ventasPerdidas = new int[Config.NUM_SEMANAS + 1]; // Array para ventas perdidas (demanda no satisfecha)
-        boolean[] pedidoRealizado = new boolean[Config.NUM_SEMANAS + 1]; // Array booleano para indicar si se realizó pedido
-        int[] posicionInventarioFinal = new int[Config.NUM_SEMANAS + 1]; // Array para posición de inventario final
-        int[] semanaVencimiento = new int[Config.NUM_SEMANAS + 1]; // Array para registrar en qué semana vence cada pedido
+    private double simularInventario(int cantidadPedido, int puntoReorden, Random rand) { // Método optimizado que simula el sistema de inventario por 52 semanas y retorna costo total
+        // Optimización: usar variables locales en lugar de arrays para mejor rendimiento
+        int posicionInventario = cantidadPedido; // Posición inicial
+        int inventarioActual = cantidadPedido; // Inventario actual
+        int inventarioFinal = 0; // Inventario final
+        int ventasPerdidas = 0; // Ventas perdidas
+        boolean pedidoRealizado = false; // Si se realizó pedido
+        int posicionInventarioFinal = 0; // Posición final
 
         double costoAlmacenamientoTotal = 0; // Acumulador para costo total de almacenamiento
         double costoPedidoTotal = 0; // Acumulador para costo total de pedidos
         double costoFaltanteTotal = 0; // Acumulador para costo total por faltantes
+        
+        // Array optimizado para pedidos pendientes (solo los necesarios)
+        int[] pedidosPendientes = new int[Config.NUM_SEMANAS + Config.DUE_OFFSET + 1]; // Array para pedidos pendientes
 
-        posicionInventario[1] = cantidadPedido; // SEMANA 1: Posición inicial es igual a cantidad de pedido
-        inventarioInicial[1] = cantidadPedido; // SEMANA 1: Inventario inicial es igual a cantidad de pedido
-        unidadesRecibidas[1] = 0; // SEMANA 1: No se reciben unidades (no hay pedidos previos)
-        demanda[1] = poissonDist.sample(); // SEMANA 1: Genera demanda aleatoria usando distribución de Poisson
+        // SEMANA 1: Procesamiento inicial
+        int demanda = generarDemandaPoisson(rand); // Genera demanda aleatoria usando distribución de Poisson
+        int projected = posicionInventario - demanda; // Calcula proyección de inventario
+        pedidoRealizado = projected <= puntoReorden; // Decide si realizar pedido
 
-        int projected1 = posicionInventario[1] - demanda[1]; // SEMANA 1: Calcula proyección de inventario después de satisfacer demanda
-        pedidoRealizado[1] = projected1 <= puntoReorden; // SEMANA 1: Decide si realizar pedido (si proyección <= punto de reorden)
+        int satisfied = Math.min(demanda, inventarioActual); // Calcula demanda satisfecha
+        ventasPerdidas = demanda - satisfied; // Calcula ventas perdidas
+        inventarioFinal = Math.max(0, inventarioActual - demanda); // Calcula inventario final
+        posicionInventarioFinal = posicionInventario - satisfied + (pedidoRealizado ? cantidadPedido : 0); // Calcula posición final
 
-        int satisfied1 = Math.min(demanda[1], inventarioInicial[1] + unidadesRecibidas[1]); // SEMANA 1: Calcula demanda satisfecha (mínimo entre demanda e inventario disponible)
-        ventasPerdidas[1] = demanda[1] - satisfied1; // SEMANA 1: Calcula ventas perdidas (demanda no satisfecha)
-
-        inventarioFinal[1] = Math.max(0, inventarioInicial[1] + unidadesRecibidas[1] - demanda[1]); // SEMANA 1: Calcula inventario final (no puede ser negativo)
-
-        posicionInventarioFinal[1] = posicionInventario[1] - satisfied1 + (pedidoRealizado[1] ? cantidadPedido : 0); // SEMANA 1: Calcula posición final = posición - satisfecha + pedido (si se hizo)
-
-        if (pedidoRealizado[1]) { // SEMANA 1: Si se realizó un pedido
-            semanaVencimiento[1] = 1 + Config.DUE_OFFSET; // Registra que vencerá en semana 1 + 3 = 4
+        if (pedidoRealizado) { // Si se realizó pedido
+            pedidosPendientes[1 + Config.DUE_OFFSET] = cantidadPedido; // Registra pedido pendiente
         }
 
-        double costoAlmacenamiento = Math.max(0, inventarioFinal[1]) * Config.COSTO_TENENCIA; // SEMANA 1: Calcula costo de almacenamiento = inventario final * 0.20
-        double costoPedido = pedidoRealizado[1] ? Config.COSTO_PEDIDO : 0; // SEMANA 1: Calcula costo de pedido = 50 si se hizo pedido, 0 si no
-        double costoFaltante = ventasPerdidas[1] * Config.COSTO_VENTAS_PERDIDAS; // SEMANA 1: Calcula costo de faltante = ventas perdidas * 100
+        // Acumular costos de la semana 1
+        costoAlmacenamientoTotal += Math.max(0, inventarioFinal) * Config.COSTO_TENENCIA;
+        costoPedidoTotal += pedidoRealizado ? Config.COSTO_PEDIDO : 0;
+        costoFaltanteTotal += ventasPerdidas * Config.COSTO_VENTAS_PERDIDAS;
 
-        costoAlmacenamientoTotal += costoAlmacenamiento; // SEMANA 1: Acumula costo de almacenamiento
-        costoPedidoTotal += costoPedido; // SEMANA 1: Acumula costo de pedido
-        costoFaltanteTotal += costoFaltante; // SEMANA 1: Acumula costo de faltante
+        // SEMANAS 2-52: Procesamiento optimizado
+        for (int sem = 2; sem <= Config.NUM_SEMANAS; sem++) {
+            posicionInventario = posicionInventarioFinal; // Posición inicial = posición final anterior
+            inventarioActual = inventarioFinal; // Inventario actual = inventario final anterior
 
-        for (int sem = 2; sem <= Config.NUM_SEMANAS; sem++) { // SEMANAS 2-52: Itera desde semana 2 hasta 52
-            posicionInventario[sem] = posicionInventarioFinal[sem - 1]; // Posición inicial = posición final de semana anterior
-            inventarioInicial[sem] = inventarioFinal[sem - 1]; // Inventario inicial = inventario final de semana anterior
+            // Verificar pedidos que llegan esta semana
+            int unidadesRecibidas = pedidosPendientes[sem];
+            pedidosPendientes[sem] = 0; // Limpiar pedido procesado
 
-            int numArriving = 0; // Inicializa contador de pedidos que llegan esta semana
-            for (int s = 1; s < sem; s++) { // Revisa todas las semanas anteriores
-                if (semanaVencimiento[s] == sem) { // Si un pedido de semana s vence esta semana
-                    numArriving++; // Incrementa contador de pedidos llegando
-                }
-            }
-            unidadesRecibidas[sem] = numArriving * cantidadPedido; // Calcula unidades recibidas = número de pedidos * cantidad por pedido
-            demanda[sem] = poissonDist.sample(); // Genera demanda aleatoria para esta semana
+            demanda = generarDemandaPoisson(rand); // Genera demanda aleatoria
+            projected = posicionInventario - demanda; // Calcula proyección
+            pedidoRealizado = projected <= puntoReorden; // Decide si realizar pedido
 
-            int projected = posicionInventario[sem] - demanda[sem]; // Calcula proyección de inventario
-            pedidoRealizado[sem] = projected <= puntoReorden; // Decide si realizar pedido
+            satisfied = Math.min(demanda, inventarioActual + unidadesRecibidas); // Calcula demanda satisfecha
+            ventasPerdidas = demanda - satisfied; // Calcula ventas perdidas
+            inventarioFinal = Math.max(0, inventarioActual + unidadesRecibidas - demanda); // Calcula inventario final
+            posicionInventarioFinal = posicionInventario - satisfied + (pedidoRealizado ? cantidadPedido : 0); // Calcula posición final
 
-            int satisfied = Math.min(demanda[sem], inventarioInicial[sem] + unidadesRecibidas[sem]); // Calcula demanda satisfecha
-            ventasPerdidas[sem] = demanda[sem] - satisfied; // Calcula ventas perdidas
-
-            inventarioFinal[sem] = Math.max(0, inventarioInicial[sem] + unidadesRecibidas[sem] - demanda[sem]); // Calcula inventario final (no negativo)
-
-            posicionInventarioFinal[sem] = posicionInventario[sem] - satisfied + (pedidoRealizado[sem] ? cantidadPedido : 0); // Calcula posición final
-
-            if (pedidoRealizado[sem]) { // Si se realizó pedido esta semana
-                semanaVencimiento[sem] = sem + Config.DUE_OFFSET; // Registra semana de vencimiento = semana actual + 3
+            if (pedidoRealizado) { // Si se realizó pedido
+                pedidosPendientes[sem + Config.DUE_OFFSET] = cantidadPedido; // Registra pedido pendiente
             }
 
-            costoAlmacenamiento = Math.max(0, inventarioFinal[sem]) * Config.COSTO_TENENCIA; // Calcula costo de almacenamiento
-            costoPedido = pedidoRealizado[sem] ? Config.COSTO_PEDIDO : 0; // Calcula costo de pedido
-            costoFaltante = ventasPerdidas[sem] * Config.COSTO_VENTAS_PERDIDAS; // Calcula costo de faltante
-
-            costoAlmacenamientoTotal += costoAlmacenamiento; // Acumula costo de almacenamiento
-            costoPedidoTotal += costoPedido; // Acumula costo de pedido
-            costoFaltanteTotal += costoFaltante; // Acumula costo de faltante
+            // Acumular costos
+            costoAlmacenamientoTotal += Math.max(0, inventarioFinal) * Config.COSTO_TENENCIA;
+            costoPedidoTotal += pedidoRealizado ? Config.COSTO_PEDIDO : 0;
+            costoFaltanteTotal += ventasPerdidas * Config.COSTO_VENTAS_PERDIDAS;
         }
 
         return costoAlmacenamientoTotal + costoPedidoTotal + costoFaltanteTotal; // Retorna costo total de las 52 semanas
+    }
+
+    private int generarDemandaPoisson(Random rand) { // Método optimizado para generar demanda usando distribución de Poisson
+        // Optimización: usar aproximación de Poisson más eficiente
+        double lambda = Config.DEMANDA_MEDIA;
+        double L = Math.exp(-lambda);
+        double p = 1.0;
+        int k = 0;
+        
+        do {
+            k++;
+            p *= rand.nextDouble();
+        } while (p > L);
+        
+        return k - 1;
     }
 
     private void actualizarResultados() { // Método para actualizar interfaz con mejores resultados encontrados
@@ -636,15 +721,7 @@ public class InventorySystemSimulator extends JFrame { // Declara clase pública
         JPanel tablas = new JPanel(new GridLayout(3, 1, 5, 10)); // Crea panel para 3 secciones con GridLayout
         tablas.setBackground(Color.WHITE); // Fondo blanco
 
-        JPanel graficoPanel = new JPanel(new BorderLayout()); // Crea panel para gráfico (placeholder)
-        graficoPanel.setBorder(BorderFactory.createTitledBorder("Gráfico de rendimiento")); // Agrega borde con título
-        graficoPanel.setBackground(Color.WHITE); // Fondo blanco
-        graficoPanel.setPreferredSize(new Dimension(600, 150)); // Establece tamaño
-
-        JLabel lblGrafico = new JLabel("Mejores soluciones encontradas", SwingConstants.CENTER); // Crea etiqueta centrada
-        lblGrafico.setFont(new Font("Calibri", Font.ITALIC, 11)); // Fuente itálica
-        graficoPanel.add(lblGrafico, BorderLayout.CENTER); // Agrega al centro
-
+        JPanel graficoPanel = crearPanelGraficoResultados(); // Crea panel con gráfico de mejores resultados
         tablas.add(graficoPanel); // Agrega panel de gráfico
 
         tablas.add(crearSeccionResultado("Objetivos", "Valor", // Agrega sección de objetivos
@@ -730,6 +807,63 @@ public class InventorySystemSimulator extends JFrame { // Declara clase pública
             scroll.setPreferredSize(new Dimension(600, 60)); // Establece tamaño
             panel.add(scroll, BorderLayout.CENTER); // Agrega scroll al panel
         }
+        return panel; // Retorna panel completo
+    }
+
+    private JPanel crearPanelGraficoResultados() { // Método para crear panel con gráfico de mejores resultados
+        JPanel panel = new JPanel(new BorderLayout()); // Crea panel con BorderLayout
+        panel.setBorder(BorderFactory.createTitledBorder("Gráfico de Mejores Resultados")); // Agrega borde con título
+        panel.setBackground(Color.WHITE); // Fondo blanco
+        panel.setPreferredSize(new Dimension(600, 200)); // Establece tamaño
+
+        // Crear gráfico de mejores resultados
+        XYSeries serieResultados = new XYSeries("Mejores Costos Encontrados"); // Crea serie
+        XYSeriesCollection dataset = new XYSeriesCollection(); // Crea dataset
+        dataset.addSeries(serieResultados); // Agrega serie al dataset
+
+        // Agregar puntos del gráfico en tiempo real
+        for (int i = 0; i < serieMejoresCostos.getItemCount(); i++) {
+            serieResultados.add(serieMejoresCostos.getX(i).intValue(), serieMejoresCostos.getY(i).doubleValue());
+        }
+
+        JFreeChart chart = ChartFactory.createXYLineChart( // Crea gráfico de líneas
+            "Evolución de Mejores Costos", // Título
+            "Número de Simulación", // Eje X
+            "Costo Total Anual ($)", // Eje Y
+            dataset, // Dataset
+            PlotOrientation.VERTICAL, // Orientación vertical
+            true, // Mostrar leyenda
+            true, // Mostrar tooltips
+            false // No mostrar URLs
+        );
+
+        // Configurar el gráfico
+        chart.setBackgroundPaint(Color.WHITE); // Fondo blanco
+        XYPlot plot = chart.getXYPlot(); // Obtener el plot
+        plot.setBackgroundPaint(Color.WHITE); // Fondo blanco del plot
+        plot.setDomainGridlinePaint(Color.LIGHT_GRAY); // Color de líneas de cuadrícula X
+        plot.setRangeGridlinePaint(Color.LIGHT_GRAY); // Color de líneas de cuadrícula Y
+
+        // Configurar el renderizador
+        XYLineAndShapeRenderer renderer = new XYLineAndShapeRenderer(true, true); // Líneas y puntos visibles
+        renderer.setSeriesPaint(0, new Color(0, 112, 192)); // Color azul para la línea
+        renderer.setSeriesStroke(0, new BasicStroke(2.0f)); // Grosor de línea 2px
+        renderer.setSeriesShapesVisible(0, true); // Mostrar puntos
+        renderer.setSeriesShape(0, new java.awt.geom.Ellipse2D.Double(-2, -2, 4, 4)); // Forma de los puntos
+        plot.setRenderer(renderer);
+
+        // Configurar ejes
+        NumberAxis domainAxis = (NumberAxis) plot.getDomainAxis(); // Eje X
+        domainAxis.setNumberFormatOverride(new DecimalFormat("#,##0")); // Formato de números
+        domainAxis.setStandardTickUnits(NumberAxis.createIntegerTickUnits()); // Unidades enteras
+
+        NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis(); // Eje Y
+        rangeAxis.setNumberFormatOverride(new DecimalFormat("$#,##0")); // Formato monetario
+
+        ChartPanel chartPanel = new ChartPanel(chart); // Crear panel del gráfico
+        chartPanel.setPreferredSize(new Dimension(580, 180)); // Tamaño preferido
+        panel.add(chartPanel, BorderLayout.CENTER); // Agregar gráfico al panel
+
         return panel; // Retorna panel completo
     }
 
