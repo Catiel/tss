@@ -1,0 +1,116 @@
+/* Estilos generales de la aplicación */
+.root {
+    -fx-background-color: #f5f5f5;
+    -fx-font-family: "Segoe UI", "Arial", sans-serif;
+}
+
+/* Botones principales */
+.button {
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-padding: 8 16;
+    -fx-background-radius: 4;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #45a049;
+}
+
+.button:pressed {
+    -fx-background-color: #3d8b40;
+}
+
+.button:disabled {
+    -fx-background-color: #cccccc;
+    -fx-text-fill: #666666;
+}
+
+/* Etiquetas de título */
+.label {
+    -fx-font-size: 12px;
+    -fx-text-fill: #333333;
+}
+
+/* Campos de texto */
+.text-field {
+    -fx-background-color: white;
+    -fx-border-color: #cccccc;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+    -fx-padding: 5;
+}
+
+.text-field:focused {
+    -fx-border-color: #4CAF50;
+    -fx-border-width: 2;
+}
+
+/* Área de texto */
+.text-area {
+    -fx-background-color: white;
+    -fx-border-color: #cccccc;
+    -fx-border-radius: 3;
+    -fx-background-radius: 3;
+}
+
+.text-area .content {
+    -fx-background-color: white;
+}
+
+/* Barra de progreso */
+.progress-bar {
+    -fx-accent: #4CAF50;
+}
+
+.progress-bar > .track {
+    -fx-background-color: #e0e0e0;
+    -fx-background-radius: 4;
+}
+
+.progress-bar > .bar {
+    -fx-background-color: #4CAF50;
+    -fx-background-radius: 4;
+}
+
+/* Tabs */
+.tab-pane {
+    -fx-background-color: white;
+}
+
+.tab {
+    -fx-background-color: #e0e0e0;
+    -fx-padding: 10 20;
+}
+
+.tab:selected {
+    -fx-background-color: white;
+    -fx-border-color: #4CAF50;
+    -fx-border-width: 0 0 3 0;
+}
+
+.tab .tab-label {
+    -fx-text-fill: #333333;
+    -fx-font-size: 13px;
+}
+
+.tab:selected .tab-label {
+    -fx-text-fill: #4CAF50;
+    -fx-font-weight: bold;
+}
+
+/* Separadores */
+.separator {
+    -fx-background-color: #cccccc;
+}
+
+/* ScrollPane */
+.scroll-pane {
+    -fx-background-color: transparent;
+}
+
+.scroll-pane > .viewport {
+    -fx-background-color: white;
+}
+
