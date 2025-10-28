@@ -5,41 +5,55 @@
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.simulacion</groupId>
-    <artifactId>linea-empaque-simulacion</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <groupId>com.simulation</groupId>
+    <artifactId>production-line-simulator</artifactId>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>Simulacion Linea de Empaque</name>
-    <description>Simulacion de Linea de Empaque con ProModel en Java</description>
-
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <javafx.version>17.0.2</javafx.version>
     </properties>
 
     <dependencies>
-        <!-- JFreeChart para graficos estadisticos -->
+        <!-- JavaFX para UI y animaciones -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-swing</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+
+        <!-- SSJ para simulación estocástica -->
+        <dependency>
+            <groupId>ca.umontreal.iro.simul</groupId>
+            <artifactId>ssj</artifactId>
+            <version>3.3.1</version>
+        </dependency>
+
+        <!-- JFreeChart para gráficas -->
         <dependency>
             <groupId>org.jfree</groupId>
             <artifactId>jfreechart</artifactId>
-            <version>1.5.5</version>
+            <version>1.5.4</version>
         </dependency>
 
-        <!-- Apache Commons Math para distribuciones estadisticas -->
+        <!-- Apache Commons Math para estadísticas adicionales -->
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
             <version>3.6.1</version>
-        </dependency>
-
-        <!-- Lombok para reducir codigo boilerplate -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.30</version>
-            <scope>provided</scope>
         </dependency>
     </dependencies>
 
@@ -50,20 +64,16 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
-                    <source>11</source>
-                    <target>11</target>
+                    <source>17</source>
+                    <target>17</target>
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.4.1</version>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.8</version>
                 <configuration>
-                    <archive>
-                        <manifest>
-                            <mainClass>com.simulacion.Main</mainClass>
-                        </manifest>
-                    </archive>
+                    <mainClass>com.simulation.gui.MainApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>
