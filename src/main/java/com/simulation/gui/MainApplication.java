@@ -1,4 +1,4 @@
-package com.simulation;
+package com.simulation.gui;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -24,8 +24,14 @@ public class MainApplication extends Application {
             Scene scene = new Scene(fxmlLoader.load(), 1200, 800);
 
             // Aplicar CSS si existe
-            String css = MainApplication.class.getResource("/css/styles.css").toExternalForm();
-            scene.getStylesheets().add(css);
+            try {
+                var cssUrl = MainApplication.class.getResource("/styles.css");
+                if (cssUrl != null) {
+                    scene.getStylesheets().add(cssUrl.toExternalForm());
+                }
+            } catch (Exception e) {
+                // No hay CSS, continuar sin él
+            }
 
             primaryStage.setTitle("Simulación de Línea de Producción - ProModel Java Implementation");
             primaryStage.setScene(scene);
