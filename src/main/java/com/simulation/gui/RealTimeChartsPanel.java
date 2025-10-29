@@ -44,7 +44,7 @@ public class RealTimeChartsPanel extends VBox {
     private LineChart<Number, Number> avgSystemTimeChart;
     private XYChart.Series<Number, Number> avgTimeSeries;
 
-    private static final int MAX_DATA_POINTS = 200;
+    private static final int MAX_DATA_POINTS = 5000;
     private int updateCounter = 0;
 
     public RealTimeChartsPanel() {
@@ -285,11 +285,7 @@ public class RealTimeChartsPanel extends VBox {
         double throughput = stats.getThroughput();
 
         throughputSeries.getData().add(new XYChart.Data<>(currentTime, throughput));
-
-        // Limitar número de puntos
-        if (throughputSeries.getData().size() > MAX_DATA_POINTS) {
-            throughputSeries.getData().remove(0);
-        }
+        enforceSeriesLimit(throughputSeries);
     }
 
     private void updateSystemPiecesChart(Statistics stats, double currentTime) {
@@ -301,12 +297,9 @@ public class RealTimeChartsPanel extends VBox {
         exitsSeriesSystem.getData().add(new XYChart.Data<>(currentTime, exits));
         inSystemSeries.getData().add(new XYChart.Data<>(currentTime, inSystem));
 
-        // Limitar puntos
-        if (arrivalsSeriesSystem.getData().size() > MAX_DATA_POINTS) {
-            arrivalsSeriesSystem.getData().remove(0);
-            exitsSeriesSystem.getData().remove(0);
-            inSystemSeries.getData().remove(0);
-        }
+        enforceSeriesLimit(arrivalsSeriesSystem);
+        enforceSeriesLimit(exitsSeriesSystem);
+        enforceSeriesLimit(inSystemSeries);
     }
 
     private void updateUtilizationChart(Statistics stats, double currentTime) {
@@ -344,11 +337,7 @@ public class RealTimeChartsPanel extends VBox {
                 if (series != null) {
                     int content = loc.getCurrentContent();
                     series.getData().add(new XYChart.Data<>(currentTime, content));
-
-                    // Limitar puntos
-                    if (series.getData().size() > MAX_DATA_POINTS) {
-                        series.getData().remove(0);
-                    }
+                    enforceSeriesLimit(series);
                 }
             }
         }
@@ -358,12 +347,28 @@ public class RealTimeChartsPanel extends VBox {
         if (stats.getTotalExits() > 0) {
             double avgTime = stats.getAverageSystemTime();
             avgTimeSeries.getData().add(new XYChart.Data<>(currentTime, avgTime));
-
-            // Limitar puntos
-            if (avgTimeSeries.getData().size() > MAX_DATA_POINTS) {
-                avgTimeSeries.getData().remove(0);
-            }
+            enforceSeriesLimit(avgTimeSeries);
         }
+    }
+
+    private void enforceSeriesLimit(XYChart.Series<Number, Number> series) {
+        ObservableList<XYChart.Data<Number, Number>> data = series.getData();
+        if (data.size() <= MAX_DATA_POINTS) {
+            return;
+        }
+
+        ObservableList<XYChart.Data<Number, Number>> downsampled = FXCollections.observableArrayList();
+        for (int i = 0; i < data.size(); i += 2) {
+            downsampled.add(data.get(i));
+        }
+
+        // Garantizar que el último punto siempre se conserve.
+        XYChart.Data<Number, Number> lastPoint = data.get(data.size() - 1);
+        if (downsampled.isEmpty() || downsampled.get(downsampled.size() - 1) != lastPoint) {
+            downsampled.add(lastPoint);
+        }
+
+        data.setAll(downsampled);
     }
 
     private void applyBarColors() {

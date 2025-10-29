@@ -36,6 +36,10 @@ public class SimulationEngine {
 
     private Set<Entity> entitiesInTransport;
     private List<Entity> allActiveEntities;
+    // Colas de piezas bloqueadas esperando espacio en la siguiente etapa
+    private Deque<Entity> blockedAfterLavadora;
+    private Deque<Entity> blockedAfterPintura;
+    private Deque<Entity> blockedAfterHorno;
 
     // Tiempo mínimo para animación visual (NO afecta estadísticas)
     private static final double VISUAL_TRANSIT_TIME = 0.05;
@@ -46,6 +50,9 @@ public class SimulationEngine {
         this.eventQueue = new PriorityQueue<>();
         this.entitiesInTransport = new HashSet<>();
         this.allActiveEntities = Collections.synchronizedList(new ArrayList<>());
+        this.blockedAfterLavadora = new ArrayDeque<>();
+        this.blockedAfterPintura = new ArrayDeque<>();
+        this.blockedAfterHorno = new ArrayDeque<>();
         this.currentTime = 0;
         this.running = false;
         this.paused = false;
@@ -109,12 +116,22 @@ public class SimulationEngine {
         eventQueue.clear();
         entitiesInTransport.clear();
         allActiveEntities.clear();
+        blockedAfterLavadora.clear();
+        blockedAfterPintura.clear();
+        blockedAfterHorno.clear();
         currentTime = 0;
         running = false;
         paused = false;
         lastRealTime = 0;
         Entity.resetIdCounter();
         statistics.reset();
+        recepcion.resetState();
+        lavadora.resetState();
+        almacenPintura.resetState();
+        pintura.resetState();
+        almacenHorno.resetState();
+        horno.resetState();
+        inspeccion.resetState();
         initializeRandomGenerators();
     }
 
@@ -229,6 +246,7 @@ public class SimulationEngine {
      */
     private void tryMoveToLavadora(Entity entity, double time) {
         if (lavadora.canEnter()) {
+            lavadora.reserveCapacity();
             // Salir de recepción
             recepcion.exit(entity, time);
 
@@ -243,7 +261,6 @@ public class SimulationEngine {
         } else {
             // No hay espacio, agregar a cola de espera
             lavadora.addToQueue(entity);
-            entity.addWaitTime(0); // Marca inicio de espera
         }
     }
 
@@ -280,6 +297,7 @@ public class SimulationEngine {
      * Entidad llega a LAVADORA
      */
     private void arriveAtLavadora(Entity entity, double time) {
+        lavadora.commitReservedCapacity();
         lavadora.enter(entity, time);
         entity.setCurrentLocation("LAVADORA");
 
@@ -293,6 +311,7 @@ public class SimulationEngine {
      * Entidad llega a PINTURA
      */
     private void arriveAtPintura(Entity entity, double time) {
+        pintura.commitReservedCapacity();
         pintura.enter(entity, time);
         entity.setCurrentLocation("PINTURA");
 
@@ -306,6 +325,7 @@ public class SimulationEngine {
      * Entidad llega a HORNO
      */
     private void arriveAtHorno(Entity entity, double time) {
+        horno.commitReservedCapacity();
         horno.enter(entity, time);
         entity.setCurrentLocation("HORNO");
 
@@ -336,35 +356,129 @@ public class SimulationEngine {
      * Termina proceso en LAVADORA
      */
     private void finishLavadora(Entity entity, double time) {
-        // Salir de LAVADORA
-        lavadora.exit(entity, time);
-
-        // Procesar siguiente en cola de LAVADORA
-        if (lavadora.hasQueuedEntities() && lavadora.canEnter()) {
-            Entity nextEntity = lavadora.pollFromQueue();
-            tryMoveToLavadora(nextEntity, time);
+        if (!attemptLavadoraDeparture(entity, time)) {
+            blockedAfterLavadora.addLast(entity);
+            entity.setBlocked(true, time);
         }
-
-        // Mover a ALMACEN_PINTURA
-        tryMoveToAlmacenPintura(entity, time);
     }
 
-    /**
-     * Intenta mover entidad a ALMACEN_PINTURA
-     */
-    private void tryMoveToAlmacenPintura(Entity entity, double time) {
-        if (almacenPintura.canEnter()) {
-            // Generar tiempo de transporte E(2)
-            double transportTime = randomGen.nextTransportLavadoraAlmacen();
-            entity.addTransportTime(transportTime);
-            entity.startTransit(time, transportTime, "ALMACEN_PINTURA");
-            entitiesInTransport.add(entity);
+    private boolean attemptLavadoraDeparture(Entity entity, double time) {
+        if (!almacenPintura.canEnter()) {
+            return false;
+        }
 
-            scheduleEvent(new TransportEndEvent(time + transportTime, entity, "ALMACEN_PINTURA"));
-        } else {
-            // Almacén lleno - BLOQUEO
-            almacenPintura.addToQueue(entity);
-            entity.setBlocked(true, time);
+        almacenPintura.reserveCapacity();
+        entity.setBlocked(false, time);
+
+        double transportTime = randomGen.nextTransportLavadoraAlmacen();
+        entity.addTransportTime(transportTime);
+        entity.startTransit(time, transportTime, "ALMACEN_PINTURA");
+        entitiesInTransport.add(entity);
+
+        lavadora.exit(entity, time);
+        scheduleEvent(new TransportEndEvent(time + transportTime, entity, "ALMACEN_PINTURA"));
+
+        processLavadoraQueue(time);
+        return true;
+    }
+
+    private void processLavadoraQueue(double time) {
+        while (lavadora.canEnter() && lavadora.hasQueuedEntities()) {
+            Entity nextEntity = lavadora.pollFromQueue();
+            if (nextEntity != null) {
+                tryMoveToLavadora(nextEntity, time);
+            }
+        }
+    }
+
+    private void releaseBlockedAfterLavadora(double time) {
+        while (!blockedAfterLavadora.isEmpty() && almacenPintura.canEnter()) {
+            Entity blocked = blockedAfterLavadora.peekFirst();
+            if (attemptLavadoraDeparture(blocked, time)) {
+                blockedAfterLavadora.removeFirst();
+            } else {
+                break;
+            }
+        }
+    }
+
+    private boolean attemptPinturaDeparture(Entity entity, double time) {
+        if (!almacenHorno.canEnter()) {
+            return false;
+        }
+
+        almacenHorno.reserveCapacity();
+        entity.setBlocked(false, time);
+
+        double transportTime = randomGen.nextTransportPinturaAlmacen();
+        entity.addTransportTime(transportTime);
+        entity.startTransit(time, transportTime, "ALMACEN_HORNO");
+        entitiesInTransport.add(entity);
+
+        pintura.exit(entity, time);
+        scheduleEvent(new TransportEndEvent(time + transportTime, entity, "ALMACEN_HORNO"));
+
+        processPinturaQueue(time);
+        return true;
+    }
+
+    private void processPinturaQueue(double time) {
+        while (pintura.canEnter() && pintura.hasQueuedEntities()) {
+            Entity nextEntity = pintura.pollFromQueue();
+            if (nextEntity != null) {
+                tryMoveToPintura(nextEntity, time);
+            }
+        }
+    }
+
+    private void releaseBlockedAfterPintura(double time) {
+        while (!blockedAfterPintura.isEmpty() && almacenHorno.canEnter()) {
+            Entity blocked = blockedAfterPintura.peekFirst();
+            if (attemptPinturaDeparture(blocked, time)) {
+                blockedAfterPintura.removeFirst();
+            } else {
+                break;
+            }
+        }
+    }
+
+    private boolean attemptHornoDeparture(Entity entity, double time) {
+        if (!inspeccion.hasAvailableStation()) {
+            return false;
+        }
+
+        inspeccion.reserveStation(entity);
+        entity.setBlocked(false, time);
+
+        double transportTime = randomGen.nextTransportHornoInspeccion();
+        entity.addTransportTime(transportTime);
+        entity.startTransit(time, transportTime, "INSPECCION");
+        entitiesInTransport.add(entity);
+
+        horno.exit(entity, time);
+        scheduleEvent(new TransportEndEvent(time + transportTime, entity, "INSPECCION"));
+
+        processHornoQueue(time);
+        return true;
+    }
+
+    private void processHornoQueue(double time) {
+        while (horno.canEnter() && horno.hasQueuedEntities()) {
+            Entity nextEntity = horno.pollFromQueue();
+            if (nextEntity != null) {
+                tryMoveToHorno(nextEntity, time);
+            }
+        }
+    }
+
+    private void releaseBlockedAfterHorno(double time) {
+        while (!blockedAfterHorno.isEmpty() && inspeccion.hasAvailableStation()) {
+            Entity blocked = blockedAfterHorno.peekFirst();
+            if (attemptHornoDeparture(blocked, time)) {
+                blockedAfterHorno.removeFirst();
+            } else {
+                break;
+            }
         }
     }
 
@@ -372,6 +486,7 @@ public class SimulationEngine {
      * Entidad llega a ALMACEN_PINTURA
      */
     private void arriveAtAlmacenPintura(Entity entity, double time) {
+        almacenPintura.commitReservedCapacity();
         almacenPintura.enter(entity, time);
         entity.setCurrentLocation("ALMACEN_PINTURA");
 
@@ -385,7 +500,9 @@ public class SimulationEngine {
      */
     private void tryMoveToPintura(Entity entity, double time) {
         if (pintura.canEnter()) {
+            pintura.reserveCapacity();
             almacenPintura.exit(entity, time);
+            releaseBlockedAfterLavadora(time);
 
             // Movimiento instantáneo con animación visual
             entity.startTransit(time, VISUAL_TRANSIT_TIME, "PINTURA");
@@ -402,41 +519,8 @@ public class SimulationEngine {
      * Termina proceso en PINTURA
      */
     private void finishPintura(Entity entity, double time) {
-        // Salir de PINTURA
-        pintura.exit(entity, time);
-
-        // Procesar siguiente en cola de PINTURA
-        if (pintura.hasQueuedEntities() && pintura.canEnter()) {
-            Entity nextEntity = pintura.pollFromQueue();
-            tryMoveToPintura(nextEntity, time);
-        }
-
-        // Desbloquear entidades en cola de ALMACEN_PINTURA
-        if (almacenPintura.hasQueuedEntities() && almacenPintura.canEnter()) {
-            Entity blockedEntity = almacenPintura.pollFromQueue();
-            blockedEntity.setBlocked(false, time);
-            tryMoveToAlmacenPintura(blockedEntity, time);
-        }
-
-        // Mover a ALMACEN_HORNO
-        tryMoveToAlmacenHorno(entity, time);
-    }
-
-    /**
-     * Intenta mover entidad a ALMACEN_HORNO
-     */
-    private void tryMoveToAlmacenHorno(Entity entity, double time) {
-        if (almacenHorno.canEnter()) {
-            // Generar tiempo de transporte U(3.5, 1.5) = [2, 5]
-            double transportTime = randomGen.nextTransportPinturaAlmacen();
-            entity.addTransportTime(transportTime);
-            entity.startTransit(time, transportTime, "ALMACEN_HORNO");
-            entitiesInTransport.add(entity);
-
-            scheduleEvent(new TransportEndEvent(time + transportTime, entity, "ALMACEN_HORNO"));
-        } else {
-            // Almacén lleno - BLOQUEO
-            almacenHorno.addToQueue(entity);
+        if (!attemptPinturaDeparture(entity, time)) {
+            blockedAfterPintura.addLast(entity);
             entity.setBlocked(true, time);
         }
     }
@@ -445,6 +529,7 @@ public class SimulationEngine {
      * Entidad llega a ALMACEN_HORNO
      */
     private void arriveAtAlmacenHorno(Entity entity, double time) {
+        almacenHorno.commitReservedCapacity();
         almacenHorno.enter(entity, time);
         entity.setCurrentLocation("ALMACEN_HORNO");
 
@@ -458,7 +543,9 @@ public class SimulationEngine {
      */
     private void tryMoveToHorno(Entity entity, double time) {
         if (horno.canEnter()) {
+            horno.reserveCapacity();
             almacenHorno.exit(entity, time);
+            releaseBlockedAfterPintura(time);
 
             // Movimiento instantáneo con animación visual
             entity.startTransit(time, VISUAL_TRANSIT_TIME, "HORNO");
@@ -475,55 +562,24 @@ public class SimulationEngine {
      * Termina proceso en HORNO
      */
     private void finishHorno(Entity entity, double time) {
-        // Salir de HORNO
-        horno.exit(entity, time);
-
-        // Procesar siguiente en cola de HORNO
-        if (horno.hasQueuedEntities() && horno.canEnter()) {
-            Entity nextEntity = horno.pollFromQueue();
-            tryMoveToHorno(nextEntity, time);
+        if (!attemptHornoDeparture(entity, time)) {
+            blockedAfterHorno.addLast(entity);
+            entity.setBlocked(true, time);
         }
-
-        // Desbloquear entidades en cola de ALMACEN_HORNO
-        if (almacenHorno.hasQueuedEntities() && almacenHorno.canEnter()) {
-            Entity blockedEntity = almacenHorno.pollFromQueue();
-            blockedEntity.setBlocked(false, time);
-            tryMoveToAlmacenHorno(blockedEntity, time);
-        }
-
-        // Mover a INSPECCION
-        tryMoveToInspeccion(entity, time);
-    }
-
-    /**
-     * Intenta mover entidad a INSPECCION
-     */
-    private void tryMoveToInspeccion(Entity entity, double time) {
-        // Generar tiempo de transporte U(2, 1) = [1, 3]
-        double transportTime = randomGen.nextTransportHornoInspeccion();
-        entity.addTransportTime(transportTime);
-        entity.startTransit(time, transportTime, "INSPECCION");
-        entitiesInTransport.add(entity);
-
-        scheduleEvent(new TransportEndEvent(time + transportTime, entity, "INSPECCION"));
     }
 
     /**
      * Entidad llega a INSPECCION
      */
     private void arriveAtInspeccion(Entity entity, double time) {
-        if (inspeccion.canEnter()) {
-            inspeccion.enter(entity, time);
-            entity.setCurrentLocation("INSPECCION");
+        inspeccion.commitReservationFor(entity);
+        inspeccion.enter(entity, time);
+        entity.setCurrentLocation("INSPECCION");
 
-            // Iniciar primera operación de inspección E(2)
-            double operationTime = randomGen.nextInspeccionOperation();
-            entity.addProcessTime(operationTime);
-            scheduleEvent(new InspectionOperationEndEvent(time + operationTime, entity));
-        } else {
-            // No hay espacio en ninguna mesa, agregar a cola
-            inspeccion.addToQueue(entity);
-        }
+        // Iniciar primera operación de inspección E(2)
+        double operationTime = randomGen.nextInspeccionOperation();
+        entity.addProcessTime(operationTime);
+        scheduleEvent(new InspectionOperationEndEvent(time + operationTime, entity));
     }
 
     /**
@@ -537,12 +593,7 @@ public class SimulationEngine {
         if (inspeccion.hasCompletedAllOperations(entity)) {
             // Salir del sistema
             inspeccion.exit(entity, time);
-
-            // Procesar siguiente en cola
-            if (inspeccion.hasQueuedEntities() && inspeccion.canEnter()) {
-                Entity nextEntity = inspeccion.pollFromQueue();
-                arriveAtInspeccion(nextEntity, time);
-            }
+            releaseBlockedAfterHorno(time);
 
             // Registrar salida del sistema
             allActiveEntities.remove(entity);

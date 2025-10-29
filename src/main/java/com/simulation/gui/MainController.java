@@ -56,6 +56,7 @@ public class MainController {
     private SimulationParameters parameters;
     private SimulationEngine engine;
     private AnimationPanel animationPanel;
+    private ScrollPane animationScrollPane;
     private RealTimeChartsPanel realTimeChartsPanel; // NUEVO: Panel de gráficas en tiempo real
     private AnimationTimer animationTimer;
     private Thread simulationThread;
@@ -65,7 +66,7 @@ public class MainController {
         parameters = new SimulationParameters();
         engine = new SimulationEngine(parameters);
 
-        setupAnimationPanel();
+    setupAnimationPanel();
         setupRealTimeCharts(); // NUEVO
         setupControls();
         setupResultsTables();
@@ -76,7 +77,19 @@ public class MainController {
 
     private void setupAnimationPanel() {
         animationPanel = new AnimationPanel(engine);
-        animationTab.setContent(animationPanel);
+        animationScrollPane = createAnimationScrollPane(animationPanel);
+        animationTab.setContent(animationScrollPane);
+    }
+
+    private ScrollPane createAnimationScrollPane(AnimationPanel panel) {
+        ScrollPane scrollPane = new ScrollPane(panel);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(false);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setPannable(true);
+        scrollPane.setStyle("-fx-background-color: transparent;");
+        return scrollPane;
     }
 
     /**
@@ -251,8 +264,7 @@ public class MainController {
         }
 
         engine = new SimulationEngine(parameters);
-        animationPanel = new AnimationPanel(engine);
-        animationTab.setContent(animationPanel);
+    setupAnimationPanel();
 
         startButton.setDisable(false);
         pauseButton.setDisable(true);
@@ -278,8 +290,7 @@ public class MainController {
 
         if (dialog.isAccepted()) {
             engine = new SimulationEngine(parameters);
-            animationPanel = new AnimationPanel(engine);
-            animationTab.setContent(animationPanel);
+            setupAnimationPanel();
             updateStatus("Parámetros actualizados");
         }
     }

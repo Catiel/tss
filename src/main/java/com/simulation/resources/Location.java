@@ -11,40 +11,37 @@ public abstract class Location {
     protected String name;
     protected int capacity;
     protected int currentContent;
+    protected int pendingArrivals;
     protected Queue<Entity> queue;
     protected int totalEntries;
     protected int totalExits;
 
-    // Para cálculo de utilización basado en tiempo
-    protected double totalBusyTime;
-    protected double lastStatusChangeTime;
-    protected boolean isBusy;
-
-    // Para cálculo de contenido promedio
-    protected double weightedContentSum;
-    protected int lastContent;
-    protected double lastContentChangeTime;
+    // Integrales de tiempo para métricas
+    protected double contentTimeIntegral;
+    protected double busyTimeIntegral;
+    protected double lastContentUpdateTime;
 
     public Location(String name, int capacity) {
         this.name = name;
         this.capacity = capacity;
         this.currentContent = 0;
+        this.pendingArrivals = 0;
         this.queue = new LinkedList<>();
         this.totalEntries = 0;
         this.totalExits = 0;
-        this.totalBusyTime = 0;
-        this.lastStatusChangeTime = 0;
-        this.isBusy = false;
-        this.weightedContentSum = 0;
-        this.lastContent = 0;
-        this.lastContentChangeTime = 0;
+        this.contentTimeIntegral = 0;
+        this.busyTimeIntegral = 0;
+        this.lastContentUpdateTime = 0;
     }
 
     /**
      * Verifica si la locación puede recibir más entidades
      */
     public boolean canEnter() {
-        return currentContent < capacity;
+        if (capacity == Integer.MAX_VALUE) {
+            return true;
+        }
+        return currentContent + pendingArrivals < capacity;
     }
 
     /**
@@ -52,17 +49,12 @@ public abstract class Location {
      */
     public void enter(Entity entity, double currentTime) {
         if (currentContent < capacity) {
-            // Actualizar contenido promedio
-            updateWeightedContent(currentTime);
-
+            updateTimeIntegrals(currentTime);
             currentContent++;
-            totalEntries++;
-
-            // Actualizar estado de ocupación
-            if (currentContent == 1 && !isBusy) {
-                isBusy = true;
-                lastStatusChangeTime = currentTime;
+            if (capacity != Integer.MAX_VALUE && pendingArrivals > 0) {
+                pendingArrivals--;
             }
+            totalEntries++;
         }
     }
 
@@ -71,30 +63,20 @@ public abstract class Location {
      */
     public void exit(Entity entity, double currentTime) {
         if (currentContent > 0) {
-            // Actualizar contenido promedio
-            updateWeightedContent(currentTime);
-
+            updateTimeIntegrals(currentTime);
             currentContent--;
             totalExits++;
-
-            // Actualizar estado de ocupación
-            if (currentContent == 0 && isBusy) {
-                totalBusyTime += (currentTime - lastStatusChangeTime);
-                isBusy = false;
-                lastStatusChangeTime = currentTime;
-            }
         }
     }
 
-    /**
-     * Actualiza el cálculo de contenido promedio ponderado por tiempo
-     */
-    private void updateWeightedContent(double currentTime) {
-        if (currentTime > lastContentChangeTime) {
-            double timeDelta = currentTime - lastContentChangeTime;
-            weightedContentSum += lastContent * timeDelta;
-            lastContent = currentContent;
-            lastContentChangeTime = currentTime;
+    private void updateTimeIntegrals(double currentTime) {
+        if (currentTime > lastContentUpdateTime) {
+            double delta = currentTime - lastContentUpdateTime;
+            contentTimeIntegral += currentContent * delta;
+            if (currentContent > 0) {
+                busyTimeIntegral += delta;
+            }
+            lastContentUpdateTime = currentTime;
         }
     }
 
@@ -146,21 +128,14 @@ public abstract class Location {
 
     /**
      * Calcula el porcentaje de utilización de la locación
-     * FÓRMULA: (Tiempo ocupado / Tiempo total) * 100
      */
     public double getUtilization(double currentTime) {
         if (capacity == Integer.MAX_VALUE || currentTime <= 0) {
             return 0.0;
         }
 
-        double actualBusyTime = totalBusyTime;
-
-        // Si actualmente está ocupado, agregar tiempo desde último cambio
-        if (isBusy && currentContent > 0) {
-            actualBusyTime += (currentTime - lastStatusChangeTime);
-        }
-
-        return (actualBusyTime / currentTime) * 100.0;
+        updateTimeIntegrals(currentTime);
+        return (busyTimeIntegral / currentTime) * 100.0;
     }
 
     /**
@@ -177,13 +152,47 @@ public abstract class Location {
      */
     public double getAverageContent(double currentTime) {
         if (currentTime <= 0) return 0;
+        updateTimeIntegrals(currentTime);
+        return contentTimeIntegral / currentTime;
+    }
 
-        // Actualizar con el contenido actual
-        double finalWeightedSum = weightedContentSum;
-        if (currentTime > lastContentChangeTime) {
-            finalWeightedSum += currentContent * (currentTime - lastContentChangeTime);
+    /**
+     * Reserva capacidad para una llegada en tránsito
+     */
+    public void reserveCapacity() {
+        if (capacity == Integer.MAX_VALUE) {
+            return;
         }
+        pendingArrivals++;
+    }
 
-        return finalWeightedSum / currentTime;
+    /**
+     * Cancela o confirma una reserva previamente hecha
+     */
+    public void commitReservedCapacity() {
+        if (capacity == Integer.MAX_VALUE) {
+            return;
+        }
+        if (pendingArrivals > 0) {
+            pendingArrivals--;
+        }
+    }
+
+    public int getPendingArrivals() {
+        return pendingArrivals;
+    }
+
+    /**
+     * Reinicia el estado interno de la locación
+     */
+    public void resetState() {
+        currentContent = 0;
+        pendingArrivals = 0;
+        queue.clear();
+        totalEntries = 0;
+        totalExits = 0;
+        contentTimeIntegral = 0;
+        busyTimeIntegral = 0;
+        lastContentUpdateTime = 0;
     }
 }

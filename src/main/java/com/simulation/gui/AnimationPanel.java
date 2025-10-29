@@ -27,6 +27,8 @@ public class AnimationPanel extends Pane {
     private static final double VERTICAL_SPACING = 200;
     private static final double COUNTER_WIDTH = 120;
     private static final double COUNTER_HEIGHT = 80;
+    private static final double COUNTER_START_X = 1150;
+    private static final double COUNTER_START_Y = 90;
 
     private Map<String, double[]> locationPositions;
     private Map<String, Color> locationColors;
@@ -452,8 +454,8 @@ public class AnimationPanel extends Pane {
      * NUEVO: Dibuja contadores de estadísticas en tiempo real
      */
     private void drawCounters(GraphicsContext gc) {
-        double startX = 1150;
-        double startY = 130;
+    double startX = COUNTER_START_X;
+    double startY = COUNTER_START_Y;
         double spacing = COUNTER_HEIGHT + 15;
 
         String[] locations = {"LAVADORA", "ALMACEN_PINTURA", "PINTURA",

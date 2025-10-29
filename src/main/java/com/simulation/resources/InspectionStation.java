@@ -2,57 +2,38 @@ package com.simulation.resources;
 
 import com.simulation.core.Entity;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Estación de inspección con múltiples mesas
  * CORREGIDO: Manejo adecuado de 2 mesas con 3 operaciones cada una
  */
 public class InspectionStation extends Location {
-    private int operationsPerPiece;
-    private Map<Entity, Integer> operationCounts;
+    private final int operationsPerPiece;
+    private final Map<Entity, Integer> operationCounts;
+    private final Set<Entity> reservedEntities;
 
     public InspectionStation(String name, int numStations, int operationsPerPiece) {
         super(name, numStations);  // capacity = 2 (dos mesas)
         this.operationsPerPiece = operationsPerPiece;
         this.operationCounts = new HashMap<>();
+        this.reservedEntities = new HashSet<>();
     }
 
     @Override
     public void enter(Entity entity, double currentTime) {
-        if (currentContent < capacity) {
-            // Actualizar contenido promedio
-            updateWeightedContent(currentTime);
-
-            currentContent++;
-            totalEntries++;
-            operationCounts.put(entity, 0);  // Iniciar contador de operaciones
-
-            // Actualizar estado de ocupación
-            if (currentContent == 1 && !isBusy) {
-                isBusy = true;
-                lastStatusChangeTime = currentTime;
-            }
-        }
+        commitReservationFor(entity);
+        super.enter(entity, currentTime);
+        operationCounts.put(entity, 0);
     }
 
     @Override
     public void exit(Entity entity, double currentTime) {
-        if (currentContent > 0) {
-            // Actualizar contenido promedio
-            updateWeightedContent(currentTime);
-
-            currentContent--;
-            totalExits++;
-            operationCounts.remove(entity);  // Limpiar contador
-
-            // Actualizar estado de ocupación
-            if (currentContent == 0 && isBusy) {
-                totalBusyTime += (currentTime - lastStatusChangeTime);
-                isBusy = false;
-                lastStatusChangeTime = currentTime;
-            }
-        }
+        operationCounts.remove(entity);
+        reservedEntities.remove(entity);
+        super.exit(entity, currentTime);
     }
 
     /**
@@ -78,46 +59,40 @@ public class InspectionStation extends Location {
         return operationCounts.getOrDefault(entity, 0);
     }
 
-    /**
-     * Método auxiliar para actualizar contenido promedio
-     */
-    private void updateWeightedContent(double currentTime) {
-        if (currentTime > lastContentChangeTime) {
-            double timeDelta = currentTime - lastContentChangeTime;
-            weightedContentSum += lastContent * timeDelta;
-            lastContent = currentContent;
-            lastContentChangeTime = currentTime;
-        }
-    }
-
     @Override
     public double getUtilization(double currentTime) {
         if (capacity == Integer.MAX_VALUE || currentTime <= 0) {
             return 0.0;
         }
+        double averageBusyStations = getAverageContent(currentTime);
+        return (averageBusyStations / capacity) * 100.0;
+    }
 
-        double actualBusyTime = totalBusyTime;
+    public boolean hasAvailableStation() {
+        return canEnter();
+    }
 
-        // Si actualmente está procesando, agregar tiempo desde último cambio
-        if (isBusy && currentContent > 0) {
-            actualBusyTime += (currentTime - lastStatusChangeTime);
+    public void reserveStation(Entity entity) {
+        if (!hasAvailableStation()) {
+            throw new IllegalStateException("No hay mesas de inspección disponibles");
         }
+        if (reservedEntities.contains(entity)) {
+            return;
+        }
+        reserveCapacity();
+        reservedEntities.add(entity);
+    }
 
-        // Para 2 mesas: utilización = tiempo ocupado / (tiempo total * 2)
-        // Esto da el % promedio de utilización de ambas mesas
-        return (actualBusyTime / (currentTime * capacity)) * 100.0;
+    public void commitReservationFor(Entity entity) {
+        if (reservedEntities.remove(entity)) {
+            commitReservedCapacity();
+        }
     }
 
     @Override
-    public double getAverageContent(double currentTime) {
-        if (currentTime <= 0) return 0;
-
-        // Actualizar con el contenido actual
-        double finalWeightedSum = weightedContentSum;
-        if (currentTime > lastContentChangeTime) {
-            finalWeightedSum += currentContent * (currentTime - lastContentChangeTime);
-        }
-
-        return finalWeightedSum / currentTime;
+    public void resetState() {
+        super.resetState();
+        operationCounts.clear();
+        reservedEntities.clear();
     }
 }
