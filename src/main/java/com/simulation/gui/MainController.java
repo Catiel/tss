@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Controlador principal mejorado con gráficas y contadores en tiempo real
+ * Controlador principal con actualización en tiempo real de gráficas
  */
 public class MainController {
     @FXML private BorderPane rootPane;
@@ -25,7 +25,7 @@ public class MainController {
     @FXML private Button pauseButton;
     @FXML private Button resetButton;
     @FXML private Button parametersButton;
-    @FXML private Button runReplicationsButton; // NUEVO
+    @FXML private Button runReplicationsButton;
     @FXML private Label statusLabel;
     @FXML private Label timeLabel;
     @FXML private Slider speedSlider;
@@ -33,7 +33,7 @@ public class MainController {
     @FXML private TabPane mainTabPane;
     @FXML private Tab animationTab;
     @FXML private Tab resultsTab;
-    @FXML private Tab chartsTab; // NUEVO
+    @FXML private Tab chartsTab;
 
     // Pestañas de resultados
     @FXML private TabPane resultsTabPane;
@@ -56,17 +56,17 @@ public class MainController {
     private SimulationParameters parameters;
     private SimulationEngine engine;
     private AnimationPanel animationPanel;
-    private UtilizationChartPanel utilizationChartPanel; // NUEVO
+    private RealTimeChartsPanel realTimeChartsPanel; // NUEVO: Panel de gráficas en tiempo real
     private AnimationTimer animationTimer;
     private Thread simulationThread;
-    private ReplicationManager replicationManager; // NUEVO
+    private ReplicationManager replicationManager;
 
     public void initialize() {
         parameters = new SimulationParameters();
         engine = new SimulationEngine(parameters);
 
         setupAnimationPanel();
-        setupUtilizationChart(); // NUEVO
+        setupRealTimeCharts(); // NUEVO
         setupControls();
         setupResultsTables();
         setupAnimationLoop();
@@ -80,14 +80,12 @@ public class MainController {
     }
 
     /**
-     * NUEVO: Configura el panel de gráfica de utilización
+     * NUEVO: Configura el panel de gráficas en tiempo real
      */
-    private void setupUtilizationChart() {
-        utilizationChartPanel = new UtilizationChartPanel();
-
-        // Si existe la pestaña de gráficas, agregar contenido
+    private void setupRealTimeCharts() {
+        realTimeChartsPanel = new RealTimeChartsPanel();
         if (chartsTab != null) {
-            chartsTab.setContent(utilizationChartPanel);
+            chartsTab.setContent(realTimeChartsPanel);
         }
     }
 
@@ -97,7 +95,6 @@ public class MainController {
         resetButton.setOnAction(e -> handleReset());
         parametersButton.setOnAction(e -> handleParameters());
 
-        // NUEVO: Botón para ejecutar réplicas
         if (runReplicationsButton != null) {
             runReplicationsButton.setOnAction(e -> handleRunReplications());
         }
@@ -184,6 +181,7 @@ public class MainController {
             public void handle(long now) {
                 if (engine.isRunning() && now - lastUpdate >= UPDATE_INTERVAL) {
                     updateDisplay();
+                    updateRealTimeCharts(); // NUEVO: Actualizar gráficas en tiempo real
                     lastUpdate = now;
                 }
             }
@@ -205,6 +203,9 @@ public class MainController {
         }
 
         engine.initialize();
+
+        // NUEVO: Inicializar gráficas en tiempo real
+        realTimeChartsPanel.reset();
 
         simulationThread = new Thread(() -> {
             engine.run();
@@ -267,7 +268,7 @@ public class MainController {
 
         locationTable.getItems().clear();
         entityStatsText.clear();
-        utilizationChartPanel.clear();
+        realTimeChartsPanel.reset(); // NUEVO
     }
 
     @FXML
@@ -283,9 +284,6 @@ public class MainController {
         }
     }
 
-    /**
-     * NUEVO: Ejecuta 3 réplicas de la simulación
-     */
     @FXML
     private void handleRunReplications() {
         Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -325,27 +323,15 @@ public class MainController {
         );
     }
 
-    /**
-     * NUEVO: Maneja la completación de las réplicas
-     */
     private void handleReplicationsComplete() {
         ReplicationManager.AggregatedStatistics aggStats = replicationManager.getAggregatedStatistics();
 
         if (aggStats != null) {
-            // Actualizar gráfica de utilización
-            utilizationChartPanel.updateChart(aggStats);
-            utilizationChartPanel.setSubtitle(
-                String.format("3 Réplicas - IC 95%%: [%.2f, %.2f] piezas/hora",
-                    aggStats.getCiThroughput()[0], aggStats.getCiThroughput()[1])
-            );
+            // Mostrar resultados en gráficas
+            realTimeChartsPanel.showReplicationResults(aggStats);
 
             // Mostrar resultados agregados
             showAggregatedResults(aggStats);
-
-            // Cambiar a pestaña de gráficas
-            if (chartsTab != null) {
-                mainTabPane.getSelectionModel().select(chartsTab);
-            }
         }
 
         startButton.setDisable(false);
@@ -356,9 +342,6 @@ public class MainController {
         updateStatus("Réplicas completadas");
     }
 
-    /**
-     * NUEVO: Muestra resultados agregados de réplicas
-     */
     private void showAggregatedResults(ReplicationManager.AggregatedStatistics aggStats) {
         Alert resultAlert = new Alert(Alert.AlertType.INFORMATION);
         resultAlert.setTitle("Resultados de Réplicas");
@@ -395,26 +378,36 @@ public class MainController {
         updateStatus("Simulación completada");
         updateResults();
 
-        // Actualizar gráfica de utilización
-        Statistics stats = engine.getStatistics();
-        utilizationChartPanel.updateChart(stats, engine.getCurrentTime());
-        utilizationChartPanel.setSubtitle("Simulación Individual");
+        // NUEVO: Actualizar gráficas finales
+        updateRealTimeCharts();
 
-        mainTabPane.getSelectionModel().select(resultsTab);
+        mainTabPane.getSelectionModel().select(chartsTab);
     }
 
     private void updateDisplay() {
         double currentTime = engine.getCurrentTime();
 
         Platform.runLater(() -> {
-            // Actualizar tiempo en formato días:horas:minutos
+            // Actualizar tiempo
             int days = (int) (currentTime / (24 * 60));
             int hours = (int) ((currentTime % (24 * 60)) / 60);
             int minutes = (int) (currentTime % 60);
             timeLabel.setText(String.format("Tiempo: %d días %02d:%02d", days, hours, minutes));
 
-            // Renderizar animación con contadores
+            // Renderizar animación
             animationPanel.render();
+        });
+    }
+
+    /**
+     * NUEVO: Actualiza las gráficas en tiempo real durante la simulación
+     */
+    private void updateRealTimeCharts() {
+        Statistics stats = engine.getStatistics();
+        double currentTime = engine.getCurrentTime();
+
+        Platform.runLater(() -> {
+            realTimeChartsPanel.updateCharts(stats, currentTime);
         });
     }
 
