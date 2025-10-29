@@ -1,58 +1,58 @@
-package com.simulation.core;
+package com.simulation.core; // Declaración del paquete que contiene las clases principales (core) de la simulación
 
-public class EventTypes {
+public class EventTypes { // Declaración de la clase pública EventTypes que agrupa todos los tipos específicos de eventos de la simulación
 
     // Evento de arribo de pieza
-    public static class ArrivalEvent extends Event {
-        public ArrivalEvent(double time) {
-            super(time, null);
-        }
+    public static class ArrivalEvent extends Event { // Declaración de clase estática pública anidada ArrivalEvent que extiende Event y representa el arribo de una nueva pieza al sistema
+        public ArrivalEvent(double time) { // Constructor público que inicializa un evento de arribo recibiendo solo el tiempo como parámetro
+            super(time, null); // Llamada al constructor de la clase padre Event pasando el tiempo y null como entidad porque aún no se ha creado la pieza
+        } // Cierre del constructor ArrivalEvent
 
-        @Override
-        public void execute(SimulationEngine engine) {
-            engine.handleArrival(time);
-        }
-    }
+        @Override // Anotación que indica que este método sobrescribe el método abstracto execute de la clase padre Event
+        public void execute(SimulationEngine engine) { // Método público que ejecuta la lógica del evento de arribo recibiendo el motor de simulación como parámetro
+            engine.handleArrival(time); // Invoca el método handleArrival del motor de simulación pasando el tiempo del arribo para procesar la llegada de una nueva pieza
+        } // Cierre del método execute
+    } // Cierre de la clase ArrivalEvent
 
     // Evento de fin de transporte
-    public static class TransportEndEvent extends Event {
-        private String destinationName;
+    public static class TransportEndEvent extends Event { // Declaración de clase estática pública anidada TransportEndEvent que extiende Event y representa la finalización de un transporte
+        private String destinationName; // Variable privada que almacena el nombre de la ubicación de destino donde terminó el transporte
 
-        public TransportEndEvent(double time, Entity entity, String destination) {
-            super(time, entity);
-            this.destinationName = destination;
-        }
+        public TransportEndEvent(double time, Entity entity, String destination) { // Constructor público que inicializa un evento de fin de transporte recibiendo tiempo, entidad y destino como parámetros
+            super(time, entity); // Llamada al constructor de la clase padre Event pasando el tiempo y la entidad que está siendo transportada
+            this.destinationName = destination; // Asigna el nombre del destino recibido como parámetro a la variable de instancia destinationName
+        } // Cierre del constructor TransportEndEvent
 
-        @Override
-        public void execute(SimulationEngine engine) {
-            engine.handleTransportEnd(entity, destinationName, time);
-        }
-    }
+        @Override // Anotación que indica que este método sobrescribe el método abstracto execute de la clase padre Event
+        public void execute(SimulationEngine engine) { // Método público que ejecuta la lógica del evento de fin de transporte recibiendo el motor de simulación como parámetro
+            engine.handleTransportEnd(entity, destinationName, time); // Invoca el método handleTransportEnd del motor pasando la entidad, nombre del destino y tiempo para procesar la llegada de la entidad a su destino
+        } // Cierre del método execute
+    } // Cierre de la clase TransportEndEvent
 
     // Evento de fin de proceso
-    public static class ProcessEndEvent extends Event {
-        private String locationName;
+    public static class ProcessEndEvent extends Event { // Declaración de clase estática pública anidada ProcessEndEvent que extiende Event y representa la finalización de un proceso en una estación
+        private String locationName; // Variable privada que almacena el nombre de la ubicación donde finalizó el procesamiento
 
-        public ProcessEndEvent(double time, Entity entity, String location) {
-            super(time, entity);
-            this.locationName = location;
-        }
+        public ProcessEndEvent(double time, Entity entity, String location) { // Constructor público que inicializa un evento de fin de proceso recibiendo tiempo, entidad y ubicación como parámetros
+            super(time, entity); // Llamada al constructor de la clase padre Event pasando el tiempo y la entidad que está siendo procesada
+            this.locationName = location; // Asigna el nombre de la ubicación recibido como parámetro a la variable de instancia locationName
+        } // Cierre del constructor ProcessEndEvent
 
-        @Override
-        public void execute(SimulationEngine engine) {
-            engine.handleProcessEnd(entity, locationName, time);
-        }
-    }
+        @Override // Anotación que indica que este método sobrescribe el método abstracto execute de la clase padre Event
+        public void execute(SimulationEngine engine) { // Método público que ejecuta la lógica del evento de fin de proceso recibiendo el motor de simulación como parámetro
+            engine.handleProcessEnd(entity, locationName, time); // Invoca el método handleProcessEnd del motor pasando la entidad, nombre de ubicación y tiempo para procesar la finalización del procesamiento
+        } // Cierre del método execute
+    } // Cierre de la clase ProcessEndEvent
 
     // Evento de fin de operación de inspección
-    public static class InspectionOperationEndEvent extends Event {
-        public InspectionOperationEndEvent(double time, Entity entity) {
-            super(time, entity);
-        }
+    public static class InspectionOperationEndEvent extends Event { // Declaración de clase estática pública anidada InspectionOperationEndEvent que extiende Event y representa la finalización de una operación individual de inspección
+        public InspectionOperationEndEvent(double time, Entity entity) { // Constructor público que inicializa un evento de fin de operación de inspección recibiendo tiempo y entidad como parámetros
+            super(time, entity); // Llamada al constructor de la clase padre Event pasando el tiempo y la entidad que está siendo inspeccionada
+        } // Cierre del constructor InspectionOperationEndEvent
 
-        @Override
-        public void execute(SimulationEngine engine) {
-            engine.handleInspectionOperationEnd(entity, time);
-        }
-    }
-}
+        @Override // Anotación que indica que este método sobrescribe el método abstracto execute de la clase padre Event
+        public void execute(SimulationEngine engine) { // Método público que ejecuta la lógica del evento de fin de operación de inspección recibiendo el motor de simulación como parámetro
+            engine.handleInspectionOperationEnd(entity, time); // Invoca el método handleInspectionOperationEnd del motor pasando la entidad y tiempo para procesar la finalización de una operación de inspección
+        } // Cierre del método execute
+    } // Cierre de la clase InspectionOperationEndEvent
+} // Cierre de la clase EventTypes
