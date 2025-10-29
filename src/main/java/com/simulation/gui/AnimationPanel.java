@@ -14,22 +14,25 @@ import javafx.scene.text.TextAlignment;
 
 import java.util.*;
 
+/**
+ * Panel de animación con contadores en tiempo real
+ */
 public class AnimationPanel extends Pane {
     private Canvas canvas;
     private SimulationEngine engine;
 
     private static final double WIDTH = 1600;
-    private static final double HEIGHT = 650;
+    private static final double HEIGHT = 700;
     private static final double BOX_SIZE = 100;
     private static final double VERTICAL_SPACING = 200;
+    private static final double COUNTER_WIDTH = 120;
+    private static final double COUNTER_HEIGHT = 80;
 
     private Map<String, double[]> locationPositions;
     private Map<String, Color> locationColors;
     private Map<String, String> locationIcons;
 
-    // Para animaciones virtuales de movimientos instantáneos
     private List<VirtualTransit> virtualTransits;
-
     private double gearRotation = 0;
 
     public AnimationPanel(SimulationEngine engine) {
@@ -55,14 +58,14 @@ public class AnimationPanel extends Pane {
         double bottomY = topY + VERTICAL_SPACING;
 
         locationPositions.put("RECEPCION", new double[]{50, topY});
-        locationPositions.put("LAVADORA", new double[]{250, topY});
-        locationPositions.put("ALMACEN_PINTURA", new double[]{450, topY});
-        locationPositions.put("PINTURA", new double[]{650, topY});
+        locationPositions.put("LAVADORA", new double[]{280, topY});
+        locationPositions.put("ALMACEN_PINTURA", new double[]{510, topY});
+        locationPositions.put("PINTURA", new double[]{740, topY});
 
-        locationPositions.put("ALMACEN_HORNO", new double[]{250, bottomY});
-        locationPositions.put("HORNO", new double[]{450, bottomY});
-        locationPositions.put("INSPECCION_1", new double[]{700, bottomY});
-        locationPositions.put("INSPECCION_2", new double[]{850, bottomY});
+        locationPositions.put("ALMACEN_HORNO", new double[]{280, bottomY});
+        locationPositions.put("HORNO", new double[]{510, bottomY});
+        locationPositions.put("INSPECCION_1", new double[]{780, bottomY});
+        locationPositions.put("INSPECCION_2", new double[]{930, bottomY});
     }
 
     private void initializeColors() {
@@ -90,20 +93,17 @@ public class AnimationPanel extends Pane {
     public void render() {
         GraphicsContext gc = canvas.getGraphicsContext2D();
 
+        // Fondo
         gc.setFill(Color.rgb(240, 242, 245));
         gc.fillRect(0, 0, WIDTH, HEIGHT);
 
         drawTitle(gc);
         drawConnections(gc);
         drawAllLocations(gc);
+        drawCounters(gc); // NUEVO: Contadores en tiempo real
 
-        // Detectar y crear animaciones virtuales
         detectVirtualTransits();
-
-        // Dibujar piezas en tránsito real
         drawTransitEntities(gc);
-
-        // Dibujar piezas en tránsito virtual
         drawVirtualTransitEntities(gc);
 
         drawGlobalInfo(gc);
@@ -133,9 +133,7 @@ public class AnimationPanel extends Pane {
         drawConnection(gc, "RECEPCION", "LAVADORA");
         drawConnection(gc, "LAVADORA", "ALMACEN_PINTURA");
         drawConnection(gc, "ALMACEN_PINTURA", "PINTURA");
-
         drawConnectionCurved(gc, "PINTURA", "ALMACEN_HORNO");
-
         drawConnection(gc, "ALMACEN_HORNO", "HORNO");
         drawConnectionToInspection(gc, "HORNO", "INSPECCION_1");
 
@@ -145,7 +143,6 @@ public class AnimationPanel extends Pane {
     private void drawConnection(GraphicsContext gc, String from, String to) {
         double[] pos1 = locationPositions.get(from);
         double[] pos2 = locationPositions.get(to);
-
         if (pos1 == null || pos2 == null) return;
 
         double x1 = pos1[0] + BOX_SIZE;
@@ -160,7 +157,6 @@ public class AnimationPanel extends Pane {
     private void drawConnectionCurved(GraphicsContext gc, String from, String to) {
         double[] pos1 = locationPositions.get(from);
         double[] pos2 = locationPositions.get(to);
-
         if (pos1 == null || pos2 == null) return;
 
         double x1 = pos1[0] + BOX_SIZE / 2;
@@ -172,14 +168,12 @@ public class AnimationPanel extends Pane {
         gc.moveTo(x1, y1);
         gc.bezierCurveTo(x1, y1 + 50, x2, y2 - 50, x2, y2);
         gc.stroke();
-
         drawArrow(gc, x2, y2 - 20, x2, y2);
     }
 
     private void drawConnectionToInspection(GraphicsContext gc, String from, String to) {
         double[] pos1 = locationPositions.get(from);
         double[] pos2 = locationPositions.get(to);
-
         if (pos1 == null || pos2 == null) return;
 
         double x1 = pos1[0] + BOX_SIZE;
@@ -203,7 +197,6 @@ public class AnimationPanel extends Pane {
 
         double x3 = x2 - arrowLength * Math.cos(angle - Math.PI / 6);
         double y3 = y2 - arrowLength * Math.sin(angle - Math.PI / 6);
-
         double x4 = x2 - arrowLength * Math.cos(angle + Math.PI / 6);
         double y4 = y2 - arrowLength * Math.sin(angle + Math.PI / 6);
 
@@ -218,7 +211,6 @@ public class AnimationPanel extends Pane {
         drawLocation(gc, "PINTURA", engine.getLocation("PINTURA"));
         drawLocation(gc, "ALMACEN_HORNO", engine.getLocation("ALMACEN_HORNO"));
         drawLocation(gc, "HORNO", engine.getLocation("HORNO"));
-
         drawInspectionStations(gc);
     }
 
@@ -234,11 +226,12 @@ public class AnimationPanel extends Pane {
         int currentContent = location.getCurrentContent();
         int capacity = location.getCapacity();
         int queueSize = location.getQueueSize();
-        int totalEntries = location.getTotalEntries();
 
+        // Sombra
         gc.setFill(Color.rgb(0, 0, 0, 0.15));
         gc.fillRoundRect(pos[0] + 4, pos[1] + 4, BOX_SIZE, BOX_SIZE, 12, 12);
 
+        // Caja principal
         gc.setFill(color);
         gc.fillRoundRect(pos[0], pos[1], BOX_SIZE, BOX_SIZE, 12, 12);
 
@@ -246,6 +239,7 @@ public class AnimationPanel extends Pane {
         gc.setLineWidth(3);
         gc.strokeRoundRect(pos[0], pos[1], BOX_SIZE, BOX_SIZE, 12, 12);
 
+        // Icono o engranaje
         if (currentContent > 0 && !name.contains("ALMACEN")) {
             drawGear(gc, pos[0] + BOX_SIZE / 2, pos[1] + 35, 18);
         } else {
@@ -255,28 +249,28 @@ public class AnimationPanel extends Pane {
             gc.fillText(icon, pos[0] + BOX_SIZE / 2, pos[1] + 40);
         }
 
+        // Nombre
         gc.setFill(Color.rgb(33, 33, 33));
         gc.setFont(Font.font("Arial", FontWeight.BOLD, 11));
         String displayName = name.replace("_", " ");
         gc.fillText(displayName, pos[0] + BOX_SIZE / 2, pos[1] - 25);
 
+        // Capacidad actual
         gc.setFont(Font.font("Arial", FontWeight.BOLD, 22));
         gc.setFill(Color.WHITE);
         String contentText = currentContent + "/" + (capacity == Integer.MAX_VALUE ? "∞" : capacity);
         gc.fillText(contentText, pos[0] + BOX_SIZE / 2, pos[1] + 75);
 
-        gc.setFont(Font.font("Arial", FontWeight.BOLD, 10));
-        gc.setFill(Color.rgb(80, 80, 80));
-        gc.setTextAlign(TextAlignment.LEFT);
-        gc.fillText("↓ " + totalEntries, pos[0] + 5, pos[1] + BOX_SIZE - 5);
-
+        // Cola de espera
         if (queueSize > 0) {
             drawQueueIndicator(gc, pos[0], pos[1], queueSize);
         }
 
+        // Barra de utilización
         double utilization = location.getUtilization(engine.getCurrentTime());
         drawUtilizationBar(gc, pos[0], pos[1] + BOX_SIZE + 8, BOX_SIZE, utilization);
 
+        // Piezas en la locación
         drawEntitiesInLocation(gc, pos[0], pos[1], currentContent, capacity);
     }
 
@@ -300,11 +294,8 @@ public class AnimationPanel extends Pane {
             double x = r * Math.cos(angle);
             double y = r * Math.sin(angle);
 
-            if (i == 0) {
-                gc.moveTo(x, y);
-            } else {
-                gc.lineTo(x, y);
-            }
+            if (i == 0) gc.moveTo(x, y);
+            else gc.lineTo(x, y);
         }
         gc.closePath();
         gc.fill();
@@ -369,13 +360,6 @@ public class AnimationPanel extends Pane {
         String contentText = content + "/" + capacity;
         gc.fillText(contentText, pos[0] + BOX_SIZE / 2, pos[1] + 75);
 
-        if (name.equals("INSPECCION_1")) {
-            gc.setFont(Font.font("Arial", FontWeight.BOLD, 10));
-            gc.setFill(Color.rgb(80, 80, 80));
-            gc.setTextAlign(TextAlignment.LEFT);
-            gc.fillText("↓ " + totalEntries, pos[0] + 5, pos[1] + BOX_SIZE - 5);
-        }
-
         if (queueSize > 0 && name.equals("INSPECCION_1")) {
             drawQueueIndicator(gc, pos[0], pos[1], queueSize);
         }
@@ -419,13 +403,9 @@ public class AnimationPanel extends Pane {
         double fillWidth = width * (utilization / 100.0);
 
         Color fillColor;
-        if (utilization < 50) {
-            fillColor = Color.rgb(76, 175, 80);
-        } else if (utilization < 80) {
-            fillColor = Color.rgb(255, 193, 7);
-        } else {
-            fillColor = Color.rgb(244, 67, 54);
-        }
+        if (utilization < 50) fillColor = Color.rgb(76, 175, 80);
+        else if (utilization < 80) fillColor = Color.rgb(255, 193, 7);
+        else fillColor = Color.rgb(244, 67, 54);
 
         gc.setFill(fillColor);
         gc.fillRoundRect(x, y, fillWidth, barHeight, 5, 5);
@@ -468,15 +448,66 @@ public class AnimationPanel extends Pane {
         }
     }
 
-    // DETECCIÓN DE TRÁNSITOS VIRTUALES
+    /**
+     * NUEVO: Dibuja contadores de estadísticas en tiempo real
+     */
+    private void drawCounters(GraphicsContext gc) {
+        double startX = 1150;
+        double startY = 130;
+        double spacing = COUNTER_HEIGHT + 15;
+
+        String[] locations = {"LAVADORA", "ALMACEN_PINTURA", "PINTURA",
+                             "ALMACEN_HORNO", "HORNO", "INSPECCION"};
+
+        for (int i = 0; i < locations.length; i++) {
+            Location loc = engine.getLocation(locations[i]);
+            if (loc != null) {
+                drawCounter(gc, startX, startY + i * spacing, locations[i], loc);
+            }
+        }
+    }
+
+    /**
+     * Dibuja un contador individual para una locación
+     */
+    private void drawCounter(GraphicsContext gc, double x, double y, String name, Location location) {
+        // Fondo del contador
+        gc.setFill(Color.rgb(255, 255, 255, 0.95));
+        gc.fillRoundRect(x, y, COUNTER_WIDTH, COUNTER_HEIGHT, 8, 8);
+
+        gc.setStroke(locationColors.get(name));
+        gc.setLineWidth(2);
+        gc.strokeRoundRect(x, y, COUNTER_WIDTH, COUNTER_HEIGHT, 8, 8);
+
+        // Nombre de la locación
+        gc.setFill(Color.rgb(50, 50, 50));
+        gc.setFont(Font.font("Arial", FontWeight.BOLD, 10));
+        gc.setTextAlign(TextAlignment.LEFT);
+        String displayName = name.replace("_", " ");
+        gc.fillText(displayName, x + 5, y + 15);
+
+        // Estadísticas
+        gc.setFont(Font.font("Arial", FontWeight.NORMAL, 9));
+
+        int entries = location.getTotalEntries();
+        gc.fillText("Entradas: " + entries, x + 5, y + 30);
+
+        double util = location.getUtilization(engine.getCurrentTime());
+        gc.fillText(String.format("Util: %.1f%%", util), x + 5, y + 45);
+
+        int queue = location.getQueueSize();
+        gc.fillText("Cola: " + queue, x + 5, y + 60);
+
+        double avgContent = location.getAverageContent(engine.getCurrentTime());
+        gc.fillText(String.format("Prom: %.1f", avgContent), x + 5, y + 75);
+    }
+
     private void detectVirtualTransits() {
-        // Actualizar progreso de tránsitos existentes
         virtualTransits.removeIf(vt -> {
-            vt.progress += 0.08; // Velocidad de animación
+            vt.progress += 0.08;
             return vt.progress >= 1.0;
         });
 
-        // Detectar nuevos movimientos de almacén a proceso
         List<Entity> allEntities = engine.getAllActiveEntities();
         for (Entity entity : allEntities) {
             if (entity == null || entity.isInTransit()) continue;
@@ -484,11 +515,8 @@ public class AnimationPanel extends Pane {
             String currentLoc = entity.getCurrentLocation();
             if (currentLoc == null) continue;
 
-            // Si está en un almacén y la siguiente locación tiene espacio, crear tránsito virtual
             if (currentLoc.equals("ALMACEN_PINTURA") &&
                 engine.getLocation("PINTURA").getCurrentContent() < engine.getLocation("PINTURA").getCapacity()) {
-
-                // Verificar si ya existe animación para esta entidad
                 boolean exists = virtualTransits.stream().anyMatch(vt -> vt.entityId == entity.getId());
                 if (!exists) {
                     virtualTransits.add(new VirtualTransit(entity.getId(), "ALMACEN_PINTURA", "PINTURA"));
@@ -496,7 +524,6 @@ public class AnimationPanel extends Pane {
             }
             else if (currentLoc.equals("ALMACEN_HORNO") &&
                      engine.getLocation("HORNO").getCurrentContent() < engine.getLocation("HORNO").getCapacity()) {
-
                 boolean exists = virtualTransits.stream().anyMatch(vt -> vt.entityId == entity.getId());
                 if (!exists) {
                     virtualTransits.add(new VirtualTransit(entity.getId(), "ALMACEN_HORNO", "HORNO"));
@@ -505,7 +532,6 @@ public class AnimationPanel extends Pane {
         }
     }
 
-    // DIBUJAR TRÁNSITOS REALES
     private void drawTransitEntities(GraphicsContext gc) {
         List<Entity> allEntities = engine.getAllActiveEntities();
         if (allEntities == null) return;
@@ -513,46 +539,39 @@ public class AnimationPanel extends Pane {
         double currentTime = engine.getCurrentTime();
 
         for (Entity entity : allEntities) {
-            if (entity == null) continue;
+            if (entity == null || !entity.isInTransit()) continue;
 
-            if (entity.isInTransit()) {
-                String from = entity.getCurrentLocation();
-                String to = entity.getDestinationLocation();
+            String from = entity.getCurrentLocation();
+            String to = entity.getDestinationLocation();
+            if (from == null || to == null) continue;
 
-                if (from == null || to == null) continue;
+            double progress = entity.getTransitProgress(currentTime);
 
-                double progress = entity.getTransitProgress(currentTime);
+            double[] fromPos = getLocationExitPoint(from);
+            double[] toPos = getLocationEntryPoint(to);
 
-                double[] fromPos = getLocationExitPoint(from);
-                double[] toPos = getLocationEntryPoint(to);
+            if (fromPos != null && toPos != null) {
+                double x, y;
 
-                if (fromPos != null && toPos != null) {
-                    double x, y;
-
-                    if (from.equals("PINTURA") && to.equals("ALMACEN_HORNO")) {
-                        double[] curvePos = getCurvePosition(fromPos, toPos, progress);
-                        x = curvePos[0];
-                        y = curvePos[1];
-                    }
-                    else if (to.equals("INSPECCION")) {
-                        toPos = getLocationEntryPoint("INSPECCION_1");
-                        if (toPos == null) continue;
-
-                        x = fromPos[0] + (toPos[0] - fromPos[0]) * progress;
-                        y = fromPos[1] + (toPos[1] - fromPos[1]) * progress;
-                    }
-                    else {
-                        x = fromPos[0] + (toPos[0] - fromPos[0]) * progress;
-                        y = fromPos[1] + (toPos[1] - fromPos[1]) * progress;
-                    }
-
-                    drawMovingPiece(gc, x, y, entity.getId());
+                if (from.equals("PINTURA") && to.equals("ALMACEN_HORNO")) {
+                    double[] curvePos = getCurvePosition(fromPos, toPos, progress);
+                    x = curvePos[0];
+                    y = curvePos[1];
+                } else if (to.equals("INSPECCION")) {
+                    toPos = getLocationEntryPoint("INSPECCION_1");
+                    if (toPos == null) continue;
+                    x = fromPos[0] + (toPos[0] - fromPos[0]) * progress;
+                    y = fromPos[1] + (toPos[1] - fromPos[1]) * progress;
+                } else {
+                    x = fromPos[0] + (toPos[0] - fromPos[0]) * progress;
+                    y = fromPos[1] + (toPos[1] - fromPos[1]) * progress;
                 }
+
+                drawMovingPiece(gc, x, y, entity.getId());
             }
         }
     }
 
-    // DIBUJAR TRÁNSITOS VIRTUALES
     private void drawVirtualTransitEntities(GraphicsContext gc) {
         for (VirtualTransit vt : virtualTransits) {
             double[] fromPos = getLocationExitPoint(vt.from);
@@ -561,7 +580,6 @@ public class AnimationPanel extends Pane {
             if (fromPos != null && toPos != null) {
                 double x = fromPos[0] + (toPos[0] - fromPos[0]) * vt.progress;
                 double y = fromPos[1] + (toPos[1] - fromPos[1]) * vt.progress;
-
                 drawMovingPiece(gc, x, y, vt.entityId);
             }
         }
@@ -576,7 +594,6 @@ public class AnimationPanel extends Pane {
 
         double[] pos = locationPositions.get(location);
         if (pos == null) return null;
-
         return new double[]{pos[0] + BOX_SIZE, pos[1] + BOX_SIZE / 2};
     }
 
@@ -593,7 +610,6 @@ public class AnimationPanel extends Pane {
 
         double[] pos = locationPositions.get(location);
         if (pos == null) return null;
-
         return new double[]{pos[0], pos[1] + BOX_SIZE / 2};
     }
 
@@ -674,7 +690,6 @@ public class AnimationPanel extends Pane {
         render();
     }
 
-    // Clase interna para tránsitos virtuales
     private static class VirtualTransit {
         int entityId;
         String from;

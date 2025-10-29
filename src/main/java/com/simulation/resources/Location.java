@@ -5,6 +5,7 @@ import java.util.*;
 
 /**
  * Clase base para todas las locaciones
+ * CORREGIDO: Cálculo preciso de utilización y tiempos
  */
 public abstract class Location {
     protected String name;
@@ -14,10 +15,15 @@ public abstract class Location {
     protected int totalEntries;
     protected int totalExits;
 
-    // Para cálculo de utilización
+    // Para cálculo de utilización basado en tiempo
     protected double totalBusyTime;
     protected double lastStatusChangeTime;
     protected boolean isBusy;
+
+    // Para cálculo de contenido promedio
+    protected double weightedContentSum;
+    protected int lastContent;
+    protected double lastContentChangeTime;
 
     public Location(String name, int capacity) {
         this.name = name;
@@ -29,17 +35,30 @@ public abstract class Location {
         this.totalBusyTime = 0;
         this.lastStatusChangeTime = 0;
         this.isBusy = false;
+        this.weightedContentSum = 0;
+        this.lastContent = 0;
+        this.lastContentChangeTime = 0;
     }
 
+    /**
+     * Verifica si la locación puede recibir más entidades
+     */
     public boolean canEnter() {
         return currentContent < capacity;
     }
 
+    /**
+     * Una entidad entra a la locación
+     */
     public void enter(Entity entity, double currentTime) {
         if (currentContent < capacity) {
+            // Actualizar contenido promedio
+            updateWeightedContent(currentTime);
+
             currentContent++;
             totalEntries++;
 
+            // Actualizar estado de ocupación
             if (currentContent == 1 && !isBusy) {
                 isBusy = true;
                 lastStatusChangeTime = currentTime;
@@ -47,11 +66,18 @@ public abstract class Location {
         }
     }
 
+    /**
+     * Una entidad sale de la locación
+     */
     public void exit(Entity entity, double currentTime) {
         if (currentContent > 0) {
+            // Actualizar contenido promedio
+            updateWeightedContent(currentTime);
+
             currentContent--;
             totalExits++;
 
+            // Actualizar estado de ocupación
             if (currentContent == 0 && isBusy) {
                 totalBusyTime += (currentTime - lastStatusChangeTime);
                 isBusy = false;
@@ -60,18 +86,40 @@ public abstract class Location {
         }
     }
 
+    /**
+     * Actualiza el cálculo de contenido promedio ponderado por tiempo
+     */
+    private void updateWeightedContent(double currentTime) {
+        if (currentTime > lastContentChangeTime) {
+            double timeDelta = currentTime - lastContentChangeTime;
+            weightedContentSum += lastContent * timeDelta;
+            lastContent = currentContent;
+            lastContentChangeTime = currentTime;
+        }
+    }
+
+    /**
+     * Agrega una entidad a la cola de espera
+     */
     public void addToQueue(Entity entity) {
         queue.add(entity);
     }
 
+    /**
+     * Remueve y retorna la siguiente entidad de la cola
+     */
     public Entity pollFromQueue() {
         return queue.poll();
     }
 
+    /**
+     * Verifica si hay entidades en cola
+     */
     public boolean hasQueuedEntities() {
         return !queue.isEmpty();
     }
 
+    // Getters básicos
     public String getName() {
         return name;
     }
@@ -96,17 +144,18 @@ public abstract class Location {
         return totalExits;
     }
 
+    /**
+     * Calcula el porcentaje de utilización de la locación
+     * FÓRMULA: (Tiempo ocupado / Tiempo total) * 100
+     */
     public double getUtilization(double currentTime) {
-        if (capacity == Integer.MAX_VALUE) {
-            return 0.0;
-        }
-
-        if (currentTime <= 0) {
+        if (capacity == Integer.MAX_VALUE || currentTime <= 0) {
             return 0.0;
         }
 
         double actualBusyTime = totalBusyTime;
 
+        // Si actualmente está ocupado, agregar tiempo desde último cambio
         if (isBusy && currentContent > 0) {
             actualBusyTime += (currentTime - lastStatusChangeTime);
         }
@@ -114,13 +163,27 @@ public abstract class Location {
         return (actualBusyTime / currentTime) * 100.0;
     }
 
+    /**
+     * Calcula el tiempo promedio por entrada
+     */
     public double getAverageTimePerEntry(double currentTime) {
         if (totalEntries == 0) return 0;
         return currentTime / totalEntries;
     }
 
+    /**
+     * Calcula el contenido promedio ponderado por tiempo
+     * FÓRMULA: Σ(contenido_i * tiempo_i) / tiempo_total
+     */
     public double getAverageContent(double currentTime) {
-        if (currentTime == 0) return 0;
-        return (totalBusyTime * capacity) / currentTime;
+        if (currentTime <= 0) return 0;
+
+        // Actualizar con el contenido actual
+        double finalWeightedSum = weightedContentSum;
+        if (currentTime > lastContentChangeTime) {
+            finalWeightedSum += currentContent * (currentTime - lastContentChangeTime);
+        }
+
+        return finalWeightedSum / currentTime;
     }
 }

@@ -1,8 +1,8 @@
 package com.simulation.config;
 
 public class SimulationParameters {
-    // Duración de la simulación
-    private double simulationDurationMinutes = 2160.0; // 36 horas = 1.5 días
+    // Duración de la simulación: 90 días x 24 horas x 60 minutos = 129,600 minutos
+    private double simulationDurationMinutes = 129600.0; // CORREGIDO: 90 días completos
 
     // Semilla aleatoria base
     private long baseRandomSeed = 12345L;
@@ -55,7 +55,7 @@ public class SimulationParameters {
     // Operaciones de INSPECCION: WAIT E(2) por cada operación
     private double inspeccionOperationMean = 2.0;
 
-    // Getters
+    // Getters y Setters
     public double getSimulationDurationMinutes() {
         return simulationDurationMinutes;
     }

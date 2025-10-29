@@ -27,10 +27,12 @@
                 <Separator orientation="VERTICAL"/>
                 <Button fx:id="parametersButton" text="⚙ Parámetros"
                         style="-fx-font-size: 14px; -fx-padding: 8 16;"/>
+                <Button fx:id="runReplicationsButton" text="📊 Ejecutar 3 Réplicas"
+                        style="-fx-font-size: 14px; -fx-padding: 8 16; -fx-background-color: #4CAF50; -fx-text-fill: white;"/>
 
                 <Region HBox.hgrow="ALWAYS"/>
 
-                <Label fx:id="timeLabel" text="Tiempo: 0.00 min"
+                <Label fx:id="timeLabel" text="Tiempo: 0 días 00:00"
                        style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
             </HBox>
 
@@ -58,8 +60,13 @@
                 <!-- El contenido se agrega dinámicamente desde el controller -->
             </Tab>
 
+            <!-- Pestaña de Gráficas -->
+            <Tab fx:id="chartsTab" text="📊 Gráficas">
+                <!-- El contenido se agrega dinámicamente desde el controller -->
+            </Tab>
+
             <!-- Pestaña de Resultados -->
-            <Tab fx:id="resultsTab" text="📊 Resultados">
+            <Tab fx:id="resultsTab" text="📋 Resultados Detallados">
                 <TabPane fx:id="resultsTabPane" tabClosingPolicy="UNAVAILABLE">
                     <!-- Estadísticas de Locaciones -->
                     <Tab fx:id="locationStatsTab" text="Estadísticas de Locaciones">
@@ -96,10 +103,10 @@
         </TabPane>
     </center>
 
-    <!-- Bottom: Additional Info (opcional) -->
+    <!-- Bottom: Additional Info -->
     <bottom>
         <HBox spacing="10" alignment="CENTER" style="-fx-background-color: #e0e0e0; -fx-padding: 5;">
-            <Label text="ProModel Java Implementation © 2025"
+            <Label text="ProModel Java Implementation © 2025 | Sincronizado con Animación y Estadísticas en Tiempo Real"
                    style="-fx-font-size: 10px; -fx-text-fill: #666;"/>
         </HBox>
     </bottom>

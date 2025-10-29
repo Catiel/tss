@@ -1,29 +1,31 @@
 package com.simulation.gui;
 
 import com.simulation.config.SimulationParameters;
+import com.simulation.core.ReplicationManager;
 import com.simulation.core.SimulationEngine;
 import com.simulation.resources.Location;
 import com.simulation.statistics.Statistics;
 import javafx.animation.AnimationTimer;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.VBox;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Controlador principal mejorado con gráficas y contadores en tiempo real
+ */
 public class MainController {
     @FXML private BorderPane rootPane;
     @FXML private Button startButton;
     @FXML private Button pauseButton;
     @FXML private Button resetButton;
     @FXML private Button parametersButton;
+    @FXML private Button runReplicationsButton; // NUEVO
     @FXML private Label statusLabel;
     @FXML private Label timeLabel;
     @FXML private Slider speedSlider;
@@ -31,6 +33,7 @@ public class MainController {
     @FXML private TabPane mainTabPane;
     @FXML private Tab animationTab;
     @FXML private Tab resultsTab;
+    @FXML private Tab chartsTab; // NUEVO
 
     // Pestañas de resultados
     @FXML private TabPane resultsTabPane;
@@ -53,14 +56,17 @@ public class MainController {
     private SimulationParameters parameters;
     private SimulationEngine engine;
     private AnimationPanel animationPanel;
+    private UtilizationChartPanel utilizationChartPanel; // NUEVO
     private AnimationTimer animationTimer;
     private Thread simulationThread;
+    private ReplicationManager replicationManager; // NUEVO
 
     public void initialize() {
         parameters = new SimulationParameters();
         engine = new SimulationEngine(parameters);
 
         setupAnimationPanel();
+        setupUtilizationChart(); // NUEVO
         setupControls();
         setupResultsTables();
         setupAnimationLoop();
@@ -73,11 +79,28 @@ public class MainController {
         animationTab.setContent(animationPanel);
     }
 
+    /**
+     * NUEVO: Configura el panel de gráfica de utilización
+     */
+    private void setupUtilizationChart() {
+        utilizationChartPanel = new UtilizationChartPanel();
+
+        // Si existe la pestaña de gráficas, agregar contenido
+        if (chartsTab != null) {
+            chartsTab.setContent(utilizationChartPanel);
+        }
+    }
+
     private void setupControls() {
         startButton.setOnAction(e -> handleStart());
         pauseButton.setOnAction(e -> handlePause());
         resetButton.setOnAction(e -> handleReset());
         parametersButton.setOnAction(e -> handleParameters());
+
+        // NUEVO: Botón para ejecutar réplicas
+        if (runReplicationsButton != null) {
+            runReplicationsButton.setOnAction(e -> handleRunReplications());
+        }
 
         pauseButton.setDisable(true);
 
@@ -138,6 +161,15 @@ public class MainController {
                     setText(null);
                 } else {
                     setText(String.format("%.2f%%", item));
+
+                    // Colorear según utilización
+                    if (item < 50) {
+                        setStyle("-fx-background-color: #C8E6C9;");
+                    } else if (item < 80) {
+                        setStyle("-fx-background-color: #FFF9C4;");
+                    } else {
+                        setStyle("-fx-background-color: #FFCDD2;");
+                    }
                 }
             }
         });
@@ -145,10 +177,14 @@ public class MainController {
 
     private void setupAnimationLoop() {
         animationTimer = new AnimationTimer() {
+            private long lastUpdate = 0;
+            private static final long UPDATE_INTERVAL = 50_000_000; // 50ms
+
             @Override
             public void handle(long now) {
-                if (engine.isRunning()) {
+                if (engine.isRunning() && now - lastUpdate >= UPDATE_INTERVAL) {
                     updateDisplay();
+                    lastUpdate = now;
                 }
             }
         };
@@ -164,6 +200,9 @@ public class MainController {
         pauseButton.setDisable(false);
         resetButton.setDisable(true);
         parametersButton.setDisable(true);
+        if (runReplicationsButton != null) {
+            runReplicationsButton.setDisable(true);
+        }
 
         engine.initialize();
 
@@ -219,12 +258,16 @@ public class MainController {
         pauseButton.setText("Pausar");
         resetButton.setDisable(false);
         parametersButton.setDisable(false);
+        if (runReplicationsButton != null) {
+            runReplicationsButton.setDisable(false);
+        }
 
-        timeLabel.setText("Tiempo: 0.00 min");
+        timeLabel.setText("Tiempo: 0 días 00:00");
         updateStatus("Listo para iniciar");
 
         locationTable.getItems().clear();
         entityStatsText.clear();
+        utilizationChartPanel.clear();
     }
 
     @FXML
@@ -240,6 +283,104 @@ public class MainController {
         }
     }
 
+    /**
+     * NUEVO: Ejecuta 3 réplicas de la simulación
+     */
+    @FXML
+    private void handleRunReplications() {
+        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmAlert.setTitle("Ejecutar Réplicas");
+        confirmAlert.setHeaderText("Ejecutar 3 réplicas de la simulación");
+        confirmAlert.setContentText("Esto ejecutará 3 corridas completas. ¿Desea continuar?");
+
+        if (confirmAlert.showAndWait().get() != ButtonType.OK) {
+            return;
+        }
+
+        // Deshabilitar controles
+        startButton.setDisable(true);
+        resetButton.setDisable(true);
+        parametersButton.setDisable(true);
+        runReplicationsButton.setDisable(true);
+
+        updateStatus("Ejecutando réplicas...");
+
+        // Crear gestor de réplicas
+        replicationManager = new ReplicationManager(parameters, 3);
+
+        // Ejecutar réplicas en segundo plano
+        replicationManager.runReplications(
+            // Callback de progreso
+            replicationNum -> {
+                Platform.runLater(() -> {
+                    updateStatus(String.format("Ejecutando réplica %d de 3...", replicationNum));
+                });
+            },
+            // Callback de completación
+            () -> {
+                Platform.runLater(() -> {
+                    handleReplicationsComplete();
+                });
+            }
+        );
+    }
+
+    /**
+     * NUEVO: Maneja la completación de las réplicas
+     */
+    private void handleReplicationsComplete() {
+        ReplicationManager.AggregatedStatistics aggStats = replicationManager.getAggregatedStatistics();
+
+        if (aggStats != null) {
+            // Actualizar gráfica de utilización
+            utilizationChartPanel.updateChart(aggStats);
+            utilizationChartPanel.setSubtitle(
+                String.format("3 Réplicas - IC 95%%: [%.2f, %.2f] piezas/hora",
+                    aggStats.getCiThroughput()[0], aggStats.getCiThroughput()[1])
+            );
+
+            // Mostrar resultados agregados
+            showAggregatedResults(aggStats);
+
+            // Cambiar a pestaña de gráficas
+            if (chartsTab != null) {
+                mainTabPane.getSelectionModel().select(chartsTab);
+            }
+        }
+
+        startButton.setDisable(false);
+        resetButton.setDisable(false);
+        parametersButton.setDisable(false);
+        runReplicationsButton.setDisable(false);
+
+        updateStatus("Réplicas completadas");
+    }
+
+    /**
+     * NUEVO: Muestra resultados agregados de réplicas
+     */
+    private void showAggregatedResults(ReplicationManager.AggregatedStatistics aggStats) {
+        Alert resultAlert = new Alert(Alert.AlertType.INFORMATION);
+        resultAlert.setTitle("Resultados de Réplicas");
+        resultAlert.setHeaderText("Estadísticas Agregadas (3 Réplicas)");
+
+        StringBuilder content = new StringBuilder();
+        content.append(String.format("📊 Throughput Promedio: %.2f piezas/hora\n", aggStats.getAvgThroughput()));
+        content.append(String.format("   IC 95%%: [%.2f, %.2f]\n\n",
+            aggStats.getCiThroughput()[0], aggStats.getCiThroughput()[1]));
+
+        content.append(String.format("⏱ Tiempo en Sistema Promedio: %.2f min\n", aggStats.getAvgAverageSystemTime()));
+        content.append(String.format("   IC 95%%: [%.2f, %.2f]\n\n",
+            aggStats.getCiAverageSystemTime()[0], aggStats.getCiAverageSystemTime()[1]));
+
+        content.append(String.format("📦 Piezas Completadas Promedio: %.0f\n", aggStats.getAvgTotalExits()));
+        content.append(String.format("   IC 95%%: [%.0f, %.0f]\n",
+            aggStats.getCiTotalExits()[0], aggStats.getCiTotalExits()[1]));
+
+        resultAlert.setContentText(content.toString());
+        resultAlert.showAndWait();
+    }
+
     private void handleSimulationComplete() {
         animationTimer.stop();
 
@@ -247,9 +388,17 @@ public class MainController {
         pauseButton.setDisable(true);
         resetButton.setDisable(false);
         parametersButton.setDisable(false);
+        if (runReplicationsButton != null) {
+            runReplicationsButton.setDisable(false);
+        }
 
         updateStatus("Simulación completada");
         updateResults();
+
+        // Actualizar gráfica de utilización
+        Statistics stats = engine.getStatistics();
+        utilizationChartPanel.updateChart(stats, engine.getCurrentTime());
+        utilizationChartPanel.setSubtitle("Simulación Individual");
 
         mainTabPane.getSelectionModel().select(resultsTab);
     }
@@ -258,7 +407,13 @@ public class MainController {
         double currentTime = engine.getCurrentTime();
 
         Platform.runLater(() -> {
-            timeLabel.setText(String.format("Tiempo: %.2f min", currentTime));
+            // Actualizar tiempo en formato días:horas:minutos
+            int days = (int) (currentTime / (24 * 60));
+            int hours = (int) ((currentTime % (24 * 60)) / 60);
+            int minutes = (int) (currentTime % 60);
+            timeLabel.setText(String.format("Tiempo: %d días %02d:%02d", days, hours, minutes));
+
+            // Renderizar animación con contadores
             animationPanel.render();
         });
     }
