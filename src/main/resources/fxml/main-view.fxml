@@ -25,10 +25,8 @@
                 <Button fx:id="resetButton" text="🔄 Reiniciar"
                         style="-fx-font-size: 14px; -fx-padding: 8 16;"/>
                 <Separator orientation="VERTICAL"/>
-                <Button fx:id="parametersButton" text="⚙ Parámetros"
-                        style="-fx-font-size: 14px; -fx-padding: 8 16;"/>
-                <Button fx:id="runReplicationsButton" text="📊 Ejecutar 3 Réplicas"
-                        style="-fx-font-size: 14px; -fx-padding: 8 16; -fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+        <Button fx:id="parametersButton" text="⚙ Parámetros"
+            style="-fx-font-size: 14px; -fx-padding: 8 16;"/>
 
                 <Region HBox.hgrow="ALWAYS"/>
 

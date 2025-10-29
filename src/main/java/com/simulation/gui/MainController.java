@@ -1,7 +1,6 @@
 package com.simulation.gui;
 
 import com.simulation.config.SimulationParameters;
-import com.simulation.core.ReplicationManager;
 import com.simulation.core.SimulationEngine;
 import com.simulation.resources.Location;
 import com.simulation.statistics.Statistics;
@@ -25,7 +24,6 @@ public class MainController {
     @FXML private Button pauseButton;
     @FXML private Button resetButton;
     @FXML private Button parametersButton;
-    @FXML private Button runReplicationsButton;
     @FXML private Label statusLabel;
     @FXML private Label timeLabel;
     @FXML private Slider speedSlider;
@@ -60,17 +58,17 @@ public class MainController {
     private RealTimeChartsPanel realTimeChartsPanel; // NUEVO: Panel de gráficas en tiempo real
     private AnimationTimer animationTimer;
     private Thread simulationThread;
-    private ReplicationManager replicationManager;
 
     public void initialize() {
         parameters = new SimulationParameters();
         engine = new SimulationEngine(parameters);
 
-    setupAnimationPanel();
+        setupAnimationPanel();
         setupRealTimeCharts(); // NUEVO
         setupControls();
         setupResultsTables();
         setupAnimationLoop();
+        realTimeChartsPanel.initializeState(engine.getStatistics());
 
         updateStatus("Listo para iniciar");
     }
@@ -79,6 +77,8 @@ public class MainController {
         animationPanel = new AnimationPanel(engine);
         animationScrollPane = createAnimationScrollPane(animationPanel);
         animationTab.setContent(animationScrollPane);
+        animationTab.setDisable(false);
+        animationPanel.render();
     }
 
     private ScrollPane createAnimationScrollPane(AnimationPanel panel) {
@@ -99,6 +99,7 @@ public class MainController {
         realTimeChartsPanel = new RealTimeChartsPanel();
         if (chartsTab != null) {
             chartsTab.setContent(realTimeChartsPanel);
+            chartsTab.setDisable(false);
         }
     }
 
@@ -107,10 +108,6 @@ public class MainController {
         pauseButton.setOnAction(e -> handlePause());
         resetButton.setOnAction(e -> handleReset());
         parametersButton.setOnAction(e -> handleParameters());
-
-        if (runReplicationsButton != null) {
-            runReplicationsButton.setOnAction(e -> handleRunReplications());
-        }
 
         pauseButton.setDisable(true);
 
@@ -211,14 +208,11 @@ public class MainController {
         pauseButton.setDisable(false);
         resetButton.setDisable(true);
         parametersButton.setDisable(true);
-        if (runReplicationsButton != null) {
-            runReplicationsButton.setDisable(true);
-        }
 
         engine.initialize();
 
-        // NUEVO: Inicializar gráficas en tiempo real
-        realTimeChartsPanel.reset();
+        // Inicializar gráficas en tiempo real
+        realTimeChartsPanel.initializeState(engine.getStatistics());
 
         simulationThread = new Thread(() -> {
             engine.run();
@@ -264,23 +258,20 @@ public class MainController {
         }
 
         engine = new SimulationEngine(parameters);
-    setupAnimationPanel();
+        setupAnimationPanel();
+        realTimeChartsPanel.initializeState(engine.getStatistics());
 
         startButton.setDisable(false);
         pauseButton.setDisable(true);
         pauseButton.setText("Pausar");
         resetButton.setDisable(false);
         parametersButton.setDisable(false);
-        if (runReplicationsButton != null) {
-            runReplicationsButton.setDisable(false);
-        }
 
         timeLabel.setText("Tiempo: 0 días 00:00");
         updateStatus("Listo para iniciar");
 
         locationTable.getItems().clear();
         entityStatsText.clear();
-        realTimeChartsPanel.reset(); // NUEVO
     }
 
     @FXML
@@ -291,88 +282,9 @@ public class MainController {
         if (dialog.isAccepted()) {
             engine = new SimulationEngine(parameters);
             setupAnimationPanel();
+            realTimeChartsPanel.initializeState(engine.getStatistics());
             updateStatus("Parámetros actualizados");
         }
-    }
-
-    @FXML
-    private void handleRunReplications() {
-        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmAlert.setTitle("Ejecutar Réplicas");
-        confirmAlert.setHeaderText("Ejecutar 3 réplicas de la simulación");
-        confirmAlert.setContentText("Esto ejecutará 3 corridas completas. ¿Desea continuar?");
-
-        if (confirmAlert.showAndWait().get() != ButtonType.OK) {
-            return;
-        }
-
-        // Deshabilitar controles
-        startButton.setDisable(true);
-        resetButton.setDisable(true);
-        parametersButton.setDisable(true);
-        runReplicationsButton.setDisable(true);
-
-        updateStatus("Ejecutando réplicas...");
-
-        // Crear gestor de réplicas
-        replicationManager = new ReplicationManager(parameters, 3);
-
-        // Ejecutar réplicas en segundo plano
-        replicationManager.runReplications(
-            // Callback de progreso
-            replicationNum -> {
-                Platform.runLater(() -> {
-                    updateStatus(String.format("Ejecutando réplica %d de 3...", replicationNum));
-                });
-            },
-            // Callback de completación
-            () -> {
-                Platform.runLater(() -> {
-                    handleReplicationsComplete();
-                });
-            }
-        );
-    }
-
-    private void handleReplicationsComplete() {
-        ReplicationManager.AggregatedStatistics aggStats = replicationManager.getAggregatedStatistics();
-
-        if (aggStats != null) {
-            // Mostrar resultados en gráficas
-            realTimeChartsPanel.showReplicationResults(aggStats);
-
-            // Mostrar resultados agregados
-            showAggregatedResults(aggStats);
-        }
-
-        startButton.setDisable(false);
-        resetButton.setDisable(false);
-        parametersButton.setDisable(false);
-        runReplicationsButton.setDisable(false);
-
-        updateStatus("Réplicas completadas");
-    }
-
-    private void showAggregatedResults(ReplicationManager.AggregatedStatistics aggStats) {
-        Alert resultAlert = new Alert(Alert.AlertType.INFORMATION);
-        resultAlert.setTitle("Resultados de Réplicas");
-        resultAlert.setHeaderText("Estadísticas Agregadas (3 Réplicas)");
-
-        StringBuilder content = new StringBuilder();
-        content.append(String.format("📊 Throughput Promedio: %.2f piezas/hora\n", aggStats.getAvgThroughput()));
-        content.append(String.format("   IC 95%%: [%.2f, %.2f]\n\n",
-            aggStats.getCiThroughput()[0], aggStats.getCiThroughput()[1]));
-
-        content.append(String.format("⏱ Tiempo en Sistema Promedio: %.2f min\n", aggStats.getAvgAverageSystemTime()));
-        content.append(String.format("   IC 95%%: [%.2f, %.2f]\n\n",
-            aggStats.getCiAverageSystemTime()[0], aggStats.getCiAverageSystemTime()[1]));
-
-        content.append(String.format("📦 Piezas Completadas Promedio: %.0f\n", aggStats.getAvgTotalExits()));
-        content.append(String.format("   IC 95%%: [%.0f, %.0f]\n",
-            aggStats.getCiTotalExits()[0], aggStats.getCiTotalExits()[1]));
-
-        resultAlert.setContentText(content.toString());
-        resultAlert.showAndWait();
     }
 
     private void handleSimulationComplete() {
@@ -382,9 +294,6 @@ public class MainController {
         pauseButton.setDisable(true);
         resetButton.setDisable(false);
         parametersButton.setDisable(false);
-        if (runReplicationsButton != null) {
-            runReplicationsButton.setDisable(false);
-        }
 
         updateStatus("Simulación completada");
         updateResults();
@@ -446,7 +355,6 @@ public class MainController {
         double currentTime = engine.getCurrentTime();
 
         List<LocationStats> locationStatsList = new ArrayList<>();
-
         Map<String, Location> locations = stats.getLocations();
         for (Map.Entry<String, Location> entry : locations.entrySet()) {
             Location loc = entry.getValue();
@@ -461,8 +369,14 @@ public class MainController {
             double utilization = loc.getUtilization(currentTime);
 
             locationStatsList.add(new LocationStats(
-                name, capacity, totalEntries, timePerEntry, avgContent,
-                maxContent, currentContent, utilization
+                name,
+                capacity,
+                totalEntries,
+                timePerEntry,
+                avgContent,
+                maxContent,
+                currentContent,
+                utilization
             ));
         }
 
@@ -476,11 +390,9 @@ public class MainController {
         sb.append("=== ESTADÍSTICAS DE ENTIDADES ===\n\n");
         sb.append(String.format("Total de Arribos: %d\n", stats.getTotalArrivals()));
         sb.append(String.format("Total de Salidas (Completadas): %d\n", stats.getTotalExits()));
-        sb.append(String.format("En Sistema Actualmente: %d\n\n",
-            stats.getTotalArrivals() - stats.getTotalExits()));
+        sb.append(String.format("En Sistema Actualmente: %d\n\n", stats.getTotalArrivals() - stats.getTotalExits()));
 
         sb.append(String.format("Throughput: %.2f piezas/hora\n\n", stats.getThroughput()));
-
         sb.append("=== TIEMPO EN SISTEMA ===\n");
         sb.append(String.format("Promedio: %.2f min\n", stats.getAverageSystemTime()));
         sb.append(String.format("Desviación Estándar: %.2f min\n", stats.getStdDevSystemTime()));
@@ -490,20 +402,24 @@ public class MainController {
         entityStatsText.setText(sb.toString());
     }
 
-    // Clase interna para datos de la tabla
     public static class LocationStats {
-        private String name;
-        private Integer capacity;
-        private Integer totalEntries;
-        private Double timePerEntry;
-        private Double avgContent;
-        private Integer maxContent;
-        private Integer currentContent;
-        private Double utilization;
+        private final String name;
+        private final Integer capacity;
+        private final Integer totalEntries;
+        private final Double timePerEntry;
+        private final Double avgContent;
+        private final Integer maxContent;
+        private final Integer currentContent;
+        private final Double utilization;
 
-        public LocationStats(String name, Integer capacity, Integer totalEntries,
-                           Double timePerEntry, Double avgContent, Integer maxContent,
-                           Integer currentContent, Double utilization) {
+        public LocationStats(String name,
+                              Integer capacity,
+                              Integer totalEntries,
+                              Double timePerEntry,
+                              Double avgContent,
+                              Integer maxContent,
+                              Integer currentContent,
+                              Double utilization) {
             this.name = name;
             this.capacity = capacity == Integer.MAX_VALUE ? -1 : capacity;
             this.totalEntries = totalEntries;
