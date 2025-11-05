@@ -12,11 +12,13 @@ public class SimulationParameters {
     private long baseRandomSeed = 12345L;
     
     // === CAPACIDADES DE LAS 12 LOCACIONES ===
+    private int conveyor1Capacity = Integer.MAX_VALUE;  // CONVEYOR_1 - capacidad infinita
     private int almacenCapacity = 10;
     private int cortadoraCapacity = 1;
     private int tornoCapacity = 2;
-    private int almacen2Capacity = 10;
+    private int conveyor2Capacity = Integer.MAX_VALUE;  // CONVEYOR_2 - capacidad infinita
     private int fresadoraCapacity = 2;
+    private int almacen2Capacity = 10;
     private int pinturaCapacity = 4;
     private int inspeccion1Capacity = 2;
     private int inspeccion2Capacity = 1;
@@ -29,41 +31,41 @@ public class SimulationParameters {
     private double conveyor2Time = 4.0;      // Tiempo fijo CONVEYOR_2
     private double transportWorkerTime = 0.1; // Tiempo fijo transporte trabajador
     
-    // === PROCESOS (19 parámetros) ===
-    // ALMACEN: E(2)
-    private double almacenProcessMean = 2.0;
+    // === PROCESOS según ProModel ===
+    // ALMACEN: WAIT N(5, 0.5) min
+    private double almacenProcessMean = 5.0;
+    private double almacenProcessStdDev = 0.5;
     
-    // CORTADORA: N(17, 1.5)
-    private double cortadoraProcessMean = 17.0;
-    private double cortadoraProcessStdDev = 1.5;
+    // CORTADORA: WAIT E(3) min
+    private double cortadoraProcessMean = 3.0;
     
-    // TORNO: N(15, 2)
-    private double tornoProcessMean = 15.0;
-    private double tornoProcessStdDev = 2.0;
+    // TORNO: WAIT N(5, 0.5) min
+    private double tornoProcessMean = 5.0;
+    private double tornoProcessStdDev = 0.5;
     
-    // FRESADORA: N(18, 2)
-    private double fresadoraProcessMean = 18.0;
-    private double fresadoraProcessStdDev = 2.0;
+    // FRESADORA: WAIT E(3) min
+    private double fresadoraProcessMean = 3.0;
     
-    // ALMACEN_2: E(2)
-    private double almacen2ProcessMean = 2.0;
+    // ALMACEN_2: WAIT N(5, 0.5) min
+    private double almacen2ProcessMean = 5.0;
+    private double almacen2ProcessStdDev = 0.5;
     
-    // PINTURA: E(5)
-    private double pinturaProcessMean = 5.0;
+    // PINTURA: WAIT E(3) min
+    private double pinturaProcessMean = 3.0;
     
-    // INSPECCION_1: N(6, 1)
-    private double inspeccion1ProcessMean = 6.0;
-    private double inspeccion1ProcessStdDev = 1.0;
+    // INSPECCION_1: WAIT N(5, 0.5) min
+    private double inspeccion1ProcessMean = 5.0;
+    private double inspeccion1ProcessStdDev = 0.5;
     
-    // INSPECCION_2: N(10, 1.5)
-    private double inspeccion2ProcessMean = 10.0;
-    private double inspeccion2ProcessStdDev = 1.5;
+    // INSPECCION_2: WAIT E(3) min
+    private double inspeccion2ProcessMean = 3.0;
     
-    // EMPAQUE: E(3)
-    private double empaqueProcessMean = 3.0;
+    // EMPAQUE: WAIT N(5, 0.5) min
+    private double empaqueProcessMean = 5.0;
+    private double empaqueProcessStdDev = 0.5;
     
-    // EMBARQUE: E(2)
-    private double embarqueProcessMean = 2.0;
+    // EMBARQUE: WAIT E(3) min
+    private double embarqueProcessMean = 3.0;
     
     // === PROBABILIDADES DE ROUTING ===
     private double inspeccion1ToEmpaqueProb = 0.80;   // 80% a EMPAQUE
@@ -87,12 +89,14 @@ public class SimulationParameters {
         this.baseRandomSeed = baseRandomSeed;
     }
     
-    // Capacidades (10 getters)
+    // Capacidades (12 getters)
+    public int getConveyor1Capacity() { return conveyor1Capacity; }
     public int getAlmacenCapacity() { return almacenCapacity; }
     public int getCortadoraCapacity() { return cortadoraCapacity; }
     public int getTornoCapacity() { return tornoCapacity; }
-    public int getAlmacen2Capacity() { return almacen2Capacity; }
+    public int getConveyor2Capacity() { return conveyor2Capacity; }
     public int getFresadoraCapacity() { return fresadoraCapacity; }
+    public int getAlmacen2Capacity() { return almacen2Capacity; }
     public int getPinturaCapacity() { return pinturaCapacity; }
     public int getInspeccion1Capacity() { return inspeccion1Capacity; }
     public int getInspeccion2Capacity() { return inspeccion2Capacity; }
@@ -105,21 +109,21 @@ public class SimulationParameters {
     public double getConveyor2Time() { return conveyor2Time; }
     public double getTransportWorkerTime() { return transportWorkerTime; }
     
-    // Procesos (19 getters)
+    // Procesos - getters según ProModel
     public double getAlmacenProcessMean() { return almacenProcessMean; }
+    public double getAlmacenProcessStdDev() { return almacenProcessStdDev; }
     public double getCortadoraProcessMean() { return cortadoraProcessMean; }
-    public double getCortadoraProcessStdDev() { return cortadoraProcessStdDev; }
     public double getTornoProcessMean() { return tornoProcessMean; }
     public double getTornoProcessStdDev() { return tornoProcessStdDev; }
     public double getFresadoraProcessMean() { return fresadoraProcessMean; }
-    public double getFresadoraProcessStdDev() { return fresadoraProcessStdDev; }
     public double getAlmacen2ProcessMean() { return almacen2ProcessMean; }
+    public double getAlmacen2ProcessStdDev() { return almacen2ProcessStdDev; }
     public double getPinturaProcessMean() { return pinturaProcessMean; }
     public double getInspeccion1ProcessMean() { return inspeccion1ProcessMean; }
     public double getInspeccion1ProcessStdDev() { return inspeccion1ProcessStdDev; }
     public double getInspeccion2ProcessMean() { return inspeccion2ProcessMean; }
-    public double getInspeccion2ProcessStdDev() { return inspeccion2ProcessStdDev; }
     public double getEmpaqueProcessMean() { return empaqueProcessMean; }
+    public double getEmpaqueProcessStdDev() { return empaqueProcessStdDev; }
     public double getEmbarqueProcessMean() { return embarqueProcessMean; }
     
     // Probabilidades de routing (2 getters)

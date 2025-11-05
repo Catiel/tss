@@ -5,25 +5,25 @@ import java.util.Random;
 public class RandomGenerators {
     private Random random;
     
-    // Parámetros de la simulación
+    // Parámetros de la simulación según ProModel
     private double arrivalMeanTime;
     private double conveyor1Time;
     private double conveyor2Time;
     private double transportWorkerTime;
     private double almacenProcessMean;
+    private double almacenProcessStdDev;
     private double cortadoraProcessMean;
-    private double cortadoraProcessStdDev;
     private double tornoProcessMean;
     private double tornoProcessStdDev;
     private double fresadoraProcessMean;
-    private double fresadoraProcessStdDev;
     private double almacen2ProcessMean;
+    private double almacen2ProcessStdDev;
     private double pinturaProcessMean;
     private double inspeccion1ProcessMean;
     private double inspeccion1ProcessStdDev;
     private double inspeccion2ProcessMean;
-    private double inspeccion2ProcessStdDev;
     private double empaqueProcessMean;
+    private double empaqueProcessStdDev;
     private double embarqueProcessMean;
     private double inspeccion1ToEmpaqueProb;
     
@@ -37,19 +37,19 @@ public class RandomGenerators {
             double conveyor2Time,
             double transportWorkerTime,
             double almacenProcessMean,
+            double almacenProcessStdDev,
             double cortadoraProcessMean,
-            double cortadoraProcessStdDev,
             double tornoProcessMean,
             double tornoProcessStdDev,
             double fresadoraProcessMean,
-            double fresadoraProcessStdDev,
             double almacen2ProcessMean,
+            double almacen2ProcessStdDev,
             double pinturaProcessMean,
             double inspeccion1ProcessMean,
             double inspeccion1ProcessStdDev,
             double inspeccion2ProcessMean,
-            double inspeccion2ProcessStdDev,
             double empaqueProcessMean,
+            double empaqueProcessStdDev,
             double embarqueProcessMean,
             double inspeccion1ToEmpaqueProb) {
         this.arrivalMeanTime = arrivalMeanTime;
@@ -57,19 +57,19 @@ public class RandomGenerators {
         this.conveyor2Time = conveyor2Time;
         this.transportWorkerTime = transportWorkerTime;
         this.almacenProcessMean = almacenProcessMean;
+        this.almacenProcessStdDev = almacenProcessStdDev;
         this.cortadoraProcessMean = cortadoraProcessMean;
-        this.cortadoraProcessStdDev = cortadoraProcessStdDev;
         this.tornoProcessMean = tornoProcessMean;
         this.tornoProcessStdDev = tornoProcessStdDev;
         this.fresadoraProcessMean = fresadoraProcessMean;
-        this.fresadoraProcessStdDev = fresadoraProcessStdDev;
         this.almacen2ProcessMean = almacen2ProcessMean;
+        this.almacen2ProcessStdDev = almacen2ProcessStdDev;
         this.pinturaProcessMean = pinturaProcessMean;
         this.inspeccion1ProcessMean = inspeccion1ProcessMean;
         this.inspeccion1ProcessStdDev = inspeccion1ProcessStdDev;
         this.inspeccion2ProcessMean = inspeccion2ProcessMean;
-        this.inspeccion2ProcessStdDev = inspeccion2ProcessStdDev;
         this.empaqueProcessMean = empaqueProcessMean;
+        this.empaqueProcessStdDev = empaqueProcessStdDev;
         this.embarqueProcessMean = embarqueProcessMean;
         this.inspeccion1ToEmpaqueProb = inspeccion1ToEmpaqueProb;
     }
@@ -94,52 +94,52 @@ public class RandomGenerators {
         return transportWorkerTime;
     }
     
-    // ALMACEN: E(2)
+    // ALMACEN: N(5, 0.5) según ProModel
     public double nextAlmacenProcess() {
-        return nextExponential(almacenProcessMean);
+        return nextNormal(almacenProcessMean, almacenProcessStdDev);
     }
     
-    // CORTADORA: N(17, 1.5)
+    // CORTADORA: E(3) según ProModel
     public double nextCortadoraProcess() {
-        return nextNormal(cortadoraProcessMean, cortadoraProcessStdDev);
+        return nextExponential(cortadoraProcessMean);
     }
     
-    // TORNO: N(15, 2)
+    // TORNO: N(5, 0.5) según ProModel
     public double nextTornoProcess() {
         return nextNormal(tornoProcessMean, tornoProcessStdDev);
     }
     
-    // FRESADORA: N(18, 2)
+    // FRESADORA: E(3) según ProModel
     public double nextFresadoraProcess() {
-        return nextNormal(fresadoraProcessMean, fresadoraProcessStdDev);
+        return nextExponential(fresadoraProcessMean);
     }
     
-    // ALMACEN_2: E(2)
+    // ALMACEN_2: N(5, 0.5) según ProModel
     public double nextAlmacen2Process() {
-        return nextExponential(almacen2ProcessMean);
+        return nextNormal(almacen2ProcessMean, almacen2ProcessStdDev);
     }
     
-    // PINTURA: E(5)
+    // PINTURA: E(3) según ProModel
     public double nextPinturaProcess() {
         return nextExponential(pinturaProcessMean);
     }
     
-    // INSPECCION_1: N(6, 1)
+    // INSPECCION_1: N(5, 0.5) según ProModel
     public double nextInspeccion1Process() {
         return nextNormal(inspeccion1ProcessMean, inspeccion1ProcessStdDev);
     }
     
-    // INSPECCION_2: N(10, 1.5)
+    // INSPECCION_2: E(3) según ProModel
     public double nextInspeccion2Process() {
-        return nextNormal(inspeccion2ProcessMean, inspeccion2ProcessStdDev);
+        return nextExponential(inspeccion2ProcessMean);
     }
     
-    // EMPAQUE: E(3)
+    // EMPAQUE: N(5, 0.5) según ProModel
     public double nextEmpaqueProcess() {
-        return nextExponential(empaqueProcessMean);
+        return nextNormal(empaqueProcessMean, empaqueProcessStdDev);
     }
     
-    // EMBARQUE: E(2)
+    // EMBARQUE: E(3) según ProModel
     public double nextEmbarqueProcess() {
         return nextExponential(embarqueProcessMean);
     }
