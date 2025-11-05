@@ -21,14 +21,13 @@ public class AnimationPanel extends Pane { // Declaración de la clase pública 
     private Canvas canvas; // Variable privada que almacena el canvas donde se dibuja toda la animación
     private SimulationEngine engine; // Variable privada que almacena la referencia al motor de simulación para acceder a datos en tiempo real
 
-    private static final double WIDTH = 1600; // Constante estática final que define el ancho del canvas en píxeles
-    private static final double HEIGHT = 700; // Constante estática final que define la altura del canvas en píxeles
-    private static final double BOX_SIZE = 100; // Constante estática final que define el tamaño de cada caja de locación en píxeles
-    private static final double VERTICAL_SPACING = 200; // Constante estática final que define el espaciado vertical entre filas de locaciones en píxeles
-    private static final double COUNTER_WIDTH = 120; // Constante estática final que define el ancho de los contadores de estadísticas en píxeles
-    private static final double COUNTER_HEIGHT = 80; // Constante estática final que define la altura de los contadores de estadísticas en píxeles
-    private static final double COUNTER_START_X = 1150; // Constante estática final que define la coordenada X inicial de los contadores en píxeles
-    private static final double COUNTER_START_Y = 90; // Constante estática final que define la coordenada Y inicial de los contadores en píxeles
+    private static final double WIDTH = 1600;
+    private static final double HEIGHT = 900;
+    private static final double BOX_SIZE = 90;
+    private static final double COUNTER_WIDTH = 150;
+    private static final double COUNTER_HEIGHT = 48;
+    private static final double COUNTER_START_X = 1330;
+    private static final double COUNTER_START_Y = 80;
 
     private Map<String, double[]> locationPositions; // Variable privada que almacena un mapa de nombres de locaciones a sus coordenadas [x, y] en el canvas
     private Map<String, Color> locationColors; // Variable privada que almacena un mapa de nombres de locaciones a sus colores representativos
@@ -55,42 +54,64 @@ public class AnimationPanel extends Pane { // Declaración de la clase pública 
         setMaxSize(WIDTH, HEIGHT); // Establece el tamaño máximo del panel con el ancho y altura definidos
     } // Cierre del constructor AnimationPanel
 
-    private void initializePositions() { // Método privado que inicializa las coordenadas de todas las locaciones en el canvas
-        double topY = 150; // Define la coordenada Y de la fila superior de locaciones
-        double bottomY = topY + VERTICAL_SPACING; // Calcula la coordenada Y de la fila inferior sumando el espaciado vertical a la Y superior
+    private void initializePositions() {
+        // Layout EXACTO según la imagen del diagrama - 12 LOCACIONES
+        // FILA SUPERIOR (horizontal de izquierda a derecha)
+        double y1 = 120;
+        locationPositions.put("CONVEYOR_1", new double[]{50, y1});
+        locationPositions.put("ALMACEN", new double[]{220, y1});
+        locationPositions.put("CORTADORA", new double[]{420, y1});
+        locationPositions.put("TORNO", new double[]{640, y1});
+        
+        // COLUMNA DERECHA (bajada vertical)
+        locationPositions.put("CONVEYOR_2", new double[]{640, 310});
+        
+        // FILA MEDIA (horizontal de derecha a izquierda)
+        double y2 = 310;
+        locationPositions.put("FRESADORA", new double[]{420, y2});
+        locationPositions.put("ALMACEN_2", new double[]{220, y2});
+        locationPositions.put("PINTURA", new double[]{50, y2});
+        
+        // COLUMNA IZQUIERDA (bajada vertical desde PINTURA)
+        locationPositions.put("INSPECCION_1", new double[]{50, 500});
+        
+        // FILA INFERIOR (dos inspecciones + empaque + embarque)
+        locationPositions.put("INSPECCION_2", new double[]{50, 620});
+        locationPositions.put("EMPAQUE", new double[]{300, 560});
+        locationPositions.put("EMBARQUE", new double[]{550, 560});
+    }
 
-        locationPositions.put("RECEPCION", new double[]{50, topY}); // Asigna la posición [50, 150] a la locación RECEPCION en la esquina superior izquierda
-        locationPositions.put("LAVADORA", new double[]{280, topY}); // Asigna la posición [280, 150] a la locación LAVADORA en la fila superior
-        locationPositions.put("ALMACEN_PINTURA", new double[]{510, topY}); // Asigna la posición [510, 150] a la locación ALMACEN_PINTURA en la fila superior
-        locationPositions.put("PINTURA", new double[]{740, topY}); // Asigna la posición [740, 150] a la locación PINTURA en la fila superior
+    private void initializeColors() {
+        locationColors.put("RECEPCION", Color.rgb(100, 181, 246));     // Azul claro
+        locationColors.put("CONVEYOR_1", Color.rgb(158, 158, 158));    // Gris conveyor
+        locationColors.put("ALMACEN", Color.rgb(255, 245, 157));       // Amarillo claro
+        locationColors.put("CORTADORA", Color.rgb(239, 83, 80));       // Rojo
+        locationColors.put("TORNO", Color.rgb(129, 199, 132));         // Verde claro
+        locationColors.put("CONVEYOR_2", Color.rgb(158, 158, 158));    // Gris conveyor
+        locationColors.put("FRESADORA", Color.rgb(156, 39, 176));      // Púrpura
+        locationColors.put("ALMACEN_2", Color.rgb(255, 235, 157));     // Amarillo
+        locationColors.put("PINTURA", Color.rgb(255, 167, 38));        // Naranja
+        locationColors.put("INSPECCION_1", Color.rgb(189, 189, 189));  // Gris
+        locationColors.put("INSPECCION_2", Color.rgb(189, 189, 189));  // Gris
+        locationColors.put("EMPAQUE", Color.rgb(121, 85, 72));         // Marrón
+        locationColors.put("EMBARQUE", Color.rgb(33, 150, 243));       // Azul
+    }
 
-        locationPositions.put("ALMACEN_HORNO", new double[]{280, bottomY}); // Asigna la posición [280, 350] a la locación ALMACEN_HORNO en la fila inferior
-        locationPositions.put("HORNO", new double[]{510, bottomY}); // Asigna la posición [510, 350] a la locación HORNO en la fila inferior
-        locationPositions.put("INSPECCION_1", new double[]{780, bottomY}); // Asigna la posición [780, 350] a la primera mesa de inspección en la fila inferior
-        locationPositions.put("INSPECCION_2", new double[]{930, bottomY}); // Asigna la posición [930, 350] a la segunda mesa de inspección en la fila inferior
-    } // Cierre del método initializePositions
-
-    private void initializeColors() { // Método privado que inicializa los colores representativos de cada locación usando valores RGB
-        locationColors.put("RECEPCION", Color.rgb(100, 181, 246)); // Asigna un color azul claro a la locación RECEPCION
-        locationColors.put("LAVADORA", Color.rgb(129, 199, 132)); // Asigna un color verde claro a la locación LAVADORA
-        locationColors.put("ALMACEN_PINTURA", Color.rgb(255, 245, 157)); // Asigna un color amarillo claro a la locación ALMACEN_PINTURA
-        locationColors.put("PINTURA", Color.rgb(255, 167, 38)); // Asigna un color naranja a la locación PINTURA
-        locationColors.put("ALMACEN_HORNO", Color.rgb(255, 224, 178)); // Asigna un color durazno claro a la locación ALMACEN_HORNO
-        locationColors.put("HORNO", Color.rgb(239, 83, 80)); // Asigna un color rojo a la locación HORNO
-        locationColors.put("INSPECCION_1", Color.rgb(189, 189, 189)); // Asigna un color gris a la primera mesa de inspección
-        locationColors.put("INSPECCION_2", Color.rgb(189, 189, 189)); // Asigna un color gris a la segunda mesa de inspección
-    } // Cierre del método initializeColors
-
-    private void initializeIcons() { // Método privado que inicializa los iconos emoji que representan cada locación
-        locationIcons.put("RECEPCION", "📦"); // Asigna el emoji de caja 📦 a la locación RECEPCION
-        locationIcons.put("LAVADORA", "🧼"); // Asigna el emoji de jabón 🧼 a la locación LAVADORA
-        locationIcons.put("ALMACEN_PINTURA", "📦"); // Asigna el emoji de caja 📦 a la locación ALMACEN_PINTURA
-        locationIcons.put("PINTURA", "🎨"); // Asigna el emoji de paleta de pintura 🎨 a la locación PINTURA
-        locationIcons.put("ALMACEN_HORNO", "📦"); // Asigna el emoji de caja 📦 a la locación ALMACEN_HORNO
-        locationIcons.put("HORNO", "🔥"); // Asigna el emoji de fuego 🔥 a la locación HORNO
-        locationIcons.put("INSPECCION_1", "🔍"); // Asigna el emoji de lupa 🔍 a la primera mesa de inspección
-        locationIcons.put("INSPECCION_2", "🔍"); // Asigna el emoji de lupa 🔍 a la segunda mesa de inspección
-    } // Cierre del método initializeIcons
+    private void initializeIcons() {
+        locationIcons.put("RECEPCION", "📦");
+        locationIcons.put("CONVEYOR_1", "➡️");
+        locationIcons.put("ALMACEN", "📦");
+        locationIcons.put("CORTADORA", "✂️");
+        locationIcons.put("TORNO", "⚙️");
+        locationIcons.put("CONVEYOR_2", "➡️");
+        locationIcons.put("FRESADORA", "�");
+        locationIcons.put("ALMACEN_2", "📦");
+        locationIcons.put("PINTURA", "🎨");
+        locationIcons.put("INSPECCION_1", "🔍");
+        locationIcons.put("INSPECCION_2", "🔍");
+        locationIcons.put("EMPAQUE", "📦");
+        locationIcons.put("EMBARQUE", "🚚");
+    }
 
     public void render() { // Método público que renderiza toda la animación dibujando todos los elementos en el canvas
         GraphicsContext gc = canvas.getGraphicsContext2D(); // Obtiene el contexto gráfico 2D del canvas para realizar operaciones de dibujo
@@ -116,31 +137,50 @@ public class AnimationPanel extends Pane { // Declaración de la clase pública 
         } // Cierre del bloque condicional if
     } // Cierre del método render
 
-    private void drawTitle(GraphicsContext gc) { // Método privado que dibuja el título principal de la simulación recibiendo el contexto gráfico como parámetro
-        gc.setFill(Color.rgb(33, 33, 33)); // Establece el color de relleno a un gris muy oscuro para el texto del título
-        gc.setFont(Font.font("Arial", FontWeight.BOLD, 26)); // Establece la fuente a Arial negrita de tamaño 26 puntos
-        gc.setTextAlign(TextAlignment.CENTER); // Establece la alineación del texto al centro
-        gc.fillText("🏭 SIMULACIÓN DE LÍNEA DE PRODUCCIÓN", WIDTH / 2, 35); // Dibuja el texto del título centrado horizontalmente en la coordenada Y 35
+    private void drawTitle(GraphicsContext gc) {
+        gc.setFill(Color.rgb(33, 33, 33));
+        gc.setFont(Font.font("Arial", FontWeight.BOLD, 26));
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText("⚙️ FABRICACIÓN DE ENGRANES - MULTI-ENGRANE", WIDTH / 2, 35);
 
-        gc.setFont(Font.font("Arial", FontWeight.NORMAL, 14)); // Establece la fuente a Arial normal de tamaño 14 puntos para el subtítulo
-        gc.setFill(Color.rgb(100, 100, 100)); // Establece el color de relleno a un gris medio para el subtítulo
-        gc.fillText("Modelo ProModel - Java Implementation", WIDTH / 2, 60); // Dibuja el subtítulo centrado horizontalmente en la coordenada Y 60
-    } // Cierre del método drawTitle
+        gc.setFont(Font.font("Arial", FontWeight.NORMAL, 14));
+        gc.setFill(Color.rgb(100, 100, 100));
+        gc.fillText("Sistema de Producción con SPLIT y Routing Probabilístico", WIDTH / 2, 60);
+    }
 
-    private void drawConnections(GraphicsContext gc) { // Método privado que dibuja las líneas de conexión entre locaciones recibiendo el contexto gráfico como parámetro
-        gc.setStroke(Color.rgb(120, 120, 140)); // Establece el color de trazo a un gris azulado para las líneas de conexión
-        gc.setLineWidth(3); // Establece el grosor de la línea a 3 píxeles
-        gc.setLineDashes(5, 5); // Establece el patrón de línea discontinua con segmentos de 5 píxeles seguidos de espacios de 5 píxeles
+    private void drawConnections(GraphicsContext gc) {
+        gc.setStroke(Color.rgb(120, 120, 140));
+        gc.setLineWidth(3);
+        gc.setLineDashes(5, 5);
 
-        drawConnection(gc, "RECEPCION", "LAVADORA"); // Dibuja la conexión desde RECEPCION a LAVADORA
-        drawConnection(gc, "LAVADORA", "ALMACEN_PINTURA"); // Dibuja la conexión desde LAVADORA a ALMACEN_PINTURA
-        drawConnection(gc, "ALMACEN_PINTURA", "PINTURA"); // Dibuja la conexión desde ALMACEN_PINTURA a PINTURA
-        drawConnectionCurved(gc, "PINTURA", "ALMACEN_HORNO"); // Dibuja la conexión curva desde PINTURA a ALMACEN_HORNO
-        drawConnection(gc, "ALMACEN_HORNO", "HORNO"); // Dibuja la conexión desde ALMACEN_HORNO a HORNO
-        drawConnectionToInspection(gc, "HORNO", "INSPECCION_1"); // Dibuja las conexiones desde HORNO a ambas mesas de inspección
+        // FILA 1: CONVEYOR_1 → ALMACEN → CORTADORA → TORNO
+        drawConnection(gc, "CONVEYOR_1", "ALMACEN");
+        drawConnection(gc, "ALMACEN", "CORTADORA");
+        drawConnection(gc, "CORTADORA", "TORNO");
+        
+        // FLECHA ABAJO: TORNO → CONVEYOR_2
+        drawConnectionVertical(gc, "TORNO", "CONVEYOR_2");
+        
+        // FILA 2 (izquierda): CONVEYOR_2 → FRESADORA → ALMACEN_2 → PINTURA
+        drawConnectionReverse(gc, "FRESADORA", "CONVEYOR_2");
+        drawConnectionReverse(gc, "ALMACEN_2", "FRESADORA");
+        drawConnectionReverse(gc, "PINTURA", "ALMACEN_2");
+        
+        // FLECHA ABAJO: PINTURA → INSPECCION_1
+        drawConnectionVertical(gc, "PINTURA", "INSPECCION_1");
+        
+        // FILA 3: INSPECCION_1 → INSPECCION_2
+        drawConnection(gc, "INSPECCION_1", "INSPECCION_2");
+        
+        // Ambas inspecciones van a EMPAQUE
+        drawConnection(gc, "INSPECCION_1", "EMPAQUE");
+        drawConnection(gc, "INSPECCION_2", "EMPAQUE");
+        
+        // Final: EMPAQUE → EMBARQUE
+        drawConnection(gc, "EMPAQUE", "EMBARQUE");
 
-        gc.setLineDashes(null); // Restablece el patrón de línea a sólido (sin discontinuidades)
-    } // Cierre del método drawConnections
+        gc.setLineDashes(null);
+    }
 
     private void drawConnection(GraphicsContext gc, String from, String to) { // Método privado que dibuja una conexión recta entre dos locaciones recibiendo el contexto gráfico y nombres de locaciones como parámetros
         double[] pos1 = locationPositions.get(from); // Obtiene las coordenadas de la locación de origen
@@ -172,6 +212,48 @@ public class AnimationPanel extends Pane { // Declaración de la clase pública 
         gc.stroke(); // Dibuja el path de la curva con el color y grosor actuales
         drawArrow(gc, x2, y2 - 20, x2, y2); // Dibuja una flecha al final de la curva para indicar la dirección del flujo
     } // Cierre del método drawConnectionCurved
+
+    private void drawConnectionVertical(GraphicsContext gc, String from, String to) {
+        double[] pos1 = locationPositions.get(from);
+        double[] pos2 = locationPositions.get(to);
+        if (pos1 == null || pos2 == null) return;
+
+        double x1 = pos1[0] + BOX_SIZE / 2;
+        double y1 = pos1[1] + BOX_SIZE;
+        double x2 = pos2[0] + BOX_SIZE / 2;
+        double y2 = pos2[1];
+
+        gc.strokeLine(x1, y1, x2, y2);
+        drawArrow(gc, x2, y2 - 20, x2, y2);
+    }
+
+    private void drawConnectionReverse(GraphicsContext gc, String from, String to) {
+        double[] pos1 = locationPositions.get(from);
+        double[] pos2 = locationPositions.get(to);
+        if (pos1 == null || pos2 == null) return;
+
+        double x1 = pos1[0];
+        double y1 = pos1[1] + BOX_SIZE / 2;
+        double x2 = pos2[0] + BOX_SIZE;
+        double y2 = pos2[1] + BOX_SIZE / 2;
+
+        gc.strokeLine(x1, y1, x2, y2);
+        drawArrow(gc, x1 + 20, y1, x1, y1);
+    }
+
+    private void drawConnectionDiagonal(GraphicsContext gc, String from, String to) {
+        double[] pos1 = locationPositions.get(from);
+        double[] pos2 = locationPositions.get(to);
+        if (pos1 == null || pos2 == null) return;
+
+        double x1 = pos1[0] + BOX_SIZE;
+        double y1 = pos1[1] + BOX_SIZE / 2;
+        double x2 = pos2[0];
+        double y2 = pos2[1] + BOX_SIZE / 2;
+
+        gc.strokeLine(x1, y1, x2, y2);
+        drawArrow(gc, x1 + (x2 - x1) * 0.8, y1 + (y2 - y1) * 0.8, x2, y2);
+    }
 
     private void drawConnectionToInspection(GraphicsContext gc, String from, String to) { // Método privado que dibuja conexiones desde una locación a ambas mesas de inspección recibiendo el contexto gráfico y nombres como parámetros
         double[] pos1 = locationPositions.get(from); // Obtiene las coordenadas de la locación de origen (HORNO)
@@ -206,15 +288,19 @@ public class AnimationPanel extends Pane { // Declaración de la clase pública 
         gc.fillPolygon(new double[]{x2, x3, x4}, new double[]{y2, y3, y4}, 3); // Dibuja un triángulo relleno que forma la punta de la flecha con tres vértices
     } // Cierre del método drawArrow
 
-    private void drawAllLocations(GraphicsContext gc) { // Método privado que dibuja todas las locaciones del sistema recibiendo el contexto gráfico como parámetro
-        drawLocation(gc, "RECEPCION", engine.getLocation("RECEPCION")); // Dibuja la caja de la locación RECEPCION
-        drawLocation(gc, "LAVADORA", engine.getLocation("LAVADORA")); // Dibuja la caja de la locación LAVADORA
-        drawLocation(gc, "ALMACEN_PINTURA", engine.getLocation("ALMACEN_PINTURA")); // Dibuja la caja de la locación ALMACEN_PINTURA
-        drawLocation(gc, "PINTURA", engine.getLocation("PINTURA")); // Dibuja la caja de la locación PINTURA
-        drawLocation(gc, "ALMACEN_HORNO", engine.getLocation("ALMACEN_HORNO")); // Dibuja la caja de la locación ALMACEN_HORNO
-        drawLocation(gc, "HORNO", engine.getLocation("HORNO")); // Dibuja la caja de la locación HORNO
-        drawInspectionStations(gc); // Dibuja las dos mesas de inspección con manejo especial
-    } // Cierre del método drawAllLocations
+    private void drawAllLocations(GraphicsContext gc) {
+        // Sistema Multi-Engrane: 10 locaciones REALES (sin conveyors ni recepcion)
+        drawLocation(gc, "ALMACEN", engine.getLocation("ALMACEN"));
+        drawLocation(gc, "CORTADORA", engine.getLocation("CORTADORA"));
+        drawLocation(gc, "TORNO", engine.getLocation("TORNO"));
+        drawLocation(gc, "FRESADORA", engine.getLocation("FRESADORA"));
+        drawLocation(gc, "ALMACEN_2", engine.getLocation("ALMACEN_2"));
+        drawLocation(gc, "PINTURA", engine.getLocation("PINTURA"));
+        drawLocation(gc, "INSPECCION_1", engine.getLocation("INSPECCION_1"));
+        drawLocation(gc, "INSPECCION_2", engine.getLocation("INSPECCION_2"));
+        drawLocation(gc, "EMPAQUE", engine.getLocation("EMPAQUE"));
+        drawLocation(gc, "EMBARQUE", engine.getLocation("EMBARQUE"));
+    }
 
     private void drawLocation(GraphicsContext gc, String name, Location location) { // Método privado que dibuja una locación individual recibiendo el contexto gráfico, nombre y objeto de locación como parámetros
         if (location == null) return; // Si la locación es null, sale del método prematuramente
@@ -254,7 +340,17 @@ public class AnimationPanel extends Pane { // Declaración de la clase pública 
         // Nombre
         gc.setFill(Color.rgb(33, 33, 33)); // Establece el color de relleno a gris oscuro para el texto del nombre
         gc.setFont(Font.font("Arial", FontWeight.BOLD, 11)); // Establece la fuente a Arial negrita de tamaño 11 para el nombre
-        String displayName = name.replace("_", " "); // Reemplaza los guiones bajos con espacios para hacer el nombre más legible
+        
+        // Convertir nombres internos a nombres del diagrama
+        String displayName = name;
+        if (name.equals("ALMACEN")) displayName = "ALMACEN 1";
+        else if (name.equals("ALMACEN_2")) displayName = "ALMACEN 2";
+        else if (name.equals("CONVEYOR_1")) displayName = "CONVEYOR 1";
+        else if (name.equals("CONVEYOR_2")) displayName = "CONVEYOR 2";
+        else if (name.equals("INSPECCION_1")) displayName = "INSPECCION 1";
+        else if (name.equals("INSPECCION_2")) displayName = "INSPECCION 2";
+        else displayName = name;
+        
         gc.fillText(displayName, pos[0] + BOX_SIZE / 2, pos[1] - 25); // Dibuja el nombre de la locación centrado arriba de la caja
 
         // Capacidad actual
@@ -453,56 +549,93 @@ public class AnimationPanel extends Pane { // Declaración de la clase pública 
     /** // Inicio del comentario Javadoc del método
      * NUEVO: Dibuja contadores de estadísticas en tiempo real // Descripción del método nuevo
      */ // Fin del comentario Javadoc
-    private void drawCounters(GraphicsContext gc) { // Método privado que dibuja los contadores de estadísticas para cada locación recibiendo el contexto gráfico como parámetro
-    double startX = COUNTER_START_X; // Asigna la coordenada X inicial de los contadores desde la constante
-    double startY = COUNTER_START_Y; // Asigna la coordenada Y inicial de los contadores desde la constante
-        double spacing = COUNTER_HEIGHT + 15; // Calcula el espaciado vertical entre contadores sumando la altura más 15 píxeles
+    private void drawCounters(GraphicsContext gc) {
+        double startX = COUNTER_START_X;
+        double startY = COUNTER_START_Y;
+        double spacing = COUNTER_HEIGHT + 6;
 
-        String[] locations = {"LAVADORA", "ALMACEN_PINTURA", "PINTURA", // Define un array con los nombres de las locaciones para las cuales se mostrarán contadores
-                             "ALMACEN_HORNO", "HORNO", "INSPECCION"}; // Continuación del array de nombres de locaciones
+        // Sistema Multi-Engrane: 10 locaciones REALES
+        String[] locations = {
+            "ALMACEN", "CORTADORA", "TORNO", "FRESADORA", "ALMACEN_2",
+            "PINTURA", "INSPECCION_1", "INSPECCION_2", "EMPAQUE", "EMBARQUE"
+        };
 
-        for (int i = 0; i < locations.length; i++) { // Bucle for que itera sobre cada locación en el array
-            Location loc = engine.getLocation(locations[i]); // Obtiene el objeto Location correspondiente a esta locación del motor
-            if (loc != null) { // Condición que verifica si la locación existe (no es null)
-                drawCounter(gc, startX, startY + i * spacing, locations[i], loc); // Dibuja el contador para esta locación en la posición calculada
-            } // Cierre del bloque condicional if
-        } // Cierre del bucle for
-    } // Cierre del método drawCounters
+        for (int i = 0; i < locations.length; i++) {
+            Location loc = engine.getLocation(locations[i]);
+            if (loc != null) {
+                drawCounter(gc, startX, startY + i * spacing, locations[i], loc);
+            }
+        }
+    }
 
     /** // Inicio del comentario Javadoc del método
      * Dibuja un contador individual para una locación // Descripción del método
      */ // Fin del comentario Javadoc
-    private void drawCounter(GraphicsContext gc, double x, double y, String name, Location location) { // Método privado que dibuja un contador individual recibiendo el contexto gráfico, coordenadas, nombre y objeto de locación como parámetros
-        // Fondo del contador
-        gc.setFill(Color.rgb(255, 255, 255, 0.95)); // Establece el color de relleno a blanco casi opaco para el fondo del contador
-        gc.fillRoundRect(x, y, COUNTER_WIDTH, COUNTER_HEIGHT, 8, 8); // Dibuja un rectángulo redondeado que forma el fondo del contador
+    private void drawCounter(GraphicsContext gc, double x, double y, String name, Location location) {
+        // Fondo del contador con sombra
+        gc.setFill(Color.rgb(0, 0, 0, 0.08));
+        gc.fillRoundRect(x + 1, y + 1, COUNTER_WIDTH, COUNTER_HEIGHT, 6, 6);
+        
+        gc.setFill(Color.rgb(255, 255, 255, 0.98));
+        gc.fillRoundRect(x, y, COUNTER_WIDTH, COUNTER_HEIGHT, 6, 6);
 
-        gc.setStroke(locationColors.get(name)); // Establece el color de trazo al color característico de esta locación
-        gc.setLineWidth(2); // Establece el grosor del borde a 2 píxeles
-        gc.strokeRoundRect(x, y, COUNTER_WIDTH, COUNTER_HEIGHT, 8, 8); // Dibuja el borde redondeado del contador con el color de la locación
+        gc.setStroke(locationColors.get(name));
+        gc.setLineWidth(2);
+        gc.strokeRoundRect(x, y, COUNTER_WIDTH, COUNTER_HEIGHT, 6, 6);
 
-        // Nombre de la locación
-        gc.setFill(Color.rgb(50, 50, 50)); // Establece el color de relleno a gris oscuro para el texto del nombre
-        gc.setFont(Font.font("Arial", FontWeight.BOLD, 10)); // Establece la fuente a Arial negrita de tamaño 10
-        gc.setTextAlign(TextAlignment.LEFT); // Establece la alineación del texto a la izquierda
-        String displayName = name.replace("_", " "); // Reemplaza los guiones bajos con espacios para hacer el nombre más legible
-        gc.fillText(displayName, x + 5, y + 15); // Dibuja el nombre de la locación en la parte superior izquierda del contador
+        // Nombre con etiquetas del diagrama
+        gc.setFill(Color.rgb(30, 30, 30));
+        gc.setFont(Font.font("Arial", FontWeight.BOLD, 8.5));
+        gc.setTextAlign(TextAlignment.LEFT);
+        
+        // Convertir nombres internos a nombres del diagrama
+        String displayName = name;
+        if (name.equals("ALMACEN")) displayName = "ALMACEN 1";
+        else if (name.equals("ALMACEN_2")) displayName = "ALMACEN 2";
+        else if (name.equals("CONVEYOR_1")) displayName = "CONVEYOR 1";
+        else if (name.equals("CONVEYOR_2")) displayName = "CONVEYOR 2";
+        else if (name.equals("INSPECCION_1")) displayName = "INSPECCION 1";
+        else if (name.equals("INSPECCION_2")) displayName = "INSPECCION 2";
+        else displayName = name;
+        
+        if (displayName.length() > 15) {
+            displayName = displayName.substring(0, 13) + "..";
+        }
+        gc.fillText(displayName, x + 5, y + 11);
 
-        // Estadísticas
-        gc.setFont(Font.font("Arial", FontWeight.NORMAL, 9)); // Establece la fuente a Arial normal de tamaño 9 para las estadísticas
+        // Estadísticas en 2 columnas compactas
+        gc.setFont(Font.font("Arial", FontWeight.NORMAL, 7.5));
+        gc.setFill(Color.rgb(50, 50, 50));
 
-        int entries = location.getTotalEntries(); // Obtiene el número total de entradas históricas a esta locación
-        gc.fillText("Entradas: " + entries, x + 5, y + 30); // Dibuja el texto mostrando el número total de entradas
+        int entries = location.getTotalEntries();
+        gc.fillText("E:" + entries, x + 5, y + 22);
 
-        double util = location.getUtilization(engine.getCurrentTime()); // Obtiene el porcentaje de utilización de la locación en el tiempo actual
-        gc.fillText(String.format("Util: %.1f%%", util), x + 5, y + 45); // Dibuja el texto mostrando la utilización con un decimal
+        double util = location.getUtilization(engine.getCurrentTime());
+        gc.fillText(String.format("U:%.0f%%", util), x + 5, y + 32);
 
-        int queue = location.getQueueSize(); // Obtiene el tamaño actual de la cola de espera
-        gc.fillText("Cola: " + queue, x + 5, y + 60); // Dibuja el texto mostrando el tamaño de la cola
+        int queue = location.getQueueSize();
+        gc.fillText("C:" + queue, x + 80, y + 22);
 
-        double avgContent = location.getAverageContent(engine.getCurrentTime()); // Obtiene el contenido promedio de la locación en el tiempo actual
-        gc.fillText(String.format("Prom: %.1f", avgContent), x + 5, y + 75); // Dibuja el texto mostrando el contenido promedio con un decimal
-    } // Cierre del método drawCounter
+        double avgContent = location.getAverageContent(engine.getCurrentTime());
+        gc.fillText(String.format("P:%.1f", avgContent), x + 80, y + 32);
+        
+        // Barra de utilización mini
+        double barWidth = COUNTER_WIDTH - 10;
+        double barHeight = 3;
+        double barY = y + COUNTER_HEIGHT - 8;
+        
+        gc.setFill(Color.rgb(220, 220, 220));
+        gc.fillRoundRect(x + 5, barY, barWidth, barHeight, 1.5, 1.5);
+        
+        double fillWidth = barWidth * (util / 100.0);
+        Color barColor;
+        if (util < 40) barColor = Color.rgb(76, 175, 80);
+        else if (util < 80) barColor = Color.rgb(255, 152, 0);
+        else barColor = Color.rgb(244, 67, 54);
+        
+        gc.setFill(barColor);
+        gc.fillRoundRect(x + 5, barY, fillWidth, barHeight, 1.5, 1.5);
+    }
 
     private void detectVirtualTransits() { // Método privado que detecta y gestiona tránsitos virtuales para movimientos instantáneos entre almacenes y estaciones
         virtualTransits.removeIf(vt -> { // Usa removeIf con un predicado para eliminar tránsitos virtuales que hayan completado su animación

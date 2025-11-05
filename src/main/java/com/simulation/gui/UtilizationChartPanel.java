@@ -82,18 +82,22 @@ public class UtilizationChartPanel extends VBox { // Declaración de la clase p�
         XYChart.Series<String, Number> series = new XYChart.Series<>(); // Crea una nueva serie de datos para la gráfica
         series.setName("Baseline"); // Establece el nombre de la serie como "Baseline"
 
-        // Locaciones a mostrar (mismo orden que ProModel)
-        String[] locations = { // Define un array con los nombres de las locaciones en el mismo orden que ProModel
-            "RECEPCION", // Locación de recepción
-            "LAVADORA", // Locación de lavadora
-            "ALMACEN_PINTURA", // Locación de almacén de pintura
-            "PINTURA", // Locación de pintura
-            "ALMACEN_HORNO", // Locación de almacén del horno
-            "HORNO", // Locación del horno
-            "INSPECCION.1", // Primera mesa de inspección
-            "INSPECCION.2", // Segunda mesa de inspección
-            "INSPECCION" // Inspección total (ambas mesas)
-        }; // Cierre de la declaración del array
+        // Locaciones Multi-Engrane (12 locaciones)
+        String[] locations = {
+            "RECEPCION",
+            "CONVEYOR_1",
+            "ALMACEN",
+            "CORTADORA",
+            "TORNO",
+            "CONVEYOR_2",
+            "FRESADORA",
+            "ALMACEN_2",
+            "PINTURA",
+            "INSPECCION_1",
+            "INSPECCION_2",
+            "EMPAQUE",
+            "EMBARQUE"
+        };
 
         // Calcular utilizaciones promedio
         for (String locName : locations) { // Bucle for-each que itera sobre cada nombre de locación en el array
@@ -121,17 +125,21 @@ public class UtilizationChartPanel extends VBox { // Declaración de la clase p�
         XYChart.Series<String, Number> series = new XYChart.Series<>(); // Crea una nueva serie de datos para la gráfica
         series.setName("Baseline"); // Establece el nombre de la serie como "Baseline"
 
-        String[] locations = { // Define un array con los nombres de las locaciones en el mismo orden que ProModel
-            "RECEPCION", // Locación de recepción
-            "LAVADORA", // Locación de lavadora
-            "ALMACEN_PINTURA", // Locación de almacén de pintura
-            "PINTURA", // Locación de pintura
-            "ALMACEN_HORNO", // Locación de almacén del horno
-            "HORNO", // Locación del horno
-            "INSPECCION.1", // Primera mesa de inspección
-            "INSPECCION.2", // Segunda mesa de inspección
-            "INSPECCION" // Inspección total (ambas mesas)
-        }; // Cierre de la declaración del array
+        String[] locations = {
+            "RECEPCION",
+            "CONVEYOR_1",
+            "ALMACEN",
+            "CORTADORA",
+            "TORNO",
+            "CONVEYOR_2",
+            "FRESADORA",
+            "ALMACEN_2",
+            "PINTURA",
+            "INSPECCION_1",
+            "INSPECCION_2",
+            "EMPAQUE",
+            "EMBARQUE"
+        };
 
         for (String locName : locations) { // Bucle for-each que itera sobre cada nombre de locación en el array
             double util = getLocationUtilization(stats, locName, currentTime); // Obtiene la utilización de esta locación en el tiempo actual

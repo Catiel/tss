@@ -274,18 +274,23 @@ public class MainController { // Declaración de la clase pública MainControlle
         entityStatsText.clear(); // Limpia el área de texto de estadísticas de entidades
     } // Cierre del método handleReset
 
-    @FXML // Anotación que indica que este método puede ser llamado desde FXML
-    private void handleParameters() { // Método privado que maneja el evento de presionar el botón de parámetros
-        ParametersDialog dialog = new ParametersDialog(parameters); // Crea una nueva instancia del diálogo de parámetros pasando los parámetros actuales
-        dialog.showAndWait(); // Muestra el diálogo de forma modal y espera a que el usuario lo cierre
-
-        if (dialog.isAccepted()) { // Condición que verifica si el usuario aceptó los cambios en el diálogo
-            engine = new SimulationEngine(parameters); // Crea una nueva instancia del motor con los parámetros modificados
-            setupAnimationPanel(); // Reconfigura el panel de animación con el nuevo motor
-            realTimeChartsPanel.initializeState(engine.getStatistics()); // Reinicializa el estado del panel de gráficas con el nuevo motor
-            updateStatus("Parámetros actualizados"); // Actualiza el mensaje de estado indicando que los parámetros fueron actualizados
-        } // Cierre del bloque condicional if
-    } // Cierre del método handleParameters
+    @FXML
+    private void handleParameters() {
+        // TODO: ParametersDialog necesita actualización para sistema Multi-Engrane
+        // Temporalmente deshabilitado
+        updateStatus("Diálogo de parámetros en desarrollo para Multi-Engrane");
+        
+        /* CÓDIGO ORIGINAL (sistema viejo):
+        ParametersDialog dialog = new ParametersDialog(parameters);
+        dialog.showAndWait();
+        if (dialog.isAccepted()) {
+            engine = new SimulationEngine(parameters);
+            setupAnimationPanel();
+            realTimeChartsPanel.initializeState(engine.getStatistics());
+            updateStatus("Parámetros actualizados");
+        }
+        */
+    }
 
     private void handleSimulationComplete() { // Método privado que maneja la finalización de la simulación
         animationTimer.stop(); // Detiene el timer de animación porque la simulación terminó

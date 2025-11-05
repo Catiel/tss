@@ -42,17 +42,9 @@ public class EventTypes { // Declaración de la clase pública EventTypes que ag
         public void execute(SimulationEngine engine) { // Método público que ejecuta la lógica del evento de fin de proceso recibiendo el motor de simulación como parámetro
             engine.handleProcessEnd(entity, locationName, time); // Invoca el método handleProcessEnd del motor pasando la entidad, nombre de ubicación y tiempo para procesar la finalización del procesamiento
         } // Cierre del método execute
-    } // Cierre de la clase ProcessEndEvent
+    }
 
-    // Evento de fin de operación de inspección
-    public static class InspectionOperationEndEvent extends Event { // Declaración de clase estática pública anidada InspectionOperationEndEvent que extiende Event y representa la finalización de una operación individual de inspección
-        public InspectionOperationEndEvent(double time, Entity entity) { // Constructor público que inicializa un evento de fin de operación de inspección recibiendo tiempo y entidad como parámetros
-            super(time, entity); // Llamada al constructor de la clase padre Event pasando el tiempo y la entidad que está siendo inspeccionada
-        } // Cierre del constructor InspectionOperationEndEvent
+    // NOTA: InspectionOperationEndEvent del sistema viejo fue removido
+    // En Multi-Engrane, INSPECCION_1 e INSPECCION_2 son procesos simples sin operaciones múltiples
+}
 
-        @Override // Anotación que indica que este método sobrescribe el método abstracto execute de la clase padre Event
-        public void execute(SimulationEngine engine) { // Método público que ejecuta la lógica del evento de fin de operación de inspección recibiendo el motor de simulación como parámetro
-            engine.handleInspectionOperationEnd(entity, time); // Invoca el método handleInspectionOperationEnd del motor pasando la entidad y tiempo para procesar la finalización de una operación de inspección
-        } // Cierre del método execute
-    } // Cierre de la clase InspectionOperationEndEvent
-} // Cierre de la clase EventTypes
