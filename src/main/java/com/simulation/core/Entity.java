@@ -18,6 +18,7 @@ public class Entity {
     private String destinationLocation;
     private boolean blocked;
     private double blockStartTime;
+    private String routingDestination; // NUEVO: Para almacenar decisiones de routing
 
     public Entity(double creationTime) {
         this.id = nextId++;
@@ -35,6 +36,7 @@ public class Entity {
         this.destinationLocation = "";
         this.blocked = false;
         this.blockStartTime = 0;
+        this.routingDestination = null; // NUEVO
     }
 
     public static void resetIdCounter() {
@@ -130,7 +132,7 @@ public class Entity {
 
     /**
      * Calcula el tiempo total que la entidad ha estado en el sistema
-     * IMPORTANTE: Este método debe llamarse getTotalSystemTime para compatibilidad con Statistics.java
+     * IMPORTANTE: Nombre debe ser getTotalSystemTime para compatibilidad con Statistics.java
      */
     public double getTotalSystemTime(double currentTime) {
         return currentTime - systemEntryTime;
@@ -162,6 +164,15 @@ public class Entity {
 
     public boolean isBlocked() {
         return blocked;
+    }
+
+    // NUEVO: Métodos para routing probabilístico
+    public String getRoutingDestination() {
+        return routingDestination;
+    }
+
+    public void setRoutingDestination(String destination) {
+        this.routingDestination = destination;
     }
 
     @Override

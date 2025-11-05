@@ -11,7 +11,7 @@ import java.util.*;
 /**
  * Motor de simulación Multi-Engrane - Fabricación de engranes con 12 locaciones
  * CORREGIDO: Las entidades permanecen en locaciones hasta que hay capacidad en destino
- * Esto permite detectar cuellos de botella correctamente
+ * CORREGIDO: Routing probabilístico se decide UNA VEZ y se mantiene en reintentos
  */
 public class SimulationEngine {
 
@@ -471,14 +471,23 @@ public class SimulationEngine {
     }
 
     private void finishInspeccion1(Entity entity, double time) {
-        boolean goToEmpaque = randomGen.routeToEmpaqueFromInspeccion1();
+        // CRÍTICO: Decidir el routing UNA SOLA VEZ y almacenarlo en la entidad
+        // Esto evita que se generen múltiples números aleatorios en reintentos
+        if (entity.getRoutingDestination() == null) {
+            boolean goToEmpaque = randomGen.routeToEmpaqueFromInspeccion1();
+            String destination = goToEmpaque ? "EMPAQUE" : "INSPECCION_2";
+            entity.setRoutingDestination(destination);
+        }
 
-        if (goToEmpaque) {
+        String destination = entity.getRoutingDestination();
+
+        if ("EMPAQUE".equals(destination)) {
             // 80%: INSPECCION_1 → EMPAQUE
             if (empaque.canEnter()) {
                 empaque.reserveCapacity();
                 inspeccion1.exit(entity, time);
                 entity.setBlocked(false, time);
+                entity.setRoutingDestination(null); // Limpiar para futuros usos
                 double transportTime = 4.0;
                 entity.addTransportTime(transportTime);
                 entity.startTransit(time, transportTime, "EMPAQUE");
@@ -489,6 +498,7 @@ public class SimulationEngine {
                 processInspeccion1Queue(time);
             } else {
                 // La entidad permanece en INSPECCION_1 bloqueada
+                // NO limpiamos routingDestination para mantener la decisión
                 entity.setBlocked(true, time);
                 entity.addWaitTime(0.5);
                 scheduleEvent(new ProcessEndEvent(time + 0.5, entity, "INSPECCION_1"));
@@ -499,6 +509,7 @@ public class SimulationEngine {
                 inspeccion2.reserveCapacity();
                 inspeccion1.exit(entity, time);
                 entity.setBlocked(false, time);
+                entity.setRoutingDestination(null); // Limpiar para futuros usos
                 double transportTime = 4.0;
                 entity.addTransportTime(transportTime);
                 entity.startTransit(time, transportTime, "INSPECCION_2");
@@ -509,6 +520,7 @@ public class SimulationEngine {
                 processInspeccion1Queue(time);
             } else {
                 // La entidad permanece en INSPECCION_1 bloqueada
+                // NO limpiamos routingDestination para mantener la decisión
                 entity.setBlocked(true, time);
                 entity.addWaitTime(0.5);
                 scheduleEvent(new ProcessEndEvent(time + 0.5, entity, "INSPECCION_1"));
@@ -711,56 +723,43 @@ public class SimulationEngine {
     }
 
     private void processFresadoraExitQueue(double time) {
-        // Procesar entidades que están esperando salir de FRESADORA
-        while (fresadora.getCurrentContent() > 0 && almacen2.canEnter() && trabajador2.isAvailable()) {
-            // Esto se maneja en finishFresadora con reintentos
-            break;
-        }
+        // Este método se puede implementar si es necesario procesar entidades bloqueadas en FRESADORA
     }
 
     private void processAlmacen2Queue(double time) {
-        // Procesar cola interna de ALMACEN_2
+        // Este método se puede implementar si es necesario procesar entidades en cola de ALMACEN_2
     }
 
     private void processAlmacen2ExitQueue(double time) {
-        // Procesar entidades que están esperando salir de ALMACEN_2
-        while (almacen2.getCurrentContent() > 0 && pintura.canEnter() && montacargas.isAvailable()) {
-            break;
-        }
+        // Este método se puede implementar si es necesario procesar entidades bloqueadas en ALMACEN_2
     }
 
     private void processPinturaQueue(double time) {
-        // Procesar cola interna de PINTURA
+        // Este método se puede implementar si es necesario procesar entidades en cola de PINTURA
     }
 
     private void processPinturaExitQueue(double time) {
-        // Procesar entidades que están esperando salir de PINTURA
-        while (pintura.getCurrentContent() > 0 && inspeccion1.canEnter() && montacargasSec.isAvailable()) {
-            break;
-        }
+        // Este método se puede implementar si es necesario procesar entidades bloqueadas en PINTURA
     }
 
     private void processInspeccion1Queue(double time) {
-        // Procesar cola interna de INSPECCION_1
+        // Este método se puede implementar si es necesario procesar entidades en cola de INSPECCION_1
     }
 
     private void processInspeccion2Queue(double time) {
-        // Procesar cola interna de INSPECCION_2
+        // Este método se puede implementar si es necesario procesar entidades en cola de INSPECCION_2
     }
 
     private void processEmpaqueQueue(double time) {
-        // Procesar cola interna de EMPAQUE
+        // Este método se puede implementar si es necesario procesar entidades en cola de EMPAQUE
     }
 
     private void processEmpaqueExitQueue(double time) {
-        // Procesar entidades que están esperando salir de EMPAQUE
-        while (empaque.getCurrentContent() > 0 && embarque.canEnter() && trabajador3.isAvailable()) {
-            break;
-        }
+        // Este método se puede implementar si es necesario procesar entidades bloqueadas en EMPAQUE
     }
 
     private void processEmbarqueQueue(double time) {
-        // Procesar cola interna de EMBARQUE
+        // Este método se puede implementar si es necesario procesar entidades en cola de EMBARQUE
     }
 
     // === MÉTODOS UTILITARIOS ===
