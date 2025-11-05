@@ -52,7 +52,18 @@ public class SimulationEngine {
     private Deque<Entity> blockedAfterEmpaque;
     private Deque<Entity> blockedInConveyor2; // Entidades esperando en CONVEYOR_2
 
+    private TransportResource trabajador1;
+    private TransportResource trabajador2;
+    private TransportResource trabajador3;
+    private TransportResource montacargas;
+    private TransportResource montacargasSec;
+
     private static final double VISUAL_TRANSIT_TIME = 0.05;
+    private static final double R1_TRAVEL_TIME = 54.28 / 150.0; // TRABAJADOR_1, Ruta R1
+    private static final double R2_TRAVEL_TIME = 36.83 / 150.0; // TRABAJADOR_2, Ruta R2
+    private static final double R3_TRAVEL_TIME = 45.15 / 150.0; // MONTACARGAS, Ruta R3
+    private static final double R4_TRAVEL_TIME = 33.13 / 150.0; // MONTACARGAS_, Ruta R4
+    private static final double R5_TRAVEL_TIME = 56.86 / 150.0; // TRABAJADOR_3, Ruta R5
 
     public SimulationEngine(SimulationParameters params) {
         this.params = params;
@@ -71,6 +82,8 @@ public class SimulationEngine {
         this.blockedAfterInspeccion2 = new ArrayDeque<>();
         this.blockedAfterEmpaque = new ArrayDeque<>();
         this.blockedInConveyor2 = new ArrayDeque<>();
+
+    initializeTransportResources();
         
         this.currentTime = 0;
         this.running = false;
@@ -107,6 +120,14 @@ public class SimulationEngine {
         statistics.registerLocation(inspeccion2);
         statistics.registerLocation(empaque);
         statistics.registerLocation(embarque);
+    }
+
+    private void initializeTransportResources() {
+        trabajador1 = new TransportResource("TRABAJADOR_1");
+        trabajador2 = new TransportResource("TRABAJADOR_2");
+        trabajador3 = new TransportResource("TRABAJADOR_3");
+        montacargas = new TransportResource("MONTACARGAS");
+        montacargasSec = new TransportResource("MONTACARGAS_");
     }
 
     private void initializeRandomGenerators() {
@@ -150,6 +171,8 @@ public class SimulationEngine {
         blockedAfterInspeccion2.clear();
         blockedAfterEmpaque.clear();
         blockedInConveyor2.clear();
+
+    resetTransportResources();
         
         currentTime = 0;
         running = false;
@@ -172,6 +195,14 @@ public class SimulationEngine {
         embarque.resetState();
         
         initializeRandomGenerators();
+    }
+
+    private void resetTransportResources() {
+        trabajador1.reset();
+        trabajador2.reset();
+        trabajador3.reset();
+        montacargas.reset();
+        montacargasSec.reset();
     }
 
     public void initialize() {
@@ -276,6 +307,33 @@ public class SimulationEngine {
             case "INSPECCION_2": arriveAtInspeccion2(entity, time); break;
             case "EMPAQUE": arriveAtEmpaque(entity, time); break;
             case "EMBARQUE": arriveAtEmbarque(entity, time); break;
+        }
+    }
+
+    public void handleTransportResourceAfterArrival(TransportResource resource, double arrivalTime, double returnTime) {
+        if (resource == null) {
+            return;
+        }
+        if (returnTime <= 0) {
+            handleTransportResourceAvailable(resource, arrivalTime);
+        } else {
+            scheduleEvent(new ResourceReleaseEvent(arrivalTime + returnTime, resource));
+        }
+    }
+
+    public void handleTransportResourceAvailable(TransportResource resource, double time) {
+        resource.release();
+
+        if (resource == trabajador1) {
+            releaseBlockedAfterCortadora(time);
+        } else if (resource == trabajador2) {
+            releaseBlockedAfterFresadora(time);
+        } else if (resource == montacargas) {
+            releaseBlockedAfterAlmacen2(time);
+        } else if (resource == montacargasSec) {
+            releaseBlockedAfterPintura(time);
+        } else if (resource == trabajador3) {
+            releaseBlockedAfterEmpaque(time);
         }
     }
 
@@ -458,7 +516,7 @@ public class SimulationEngine {
         Entity pieza1 = entity;
         Entity pieza2 = new Entity(time);
         allActiveEntities.add(pieza2);
-        statistics.recordArrival();
+    statistics.recordArrival();
         
         tryMoveToTorno(pieza1, time);
         tryMoveToTorno(pieza2, time);
@@ -504,18 +562,14 @@ public class SimulationEngine {
     }
 
     private void finishFresadora(Entity entity, double time) {
-        if (almacen2.canEnter()) {
+        if (almacen2.canEnter() && trabajador2.isAvailable()) {
             almacen2.reserveCapacity();
             fresadora.exit(entity, time);
-            
-            double transportTime = randomGen.nextTransportWorkerTime();
-            entity.addTransportTime(transportTime);
-            entity.startTransit(time, transportTime, "ALMACEN_2");
-            entitiesInTransport.add(entity);
-            
-            scheduleEvent(new TransportEndEvent(time + transportTime, entity, "ALMACEN_2"));
+            entity.setBlocked(false, time);
+
+            startTransportWithResource(entity, time, R2_TRAVEL_TIME, R2_TRAVEL_TIME, "ALMACEN_2", trabajador2);
             processFresadoraQueue(time);
-            releaseBlockedInConveyor2(time); // Liberar entidades esperando en CONVEYOR_2
+            releaseBlockedInConveyor2(time);
         } else {
             blockedAfterFresadora.addLast(entity);
             entity.setBlocked(true, time);
@@ -523,17 +577,14 @@ public class SimulationEngine {
     }
 
     private void finishAlmacen2(Entity entity, double time) {
-        if (pintura.canEnter()) {
+        if (pintura.canEnter() && montacargas.isAvailable()) {
             pintura.reserveCapacity();
             almacen2.exit(entity, time);
-            
-            double transportTime = randomGen.nextTransportWorkerTime();
-            entity.addTransportTime(transportTime);
-            entity.startTransit(time, transportTime, "PINTURA");
-            entitiesInTransport.add(entity);
-            
-            scheduleEvent(new TransportEndEvent(time + transportTime, entity, "PINTURA"));
+            entity.setBlocked(false, time);
+
+            startTransportWithResource(entity, time, R3_TRAVEL_TIME, R3_TRAVEL_TIME, "PINTURA", montacargas);
             processAlmacen2Queue(time);
+            releaseBlockedAfterFresadora(time);
         } else {
             blockedAfterAlmacen2.addLast(entity);
             entity.setBlocked(true, time);
@@ -541,17 +592,14 @@ public class SimulationEngine {
     }
 
     private void finishPintura(Entity entity, double time) {
-        if (inspeccion1.canEnter()) {
+        if (inspeccion1.canEnter() && montacargasSec.isAvailable()) {
             inspeccion1.reserveCapacity();
             pintura.exit(entity, time);
-            
-            double transportTime = randomGen.nextTransportWorkerTime();
-            entity.addTransportTime(transportTime);
-            entity.startTransit(time, transportTime, "INSPECCION_1");
-            entitiesInTransport.add(entity);
-            
-            scheduleEvent(new TransportEndEvent(time + transportTime, entity, "INSPECCION_1"));
+            entity.setBlocked(false, time);
+
+            startTransportWithResource(entity, time, R4_TRAVEL_TIME, R4_TRAVEL_TIME, "INSPECCION_1", montacargasSec);
             processPinturaQueue(time);
+            releaseBlockedAfterAlmacen2(time);
         } else {
             blockedAfterPintura.addLast(entity);
             entity.setBlocked(true, time);
@@ -573,6 +621,7 @@ public class SimulationEngine {
         
         processInspeccion1Queue(time);
         releaseBlockedAfterInspeccion1(time);
+        releaseBlockedAfterPintura(time);
     }
 
     private void finishInspeccion2(Entity entity, double time) {
@@ -597,17 +646,14 @@ public class SimulationEngine {
     }
 
     private void finishEmpaque(Entity entity, double time) {
-        if (embarque.canEnter()) {
+        if (embarque.canEnter() && trabajador3.isAvailable()) {
             embarque.reserveCapacity();
             empaque.exit(entity, time);
-            
-            double transportTime = randomGen.nextTransportWorkerTime();
-            entity.addTransportTime(transportTime);
-            entity.startTransit(time, transportTime, "EMBARQUE");
-            entitiesInTransport.add(entity);
-            
-            scheduleEvent(new TransportEndEvent(time + transportTime, entity, "EMBARQUE"));
+            entity.setBlocked(false, time);
+
+            startTransportWithResource(entity, time, R5_TRAVEL_TIME, R5_TRAVEL_TIME, "EMBARQUE", trabajador3);
             processEmpaqueQueue(time);
+            releaseBlockedAfterEmpaque(time);
         } else {
             blockedAfterEmpaque.addLast(entity);
             entity.setBlocked(true, time);
@@ -627,7 +673,7 @@ public class SimulationEngine {
         statistics.recordExit(entity, exitTime);
         
         processEmbarqueQueue(time);
-        releaseBlockedAfterEmbarque(time);
+        releaseBlockedAfterEmpaque(time);
     }
 
     // === MÉTODOS TRY MOVE ===
@@ -641,47 +687,45 @@ public class SimulationEngine {
                 almacen.exit(entity, time);
             }
             
-            double transportTime = randomGen.nextTransportWorkerTime();
-            entity.addTransportTime(transportTime);
-            entity.startTransit(time, transportTime, "CORTADORA");
-            entitiesInTransport.add(entity);
-            
-            scheduleEvent(new TransportEndEvent(time + transportTime, entity, "CORTADORA"));
+            double transportTime = 3.0;
+            startTransport(entity, time, transportTime, "CORTADORA");
         } else {
             cortadora.addToQueue(entity);
         }
     }
 
     private void tryMoveToTorno(Entity entity, double time) {
-        if (torno.canEnter()) {
-            torno.reserveCapacity();
-            
-            String currentLoc = entity.getCurrentLocation();
-            if ("CORTADORA".equals(currentLoc)) {
-                cortadora.exit(entity, time);
-            }
-            
-            double transportTime = randomGen.nextTransportWorkerTime();
-            entity.addTransportTime(transportTime);
-            entity.startTransit(time, transportTime, "TORNO");
-            entitiesInTransport.add(entity);
-            
-            scheduleEvent(new TransportEndEvent(time + transportTime, entity, "TORNO"));
-        } else {
+        if (!torno.canEnter()) {
             torno.addToQueue(entity);
+            entity.setBlocked(true, time);
+            return;
         }
+
+        if (trabajador1.isBusy()) {
+            blockedAfterCortadora.addLast(entity);
+            entity.setBlocked(true, time);
+            return;
+        }
+
+        torno.reserveCapacity();
+
+        String currentLoc = entity.getCurrentLocation();
+        if ("CORTADORA".equals(currentLoc)) {
+            cortadora.exit(entity, time);
+        }
+
+        entity.setBlocked(false, time);
+        startTransportWithResource(entity, time, R1_TRAVEL_TIME, R1_TRAVEL_TIME, "TORNO", trabajador1);
+
+        processCortadoraQueue(time);
     }
 
     private void tryMoveToEmpaque(Entity entity, double time) {
         if (empaque.canEnter()) {
             empaque.reserveCapacity();
-            
-            double transportTime = randomGen.nextTransportWorkerTime();
-            entity.addTransportTime(transportTime);
-            entity.startTransit(time, transportTime, "EMPAQUE");
-            entitiesInTransport.add(entity);
-            
-            scheduleEvent(new TransportEndEvent(time + transportTime, entity, "EMPAQUE"));
+
+            double transportTime = 3.0;
+            startTransport(entity, time, transportTime, "EMPAQUE");
         } else {
             empaque.addToQueue(entity);
         }
@@ -709,21 +753,6 @@ public class SimulationEngine {
             inspeccion2.reserveCapacity();
             
             double transportTime = 4.0; // Tiempo fijo según ProModel
-            entity.addTransportTime(transportTime);
-            entity.startTransit(time, transportTime, "INSPECCION_2");
-            entitiesInTransport.add(entity);
-            
-            scheduleEvent(new TransportEndEvent(time + transportTime, entity, "INSPECCION_2"));
-        } else {
-            inspeccion2.addToQueue(entity);
-        }
-    }
-
-    private void tryMoveToInspeccion2(Entity entity, double time) {
-        if (inspeccion2.canEnter()) {
-            inspeccion2.reserveCapacity();
-            
-            double transportTime = randomGen.nextTransportWorkerTime();
             entity.addTransportTime(transportTime);
             entity.startTransit(time, transportTime, "INSPECCION_2");
             entitiesInTransport.add(entity);
@@ -772,56 +801,42 @@ public class SimulationEngine {
             Entity nextEntity = fresadora.pollFromQueue();
             if (nextEntity != null) {
                 fresadora.reserveCapacity();
-                double transportTime = randomGen.nextTransportWorkerTime();
-                nextEntity.addTransportTime(transportTime);
-                nextEntity.startTransit(time, transportTime, "FRESADORA");
-                entitiesInTransport.add(nextEntity);
-                scheduleEvent(new TransportEndEvent(time + transportTime, nextEntity, "FRESADORA"));
+                startTransport(nextEntity, time, 4.0, "FRESADORA");
             }
         }
     }
 
     private void processAlmacen2Queue(double time) {
-        while (pintura.canEnter() && almacen2.hasQueuedEntities()) {
+        while (pintura.canEnter() && almacen2.hasQueuedEntities() && montacargas.isAvailable()) {
             Entity nextEntity = almacen2.pollFromQueue();
             if (nextEntity != null) {
                 pintura.reserveCapacity();
                 almacen2.exit(nextEntity, time);
-                double transportTime = randomGen.nextTransportWorkerTime();
-                nextEntity.addTransportTime(transportTime);
-                nextEntity.startTransit(time, transportTime, "PINTURA");
-                entitiesInTransport.add(nextEntity);
-                scheduleEvent(new TransportEndEvent(time + transportTime, nextEntity, "PINTURA"));
+                startTransportWithResource(nextEntity, time, R3_TRAVEL_TIME, R3_TRAVEL_TIME, "PINTURA", montacargas);
             }
         }
+        releaseBlockedAfterFresadora(time);
     }
 
     private void processPinturaQueue(double time) {
-        while (inspeccion1.canEnter() && pintura.hasQueuedEntities()) {
+        while (inspeccion1.canEnter() && pintura.hasQueuedEntities() && montacargasSec.isAvailable()) {
             Entity nextEntity = pintura.pollFromQueue();
             if (nextEntity != null) {
                 inspeccion1.reserveCapacity();
                 pintura.exit(nextEntity, time);
-                double transportTime = randomGen.nextTransportWorkerTime();
-                nextEntity.addTransportTime(transportTime);
-                nextEntity.startTransit(time, transportTime, "INSPECCION_1");
-                entitiesInTransport.add(nextEntity);
-                scheduleEvent(new TransportEndEvent(time + transportTime, nextEntity, "INSPECCION_1"));
+                startTransportWithResource(nextEntity, time, R4_TRAVEL_TIME, R4_TRAVEL_TIME, "INSPECCION_1", montacargasSec);
             }
         }
+        releaseBlockedAfterAlmacen2(time);
     }
 
     private void processInspeccion1Queue(double time) {
-        while (inspeccion1.canEnter() && inspeccion1.hasQueuedEntities()) {
+        while (inspeccion1.canEnter() && inspeccion1.hasQueuedEntities() && montacargasSec.isAvailable()) {
             Entity nextEntity = inspeccion1.pollFromQueue();
             if (nextEntity != null) {
                 inspeccion1.reserveCapacity();
                 pintura.exit(nextEntity, time);
-                double transportTime = randomGen.nextTransportWorkerTime();
-                nextEntity.addTransportTime(transportTime);
-                nextEntity.startTransit(time, transportTime, "INSPECCION_1");
-                entitiesInTransport.add(nextEntity);
-                scheduleEvent(new TransportEndEvent(time + transportTime, nextEntity, "INSPECCION_1"));
+                startTransportWithResource(nextEntity, time, R4_TRAVEL_TIME, R4_TRAVEL_TIME, "INSPECCION_1", montacargasSec);
             }
         }
     }
@@ -831,11 +846,7 @@ public class SimulationEngine {
             Entity nextEntity = inspeccion2.pollFromQueue();
             if (nextEntity != null) {
                 inspeccion2.reserveCapacity();
-                double transportTime = randomGen.nextTransportWorkerTime();
-                nextEntity.addTransportTime(transportTime);
-                nextEntity.startTransit(time, transportTime, "INSPECCION_2");
-                entitiesInTransport.add(nextEntity);
-                scheduleEvent(new TransportEndEvent(time + transportTime, nextEntity, "INSPECCION_2"));
+                startTransport(nextEntity, time, 4.0, "INSPECCION_2");
             }
         }
     }
@@ -847,27 +858,25 @@ public class SimulationEngine {
                 tryMoveToEmpaque(nextEntity, time);
             }
         }
+        releaseBlockedAfterEmpaque(time);
     }
 
     private void processEmbarqueQueue(double time) {
-        while (embarque.canEnter() && embarque.hasQueuedEntities()) {
+        while (embarque.canEnter() && embarque.hasQueuedEntities() && trabajador3.isAvailable()) {
             Entity nextEntity = embarque.pollFromQueue();
             if (nextEntity != null) {
                 embarque.reserveCapacity();
                 empaque.exit(nextEntity, time);
-                double transportTime = randomGen.nextTransportWorkerTime();
-                nextEntity.addTransportTime(transportTime);
-                nextEntity.startTransit(time, transportTime, "EMBARQUE");
-                entitiesInTransport.add(nextEntity);
-                scheduleEvent(new TransportEndEvent(time + transportTime, nextEntity, "EMBARQUE"));
+                startTransportWithResource(nextEntity, time, R5_TRAVEL_TIME, R5_TRAVEL_TIME, "EMBARQUE", trabajador3);
             }
         }
+        releaseBlockedAfterEmpaque(time);
     }
 
     // === MÉTODOS RELEASE BLOCKED ===
     
     private void releaseBlockedAfterCortadora(double time) {
-        while (!blockedAfterCortadora.isEmpty() && torno.canEnter()) {
+        while (!blockedAfterCortadora.isEmpty() && torno.canEnter() && trabajador1.isAvailable()) {
             Entity blocked = blockedAfterCortadora.removeFirst();
             tryMoveToTorno(blocked, time);
         }
@@ -888,8 +897,58 @@ public class SimulationEngine {
         }
     }
 
-    private void releaseBlockedAfterEmbarque(double time) {
-        // No hay bloqueo después de EMBARQUE (exit)
+    private void releaseBlockedAfterFresadora(double time) {
+        while (!blockedAfterFresadora.isEmpty() && almacen2.canEnter() && trabajador2.isAvailable()) {
+            Entity blocked = blockedAfterFresadora.removeFirst();
+            blocked.setBlocked(false, time);
+
+            almacen2.reserveCapacity();
+            fresadora.exit(blocked, time);
+
+            startTransportWithResource(blocked, time, R2_TRAVEL_TIME, R2_TRAVEL_TIME, "ALMACEN_2", trabajador2);
+            processFresadoraQueue(time);
+            releaseBlockedInConveyor2(time);
+        }
+    }
+
+    private void releaseBlockedAfterAlmacen2(double time) {
+        while (!blockedAfterAlmacen2.isEmpty() && pintura.canEnter() && montacargas.isAvailable()) {
+            Entity blocked = blockedAfterAlmacen2.removeFirst();
+            blocked.setBlocked(false, time);
+
+            pintura.reserveCapacity();
+            almacen2.exit(blocked, time);
+
+            startTransportWithResource(blocked, time, R3_TRAVEL_TIME, R3_TRAVEL_TIME, "PINTURA", montacargas);
+            processAlmacen2Queue(time);
+            releaseBlockedAfterFresadora(time);
+        }
+    }
+
+    private void releaseBlockedAfterPintura(double time) {
+        while (!blockedAfterPintura.isEmpty() && inspeccion1.canEnter() && montacargasSec.isAvailable()) {
+            Entity blocked = blockedAfterPintura.removeFirst();
+            blocked.setBlocked(false, time);
+
+            inspeccion1.reserveCapacity();
+            pintura.exit(blocked, time);
+
+            startTransportWithResource(blocked, time, R4_TRAVEL_TIME, R4_TRAVEL_TIME, "INSPECCION_1", montacargasSec);
+            processPinturaQueue(time);
+        }
+    }
+
+    private void releaseBlockedAfterEmpaque(double time) {
+        while (!blockedAfterEmpaque.isEmpty() && embarque.canEnter() && trabajador3.isAvailable()) {
+            Entity blocked = blockedAfterEmpaque.removeFirst();
+            blocked.setBlocked(false, time);
+
+            embarque.reserveCapacity();
+            empaque.exit(blocked, time);
+
+            startTransportWithResource(blocked, time, R5_TRAVEL_TIME, R5_TRAVEL_TIME, "EMBARQUE", trabajador3);
+            processEmpaqueQueue(time);
+        }
     }
     
     private void releaseBlockedInConveyor2(double time) {
@@ -914,6 +973,21 @@ public class SimulationEngine {
     
     private void scheduleEvent(Event event) {
         eventQueue.add(event);
+    }
+
+    private void startTransport(Entity entity, double time, double travelTime, String destination) {
+        entity.addTransportTime(travelTime);
+        entity.startTransit(time, travelTime, destination);
+        entitiesInTransport.add(entity);
+        scheduleEvent(new TransportEndEvent(time + travelTime, entity, destination));
+    }
+
+    private void startTransportWithResource(Entity entity, double time, double travelTime, double returnTime, String destination, TransportResource resource) {
+        resource.occupy();
+        entity.addTransportTime(travelTime);
+        entity.startTransit(time, travelTime, destination);
+        entitiesInTransport.add(entity);
+        scheduleEvent(new TransportEndEvent(time + travelTime, entity, destination, resource, returnTime));
     }
 
     // === GETTERS ===

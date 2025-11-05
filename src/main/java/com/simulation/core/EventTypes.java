@@ -1,5 +1,7 @@
 package com.simulation.core; // Declaración del paquete que contiene las clases principales (core) de la simulación
 
+import com.simulation.resources.TransportResource;
+
 public class EventTypes { // Declaración de la clase pública EventTypes que agrupa todos los tipos específicos de eventos de la simulación
 
     // Evento de arribo de pieza
@@ -17,15 +19,26 @@ public class EventTypes { // Declaración de la clase pública EventTypes que ag
     // Evento de fin de transporte
     public static class TransportEndEvent extends Event { // Declaración de clase estática pública anidada TransportEndEvent que extiende Event y representa la finalización de un transporte
         private String destinationName; // Variable privada que almacena el nombre de la ubicación de destino donde terminó el transporte
+        private TransportResource resource;
+        private double resourceReturnTime;
 
-        public TransportEndEvent(double time, Entity entity, String destination) { // Constructor público que inicializa un evento de fin de transporte recibiendo tiempo, entidad y destino como parámetros
+        public TransportEndEvent(double time, Entity entity, String destination) {
+            this(time, entity, destination, null, 0.0);
+        }
+
+        public TransportEndEvent(double time, Entity entity, String destination, TransportResource resource, double resourceReturnTime) { // Constructor público que inicializa un evento de fin de transporte recibiendo tiempo, entidad y destino como parámetros
             super(time, entity); // Llamada al constructor de la clase padre Event pasando el tiempo y la entidad que está siendo transportada
             this.destinationName = destination; // Asigna el nombre del destino recibido como parámetro a la variable de instancia destinationName
+            this.resource = resource;
+            this.resourceReturnTime = resourceReturnTime;
         } // Cierre del constructor TransportEndEvent
 
         @Override // Anotación que indica que este método sobrescribe el método abstracto execute de la clase padre Event
         public void execute(SimulationEngine engine) { // Método público que ejecuta la lógica del evento de fin de transporte recibiendo el motor de simulación como parámetro
             engine.handleTransportEnd(entity, destinationName, time); // Invoca el método handleTransportEnd del motor pasando la entidad, nombre del destino y tiempo para procesar la llegada de la entidad a su destino
+            if (resource != null) {
+                engine.handleTransportResourceAfterArrival(resource, time, resourceReturnTime);
+            }
         } // Cierre del método execute
     } // Cierre de la clase TransportEndEvent
 
@@ -42,6 +55,20 @@ public class EventTypes { // Declaración de la clase pública EventTypes que ag
         public void execute(SimulationEngine engine) { // Método público que ejecuta la lógica del evento de fin de proceso recibiendo el motor de simulación como parámetro
             engine.handleProcessEnd(entity, locationName, time); // Invoca el método handleProcessEnd del motor pasando la entidad, nombre de ubicación y tiempo para procesar la finalización del procesamiento
         } // Cierre del método execute
+    }
+
+    public static class ResourceReleaseEvent extends Event {
+        private final TransportResource resource;
+
+        public ResourceReleaseEvent(double time, TransportResource resource) {
+            super(time, null);
+            this.resource = resource;
+        }
+
+        @Override
+        public void execute(SimulationEngine engine) {
+            engine.handleTransportResourceAvailable(resource, time);
+        }
     }
 
     // NOTA: InspectionOperationEndEvent del sistema viejo fue removido
