@@ -182,7 +182,11 @@ public class SimulationEngine {
         running = true;
         double endTime = params.getSimulationDurationMinutes();
 
-        while (running && !eventQueue.isEmpty()) {
+        while (running) {
+            if (eventQueue.isEmpty()) {
+                break;
+            }
+
             while (paused && running) {
                 try {
                     Thread.sleep(100);
@@ -195,7 +199,12 @@ public class SimulationEngine {
             if (!running) break;
 
             Event nextEvent = eventQueue.peek();
-            if (nextEvent == null || nextEvent.getTime() >= endTime) {
+            if (nextEvent == null) {
+                break;
+            }
+
+            if (nextEvent.getTime() >= endTime) {
+                currentTime = endTime;
                 break;
             }
 
@@ -223,6 +232,7 @@ public class SimulationEngine {
             currentTime = targetSimTime;
 
             if (currentTime >= endTime) {
+                currentTime = endTime;
                 break;
             }
 

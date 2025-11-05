@@ -22,11 +22,11 @@ public class AnimationPanel extends Pane {
     private SimulationEngine engine;
 
     private static final double WIDTH = 1600;
-    private static final double HEIGHT = 950;
-    private static final double BOX_SIZE = 90;
-    private static final double COUNTER_WIDTH = 150;
-    private static final double COUNTER_HEIGHT = 48;
-    private static final double COUNTER_START_X = 1330;
+    private static final double HEIGHT = 1250;
+    private static final double BOX_SIZE = 120;
+    private static final double COUNTER_WIDTH = 210;
+    private static final double COUNTER_HEIGHT = 86;
+    private static final double COUNTER_START_X = 1300;
     private static final double COUNTER_START_Y = 80;
 
     private Map<String, double[]> locationPositions;
@@ -315,25 +315,25 @@ public class AnimationPanel extends Pane {
         gc.setFill(Color.WHITE);
 
         if (name.contains("CONVEYOR")) {
-            gc.setFont(Font.font("Arial", FontWeight.BOLD, 48));
-            gc.fillText("→", pos[0] + BOX_SIZE / 2, pos[1] + 55);
+            gc.setFont(Font.font("Arial", FontWeight.BOLD, 56));
+            gc.fillText("→", pos[0] + BOX_SIZE / 2, pos[1] + BOX_SIZE * 0.62);
         } else {
-            gc.setFont(Font.font("Segoe UI Emoji", 32));
-            gc.fillText(icon, pos[0] + BOX_SIZE / 2, pos[1] + 42);
+            gc.setFont(Font.font("Segoe UI Emoji", 40));
+            gc.fillText(icon, pos[0] + BOX_SIZE / 2, pos[1] + BOX_SIZE * 0.58);
         }
 
         // Nombre
         gc.setFill(Color.rgb(33, 33, 33));
-        gc.setFont(Font.font("Arial", FontWeight.BOLD, 12));
+        gc.setFont(Font.font("Arial", FontWeight.BOLD, 14));
 
         String displayName = getDisplayName(name);
         gc.fillText(displayName, pos[0] + BOX_SIZE / 2, pos[1] - 12);
 
         // Capacidad
-        gc.setFont(Font.font("Arial", FontWeight.BOLD, 20));
+        gc.setFont(Font.font("Arial", FontWeight.BOLD, 24));
         gc.setFill(Color.WHITE);
         String contentText = currentContent + "/" + (capacity == Integer.MAX_VALUE ? "∞" : capacity);
-        gc.fillText(contentText, pos[0] + BOX_SIZE / 2, pos[1] + 78);
+        gc.fillText(contentText, pos[0] + BOX_SIZE / 2, pos[1] + BOX_SIZE - 12);
 
         // Cola
         if (queueSize > 0) {
@@ -363,21 +363,21 @@ public class AnimationPanel extends Pane {
     }
 
     private void drawQueueIndicator(GraphicsContext gc, double x, double y, int queueSize) {
-        double badgeX = x + BOX_SIZE - 35;
-        double badgeY = y - 10;
-        double badgeSize = 30;
+    double badgeX = x + BOX_SIZE - 48;
+    double badgeY = y - 16;
+    double badgeSize = 44;
 
         gc.setFill(Color.rgb(244, 67, 54));
         gc.fillOval(badgeX, badgeY, badgeSize, badgeSize);
 
         gc.setStroke(Color.WHITE);
-        gc.setLineWidth(2);
+    gc.setLineWidth(3);
         gc.strokeOval(badgeX, badgeY, badgeSize, badgeSize);
 
         gc.setFill(Color.WHITE);
-        gc.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+    gc.setFont(Font.font("Arial", FontWeight.BOLD, 18));
         gc.setTextAlign(TextAlignment.CENTER);
-        gc.fillText(String.valueOf(queueSize), badgeX + badgeSize / 2, badgeY + badgeSize / 2 + 5);
+    gc.fillText(String.valueOf(queueSize), badgeX + badgeSize / 2, badgeY + badgeSize / 2 + 7);
     }
 
     private void drawUtilizationBar(GraphicsContext gc, double x, double y, double width, double utilization) {
@@ -453,47 +453,47 @@ public class AnimationPanel extends Pane {
     }
 
     private void drawCounterSafe(GraphicsContext gc, double x, double y, String name, Location location) {
-        gc.setFill(Color.rgb(0, 0, 0, 0.08));
-        gc.fillRoundRect(x + 1, y + 1, COUNTER_WIDTH, COUNTER_HEIGHT, 6, 6);
+        gc.setFill(Color.rgb(0, 0, 0, 0.12));
+        gc.fillRoundRect(x + 2, y + 2, COUNTER_WIDTH, COUNTER_HEIGHT, 10, 10);
 
         gc.setFill(Color.rgb(255, 255, 255, 0.98));
-        gc.fillRoundRect(x, y, COUNTER_WIDTH, COUNTER_HEIGHT, 6, 6);
+        gc.fillRoundRect(x, y, COUNTER_WIDTH, COUNTER_HEIGHT, 10, 10);
 
         gc.setStroke(locationColors.get(name));
-        gc.setLineWidth(2);
-        gc.strokeRoundRect(x, y, COUNTER_WIDTH, COUNTER_HEIGHT, 6, 6);
+        gc.setLineWidth(3);
+        gc.strokeRoundRect(x, y, COUNTER_WIDTH, COUNTER_HEIGHT, 10, 10);
 
         gc.setFill(Color.rgb(30, 30, 30));
-        gc.setFont(Font.font("Arial", FontWeight.BOLD, 8.5));
+        gc.setFont(Font.font("Arial", FontWeight.BOLD, 16));
         gc.setTextAlign(TextAlignment.LEFT);
 
         String displayName = getDisplayName(name);
         if (displayName.length() > 15) {
             displayName = displayName.substring(0, 13) + "..";
         }
-        gc.fillText(displayName, x + 5, y + 11);
+    gc.fillText(displayName, x + 12, y + 24);
 
-        gc.setFont(Font.font("Arial", FontWeight.NORMAL, 7.5));
+        gc.setFont(Font.font("Arial", FontWeight.NORMAL, 14));
         gc.setFill(Color.rgb(50, 50, 50));
 
         int entries = location != null ? location.getTotalEntries() : 0;
-        gc.fillText("E:" + entries, x + 5, y + 22);
+    gc.fillText("Entradas: " + entries, x + 12, y + 46);
 
         double util = location != null ? location.getUtilization(engine.getCurrentTime()) : 0;
-        gc.fillText(String.format("U:%.0f%%", util), x + 5, y + 32);
+    gc.fillText(String.format("Utilización: %.0f%%", util), x + 12, y + 65);
 
         int queue = location != null ? location.getQueueSize() : 0;
-        gc.fillText("C:" + queue, x + 80, y + 22);
+    gc.fillText("Cola: " + queue, x + 130, y + 46);
 
         double avgContent = location != null ? location.getAverageContent(engine.getCurrentTime()) : 0;
-        gc.fillText(String.format("P:%.1f", avgContent), x + 80, y + 32);
+    gc.fillText(String.format("Prom: %.1f", avgContent), x + 130, y + 65);
 
-        double barWidth = COUNTER_WIDTH - 10;
-        double barHeight = 3;
-        double barY = y + COUNTER_HEIGHT - 8;
+    double barWidth = COUNTER_WIDTH - 24;
+    double barHeight = 8;
+    double barY = y + COUNTER_HEIGHT - 17;
 
         gc.setFill(Color.rgb(220, 220, 220));
-        gc.fillRoundRect(x + 5, barY, barWidth, barHeight, 1.5, 1.5);
+        gc.fillRoundRect(x + 12, barY, barWidth, barHeight, 4, 4);
 
         double fillWidth = barWidth * (util / 100.0);
         Color barColor;
@@ -502,7 +502,7 @@ public class AnimationPanel extends Pane {
         else barColor = Color.rgb(244, 67, 54);
 
         gc.setFill(barColor);
-        gc.fillRoundRect(x + 5, barY, fillWidth, barHeight, 1.5, 1.5);
+        gc.fillRoundRect(x + 12, barY, fillWidth, barHeight, 4, 4);
     }
 
     private void detectVirtualTransits() {
@@ -533,7 +533,8 @@ public class AnimationPanel extends Pane {
             if (fromPos != null && toPos != null) {
                 double x = fromPos[0] + (toPos[0] - fromPos[0]) * progress;
                 double y = fromPos[1] + (toPos[1] - fromPos[1]) * progress;
-                drawMovingPiece(gc, x, y, entity.getId());
+                Color baseColor = locationColors.getOrDefault(to, Color.rgb(33, 150, 243));
+                drawMovingPiece(gc, x, y, entity.getId(), baseColor);
             }
         }
     }
@@ -546,7 +547,8 @@ public class AnimationPanel extends Pane {
             if (fromPos != null && toPos != null) {
                 double x = fromPos[0] + (toPos[0] - fromPos[0]) * vt.progress;
                 double y = fromPos[1] + (toPos[1] - fromPos[1]) * vt.progress;
-                drawMovingPiece(gc, x, y, vt.entityId);
+                Color baseColor = locationColors.getOrDefault(vt.to, Color.rgb(33, 150, 243));
+                drawMovingPiece(gc, x, y, vt.entityId, baseColor);
             }
         }
     }
@@ -577,16 +579,17 @@ public class AnimationPanel extends Pane {
         return new double[]{pos[0], pos[1] + BOX_SIZE / 2};
     }
 
-    private void drawMovingPiece(GraphicsContext gc, double x, double y, int entityId) {
+    private void drawMovingPiece(GraphicsContext gc, double x, double y, int entityId, Color baseColor) {
         double pieceSize = 16;
 
-        gc.setFill(Color.rgb(0, 0, 0, 0.3));
+        Color shadowColor = baseColor.deriveColor(0, 1.0, 0.4, 0.35);
+        gc.setFill(shadowColor);
         gc.fillOval(x - pieceSize/2 + 2, y - pieceSize/2 + 2, pieceSize, pieceSize);
 
-        gc.setFill(Color.rgb(33, 150, 243));
+        gc.setFill(baseColor);
         gc.fillOval(x - pieceSize/2, y - pieceSize/2, pieceSize, pieceSize);
 
-        gc.setStroke(Color.rgb(25, 118, 210));
+        gc.setStroke(baseColor.darker());
         gc.setLineWidth(2);
         gc.strokeOval(x - pieceSize/2, y - pieceSize/2, pieceSize, pieceSize);
     }
@@ -611,13 +614,13 @@ public class AnimationPanel extends Pane {
 
         gc.setFont(Font.font("Arial", FontWeight.NORMAL, 13));
 
-        double currentTime = engine.getCurrentTime();
-        int days = (int) (currentTime / (24 * 60));
-        int hours = (int) ((currentTime % (24 * 60)) / 60);
-        int minutes = (int) (currentTime % 60);
+    double currentTime = engine.getCurrentTime();
+    int totalMinutes = (int) Math.floor(currentTime);
+    int hours = totalMinutes / 60;
+    int minutes = totalMinutes % 60;
 
-        gc.fillText(String.format("⏱ Tiempo: %d días %02d:%02d", days, hours, minutes),
-                   infoX + 15, infoY + 60);
+    gc.fillText(String.format("⏱ Tiempo: %02d:%02d h", hours, minutes),
+           infoX + 15, infoY + 60);
 
         int totalArrivals = engine.getStatistics().getTotalArrivals();
         gc.fillText("📥 Arribos: " + totalArrivals, infoX + 15, infoY + 85);
@@ -645,6 +648,7 @@ public class AnimationPanel extends Pane {
         String to;
         double progress;
 
+        @SuppressWarnings("unused")
         VirtualTransit(int entityId, String from, String to) {
             this.entityId = entityId;
             this.from = from;

@@ -12,7 +12,10 @@ import javafx.scene.control.Tab; // Importa la clase Tab de JavaFX para crear pe
 import javafx.scene.control.TabPane; // Importa la clase TabPane de JavaFX para crear un contenedor con pestañas
 import javafx.scene.layout.VBox; // Importa la clase VBox de JavaFX para crear un contenedor de layout vertical
 
+import java.util.ArrayList; // Importa la clase ArrayList para ordenar locaciones dinámicamente
+import java.util.Collections; // Importa Collections para ordenar listas
 import java.util.HashMap; // Importa la clase HashMap de Java para crear mapas clave-valor
+import java.util.List; // Importa la interfaz List para trabajar con listas ordenadas
 import java.util.Map; // Importa la interfaz Map de Java para trabajar con mapas
 
 /** // Inicio del comentario Javadoc de la clase
@@ -52,7 +55,8 @@ public class RealTimeChartsPanel extends VBox { // Declaración de la clase púb
     } // Cierre del constructor RealTimeChartsPanel
 
     public void initializeState(Statistics stats) { // Método público que inicializa el estado de las gráficas con estadísticas iniciales recibiendo el objeto de estadísticas como parámetro
-        reset(); // Llama al método reset para limpiar todas las gráficas
+    reset(); // Llama al método reset para limpiar todas las gráficas
+    setupLocationSeries(stats); // Crea series dinámicamente para todas las locaciones registradas
         double initialTime = Math.max(0, stats.getSimulationDuration()); // Calcula el tiempo inicial como el máximo entre 0 y la duración de la simulación
         updateSystemPiecesChart(stats, initialTime); // Actualiza la gráfica de piezas en el sistema con el tiempo inicial
         updateUtilizationChart(stats, initialTime); // Actualiza la gráfica de utilización con el tiempo inicial
@@ -63,7 +67,7 @@ public class RealTimeChartsPanel extends VBox { // Declaración de la clase púb
     private void initializeCharts() { // Método privado que inicializa todas las gráficas y crea las pestañas
         tabPane = new TabPane(); // Crea una nueva instancia de TabPane para contener las pestañas de gráficas
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE); // Establece que las pestañas no puedan cerrarse por el usuario
-    tabPane.setStyle("-fx-font-size: 14px;"); // Establece el tamaño de fuente del TabPane a 14 píxeles usando CSS
+    tabPane.setStyle("-fx-font-size: 12px;"); // Establece un tamaño de fuente más compacto para el TabPane
 
         // Tab 1: Throughput
     // Tab 1: Piezas en Sistema
@@ -93,8 +97,8 @@ public class RealTimeChartsPanel extends VBox { // Declaración de la clase púb
         VBox container = new VBox(10); // Crea un nuevo VBox con espaciado de 10 píxeles entre elementos
         container.setPadding(new Insets(10)); // Establece un margen interno de 10 píxeles en todos los lados del contenedor
 
-        Label title = new Label("Arribos, Salidas y Piezas en Sistema"); // Crea una nueva etiqueta con el título de la gráfica
-        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;"); // Establece el estilo de la etiqueta con fuente de 16 píxeles y negrita usando CSS
+    Label title = new Label("Arribos, Salidas y Piezas en Sistema"); // Crea una nueva etiqueta con el título de la gráfica
+    title.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;"); // Establece un título compacto manteniendo la jerarquía visual
 
         NumberAxis xAxis = new NumberAxis(); // Crea un nuevo eje X numérico para la gráfica
         xAxis.setLabel("Tiempo (minutos)"); // Establece la etiqueta del eje X como "Tiempo (minutos)"
@@ -134,8 +138,8 @@ public class RealTimeChartsPanel extends VBox { // Declaración de la clase púb
         VBox container = new VBox(10); // Crea un nuevo VBox con espaciado de 10 píxeles entre elementos
         container.setPadding(new Insets(10)); // Establece un margen interno de 10 píxeles en todos los lados del contenedor
 
-        Label title = new Label("Utilización Actual de Locaciones (%)"); // Crea una nueva etiqueta con el título de la gráfica
-        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;"); // Establece el estilo de la etiqueta con fuente de 16 píxeles y negrita usando CSS
+    Label title = new Label("Utilización Actual de Locaciones (%)"); // Crea una nueva etiqueta con el título de la gráfica
+    title.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;"); // Establece un título compacto manteniendo la jerarquía visual
 
         CategoryAxis xAxis = new CategoryAxis(); // Crea un nuevo eje X categórico para mostrar nombres de locaciones
         xAxis.setLabel("Locación"); // Establece la etiqueta del eje X como "Locación"
@@ -163,8 +167,8 @@ public class RealTimeChartsPanel extends VBox { // Declaración de la clase púb
         VBox container = new VBox(10); // Crea un nuevo VBox con espaciado de 10 píxeles entre elementos
         container.setPadding(new Insets(10)); // Establece un margen interno de 10 píxeles en todos los lados del contenedor
 
-        Label title = new Label("Contenido de Locaciones en Tiempo Real"); // Crea una nueva etiqueta con el título de la gráfica
-        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;"); // Establece el estilo de la etiqueta con fuente de 16 píxeles y negrita usando CSS
+    Label title = new Label("Contenido de Locaciones en Tiempo Real"); // Crea una nueva etiqueta con el título de la gráfica
+    title.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;"); // Establece un título compacto manteniendo la jerarquía visual
 
         NumberAxis xAxis = new NumberAxis(); // Crea un nuevo eje X numérico para el tiempo
         xAxis.setLabel("Tiempo (minutos)"); // Establece la etiqueta del eje X como "Tiempo (minutos)"
@@ -180,17 +184,6 @@ public class RealTimeChartsPanel extends VBox { // Declaración de la clase púb
         locationContentChart.setAnimated(false); // Desactiva las animaciones de la gráfica para mejorar el rendimiento
         locationContentChart.setLegendSide(Side.RIGHT); // Establece que la leyenda debe mostrarse en el lado derecho de la gráfica
 
-        // Crear series para cada locación
-        String[] locations = {"LAVADORA", "ALMACEN_PINTURA", "PINTURA", // Define un array con los nombres de las locaciones para las cuales se mostrarán series
-                             "ALMACEN_HORNO", "HORNO", "INSPECCION"}; // Continuación del array de nombres de locaciones
-
-        for (String loc : locations) { // Bucle for-each que itera sobre cada nombre de locación en el array
-            XYChart.Series<Number, Number> series = new XYChart.Series<>(); // Crea una nueva serie de datos para esta locación
-            series.setName(loc); // Establece el nombre de la serie como el nombre de la locación
-            contentSeriesMap.put(loc, series); // Agrega la serie al mapa de series usando el nombre de la locación como clave
-            locationContentChart.getData().add(series); // Agrega la serie a la gráfica
-        } // Cierre del bucle for-each
-
     applyLargeFont(locationContentChart); // Aplica un tamaño de fuente grande a la gráfica
     VBox.setVgrow(locationContentChart, javafx.scene.layout.Priority.ALWAYS); // Establece que la gráfica debe expandirse verticalmente para ocupar todo el espacio disponible
         container.getChildren().addAll(title, locationContentChart); // Agrega la etiqueta de título y la gráfica al contenedor VBox
@@ -203,8 +196,8 @@ public class RealTimeChartsPanel extends VBox { // Declaración de la clase púb
         VBox container = new VBox(10); // Crea un nuevo VBox con espaciado de 10 píxeles entre elementos
         container.setPadding(new Insets(10)); // Establece un margen interno de 10 píxeles en todos los lados del contenedor
 
-        Label title = new Label("Tiempo Promedio en Sistema (minutos)"); // Crea una nueva etiqueta con el título de la gráfica
-        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;"); // Establece el estilo de la etiqueta con fuente de 16 píxeles y negrita usando CSS
+    Label title = new Label("Tiempo Promedio en Sistema (minutos)"); // Crea una nueva etiqueta con el título de la gráfica
+    title.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;"); // Establece un título compacto manteniendo la jerarquía visual
 
         NumberAxis xAxis = new NumberAxis(); // Crea un nuevo eje X numérico para el tiempo
         xAxis.setLabel("Tiempo (minutos)"); // Establece la etiqueta del eje X como "Tiempo (minutos)"
@@ -275,10 +268,10 @@ public class RealTimeChartsPanel extends VBox { // Declaración de la clase púb
         XYChart.Series<String, Number> series = new XYChart.Series<>(); // Crea una nueva serie de datos para la utilización
         series.setName("Utilización"); // Establece el nombre de la serie como "Utilización"
 
-        String[] locations = {"LAVADORA", "ALMACEN_PINTURA", "PINTURA", // Define un array con los nombres de las locaciones para las cuales se calculará la utilización
-                             "ALMACEN_HORNO", "HORNO", "INSPECCION"}; // Continuación del array de nombres de locaciones
+        List<String> locationNames = new ArrayList<>(stats.getLocations().keySet()); // Obtiene todos los nombres de locaciones registradas
+        Collections.sort(locationNames); // Ordena alfabéticamente para una lectura consistente
 
-        for (String locName : locations) { // Bucle for-each que itera sobre cada nombre de locación en el array
+        for (String locName : locationNames) { // Itera sobre cada locación disponible
             Location loc = stats.getLocation(locName); // Obtiene el objeto Location correspondiente a esta locación desde las estadísticas
             if (loc != null) { // Condición que verifica si la locación existe (no es null)
                 double util = loc.getUtilization(currentTime); // Obtiene el porcentaje de utilización de la locación en el tiempo actual
@@ -294,20 +287,16 @@ public class RealTimeChartsPanel extends VBox { // Declaración de la clase púb
     } // Cierre del método updateUtilizationChart
 
     private void updateLocationContentChart(Statistics stats, double currentTime) { // Método privado que actualiza la gráfica de contenido de locaciones recibiendo las estadísticas y el tiempo actual como parámetros
-        String[] locations = {"LAVADORA", "ALMACEN_PINTURA", "PINTURA", // Define un array con los nombres de las locaciones para las cuales se actualizará el contenido
-                             "ALMACEN_HORNO", "HORNO", "INSPECCION"}; // Continuación del array de nombres de locaciones
-
-        for (String locName : locations) { // Bucle for-each que itera sobre cada nombre de locación en el array
-            Location loc = stats.getLocation(locName); // Obtiene el objeto Location correspondiente a esta locación desde las estadísticas
-            if (loc != null) { // Condición que verifica si la locación existe (no es null)
-                XYChart.Series<Number, Number> series = contentSeriesMap.get(locName); // Obtiene la serie de datos correspondiente a esta locación desde el mapa de series
-                if (series != null) { // Condición que verifica si la serie existe (no es null)
-                    int content = loc.getCurrentContent(); // Obtiene el contenido actual de la locación (número de piezas)
-                    series.getData().add(new XYChart.Data<>(currentTime, content)); // Agrega un nuevo punto de datos a la serie con el tiempo actual y el contenido
-                    enforceSeriesLimit(series); // Llama al método para aplicar downsampling a la serie si excede el límite de puntos
-                } // Cierre del bloque condicional if interno
-            } // Cierre del bloque condicional if externo
-        } // Cierre del bucle for-each
+        for (Map.Entry<String, XYChart.Series<Number, Number>> entry : contentSeriesMap.entrySet()) { // Itera sobre cada serie asociada a una locación
+            String locName = entry.getKey(); // Obtiene el nombre de la locación
+            Location loc = stats.getLocation(locName); // Obtiene el objeto Location correspondiente a la locación
+            if (loc != null) { // Verifica que la locación exista en las estadísticas
+                XYChart.Series<Number, Number> series = entry.getValue(); // Obtiene la serie asociada
+                int content = loc.getCurrentContent(); // Obtiene el contenido actual de la locación
+                series.getData().add(new XYChart.Data<>(currentTime, content)); // Agrega un nuevo punto de datos con el tiempo actual
+                enforceSeriesLimit(series); // Aplica control de puntos máximos
+            }
+        }
     } // Cierre del método updateLocationContentChart
 
     private void updateAvgSystemTimeChart(Statistics stats, double currentTime) { // Método privado que actualiza la gráfica de tiempo promedio en sistema recibiendo las estadísticas y el tiempo actual como parámetros
@@ -364,7 +353,7 @@ public class RealTimeChartsPanel extends VBox { // Declaración de la clase púb
     } // Cierre del método getColorForUtilization
 
     private void applyLargeFont(Chart chart) { // Método privado que aplica un tamaño de fuente grande a una gráfica recibiendo la gráfica como parámetro
-        chart.setStyle("-fx-font-size: 14px;"); // Establece el tamaño de fuente de la gráfica a 14 píxeles usando CSS
+    chart.setStyle("-fx-font-size: 12px;"); // Ajusta el tamaño de fuente de la gráfica para armonizar con el resto de la UI
     } // Cierre del método applyLargeFont
 
     /** // Inicio del comentario Javadoc del método
@@ -377,11 +366,22 @@ public class RealTimeChartsPanel extends VBox { // Declaración de la clase púb
         utilizationChart.getData().clear(); // Limpia todos los datos de la gráfica de utilización
         avgTimeSeries.getData().clear(); // Limpia todos los datos de la serie de tiempo promedio
 
-        for (XYChart.Series<Number, Number> series : contentSeriesMap.values()) { // Bucle for-each que itera sobre cada serie en el mapa de series de contenido
-            series.getData().clear(); // Limpia todos los datos de la serie actual
-        } // Cierre del bucle for-each
+        locationContentChart.getData().clear(); // Elimina todas las series dibujadas en la gráfica de contenido
+        contentSeriesMap.clear(); // Vacía el mapa de series para reconstruirlo dinámicamente
 
         updateCounter = 0; // Reinicia el contador de actualizaciones a 0
 
     } // Cierre del método reset
+
+    private void setupLocationSeries(Statistics stats) { // Crea series dinámicas para cada locación registrada
+        List<String> locationNames = new ArrayList<>(stats.getLocations().keySet()); // Obtiene todos los nombres de locaciones
+        Collections.sort(locationNames); // Ordena los nombres para presentación consistente
+
+        for (String locName : locationNames) { // Crea una serie por cada locación disponible
+            XYChart.Series<Number, Number> series = new XYChart.Series<>(); // Genera la serie de datos
+            series.setName(locName); // Asigna el nombre visible en la leyenda
+            contentSeriesMap.put(locName, series); // Guarda la referencia en el mapa para actualizaciones posteriores
+            locationContentChart.getData().add(series); // Agrega la serie a la gráfica de contenido
+        }
+    }
 } // Cierre de la clase RealTimeChartsPanel

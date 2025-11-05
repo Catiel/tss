@@ -33,11 +33,6 @@ public class MainController { // Declaración de la clase pública MainControlle
     @FXML private Tab resultsTab; // Variable privada anotada con @FXML que representa la pestaña de resultados inyectada desde FXML
     @FXML private Tab chartsTab; // Variable privada anotada con @FXML que representa la pestaña de gráficas inyectada desde FXML
 
-    // Pestañas de resultados
-    @FXML private TabPane resultsTabPane; // Variable privada anotada con @FXML que representa el panel de pestañas de resultados inyectado desde FXML
-    @FXML private Tab locationStatsTab; // Variable privada anotada con @FXML que representa la pestaña de estadísticas de locaciones inyectada desde FXML
-    @FXML private Tab entityStatsTab; // Variable privada anotada con @FXML que representa la pestaña de estadísticas de entidades inyectada desde FXML
-
     // Tablas de resultados
     @FXML private TableView<LocationStats> locationTable; // Variable privada anotada con @FXML que representa la tabla de estadísticas de locaciones inyectada desde FXML
     @FXML private TableColumn<LocationStats, String> locNameCol; // Variable privada anotada con @FXML que representa la columna de nombre de locación inyectada desde FXML
@@ -54,7 +49,7 @@ public class MainController { // Declaración de la clase pública MainControlle
     private SimulationParameters parameters; // Variable privada que almacena los parámetros de configuración de la simulación
     private SimulationEngine engine; // Variable privada que almacena la referencia al motor de simulación
     private AnimationPanel animationPanel; // Variable privada que almacena el panel de animación personalizado
-    private ScrollPane animationScrollPane; // Variable privada que almacena el panel desplazable que contiene la animación
+    @FXML private ScrollPane animationScrollPane; // ScrollPane definido en FXML que contiene la animación
     private RealTimeChartsPanel realTimeChartsPanel; // NUEVO: Panel de gráficas en tiempo real // Variable privada que almacena el panel de gráficas en tiempo real
     private AnimationTimer animationTimer; // Variable privada que almacena el timer de animación para actualizar la interfaz periódicamente
     private Thread simulationThread; // Variable privada que almacena el hilo donde se ejecuta la simulación
@@ -75,22 +70,23 @@ public class MainController { // Declaración de la clase pública MainControlle
 
     private void setupAnimationPanel() { // Método privado que configura el panel de animación y lo agrega a la pestaña correspondiente
         animationPanel = new AnimationPanel(engine); // Crea una nueva instancia de AnimationPanel pasando el motor de simulación
-        animationScrollPane = createAnimationScrollPane(animationPanel); // Crea un ScrollPane que contiene el panel de animación
-        animationTab.setContent(animationScrollPane); // Establece el contenido de la pestaña de animación con el ScrollPane
+        configureAnimationScrollPane(); // Configura las propiedades del ScrollPane definido en FXML
+        animationScrollPane.setContent(animationPanel); // Inserta el panel de animación dentro del ScrollPane existente
         animationTab.setDisable(false); // Habilita la pestaña de animación para que pueda ser seleccionada
         animationPanel.render(); // Renderiza el panel de animación inicialmente para mostrar el estado inicial
     } // Cierre del método setupAnimationPanel
 
-    private ScrollPane createAnimationScrollPane(AnimationPanel panel) { // Método privado que crea y configura un ScrollPane para el panel de animación recibiendo el panel como parámetro y retornando el ScrollPane configurado
-        ScrollPane scrollPane = new ScrollPane(panel); // Crea un nuevo ScrollPane con el panel de animación como contenido
-        scrollPane.setFitToWidth(true); // Establece que el contenido debe ajustarse al ancho del ScrollPane
-        scrollPane.setFitToHeight(false); // Establece que el contenido NO debe ajustarse a la altura (mantiene su tamaño natural)
-        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED); // Establece que la barra de desplazamiento horizontal aparece solo cuando es necesaria
-        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED); // Establece que la barra de desplazamiento vertical aparece solo cuando es necesaria
-        scrollPane.setPannable(true); // Habilita el desplazamiento arrastrando con el mouse
-        scrollPane.setStyle("-fx-background-color: transparent;"); // Establece el fondo del ScrollPane como transparente usando CSS
-        return scrollPane; // Retorna el ScrollPane configurado
-    } // Cierre del método createAnimationScrollPane
+    private void configureAnimationScrollPane() { // Configura propiedades del ScrollPane proveniente del FXML
+        if (animationScrollPane == null) {
+            return; // Evita NullPointerException si la referencia no se resolvió
+        }
+        animationScrollPane.setFitToWidth(true); // Ajusta ancho automáticamente
+        animationScrollPane.setFitToHeight(false); // Mantiene alto natural para permitir desplazamiento vertical
+        animationScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED); // Barra horizontal solo cuando se necesita
+        animationScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED); // Barra vertical solo cuando se necesita
+        animationScrollPane.setPannable(true); // Permite arrastrar la vista con el mouse
+        animationScrollPane.setStyle("-fx-background-color: transparent;"); // Fondo transparente para combinar con el estilo general
+    }
 
     /** // Inicio del comentario Javadoc del método
      * NUEVO: Configura el panel de gráficas en tiempo real // Descripción del método nuevo
@@ -267,7 +263,7 @@ public class MainController { // Declaración de la clase pública MainControlle
         resetButton.setDisable(false); // Habilita el botón de reinicio
         parametersButton.setDisable(false); // Habilita el botón de parámetros para permitir cambios
 
-        timeLabel.setText("Tiempo: 0 días 00:00"); // Restablece la etiqueta de tiempo al estado inicial
+    updateTimeLabel(0); // Restablece la etiqueta de tiempo al estado inicial
         updateStatus("Listo para iniciar"); // Actualiza el mensaje de estado indicando que está listo
 
         locationTable.getItems().clear(); // Limpia todos los items de la tabla de locaciones
@@ -301,6 +297,7 @@ public class MainController { // Declaración de la clase pública MainControlle
         parametersButton.setDisable(false); // Habilita el botón de parámetros para permitir cambios
 
         updateStatus("Simulación completada"); // Actualiza el mensaje de estado indicando que la simulación finalizó
+    updateTimeLabel(engine.getCurrentTime()); // Refresca la etiqueta de tiempo con el valor final (ej. 60 horas)
         updateResults(); // Llama al método para actualizar las tablas de resultados con las estadísticas finales
 
         // NUEVO: Actualizar gráficas finales
@@ -314,15 +311,21 @@ public class MainController { // Declaración de la clase pública MainControlle
 
         Platform.runLater(() -> { // Programa la ejecución de código en el hilo de JavaFX para actualizar la interfaz de forma thread-safe
             // Actualizar tiempo
-            int days = (int) (currentTime / (24 * 60)); // Calcula el número de días dividiendo el tiempo total entre minutos por día
-            int hours = (int) ((currentTime % (24 * 60)) / 60); // Calcula las horas del día actual usando el módulo de minutos por día dividido entre 60
-            int minutes = (int) (currentTime % 60); // Calcula los minutos de la hora actual usando el módulo de 60
-            timeLabel.setText(String.format("Tiempo: %d días %02d:%02d", days, hours, minutes)); // Actualiza la etiqueta de tiempo con el formato "días HH:MM"
+            updateTimeLabel(currentTime); // Refresca la etiqueta de tiempo en formato HH:MM
 
             // Renderizar animación
             animationPanel.render(); // Renderiza el panel de animación con el estado actual del motor
+
+            updateLocationStats(); // Refresca la tabla de locaciones en tiempo real
         }); // Cierre del paréntesis de runLater
     } // Cierre del método updateDisplay
+
+    private void updateTimeLabel(double currentTime) { // Actualiza la etiqueta con formato HH:MM h
+        int totalMinutes = (int) Math.floor(currentTime); // Minutos transcurridos totales
+        int hours = totalMinutes / 60; // Conversión a horas completas
+        int minutes = totalMinutes % 60; // Minutos residuales
+        timeLabel.setText(String.format("Tiempo: %02d:%02d h", hours, minutes)); // Muestra el tiempo en formato HH:MM
+    }
 
     /** // Inicio del comentario Javadoc del método
      * NUEVO: Actualiza las gráficas en tiempo real durante la simulación // Descripción del método nuevo

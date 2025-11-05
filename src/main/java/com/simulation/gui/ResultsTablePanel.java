@@ -11,6 +11,7 @@ import javafx.scene.control.cell.PropertyValueFactory; // Importa la clase Prope
 import javafx.scene.layout.BorderPane; // Importa la clase BorderPane de JavaFX para el layout principal
 import javafx.scene.layout.VBox; // Importa la clase VBox de JavaFX para layout vertical
 
+import java.util.Arrays; // Importa la clase Arrays para trabajar con colecciones utilitarias
 import java.util.Map; // Importa la interfaz Map de Java para trabajar con mapas clave-valor
 
 /** // Inicio del comentario Javadoc de la clase
@@ -48,10 +49,11 @@ public class ResultsTablePanel extends BorderPane { // Declaración de la clase 
         VBox container = new VBox(10); // Crea un nuevo VBox con espaciado de 10 píxeles entre elementos
         container.setPadding(new Insets(10)); // Establece un margen interno de 10 píxeles en todos los lados del contenedor
 
-        Label title = new Label("Resumen de Locaciones"); // Crea una nueva etiqueta con el título de la tabla
-        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;"); // Establece el estilo de la etiqueta con fuente de 16 píxeles y negrita usando CSS
+    Label title = new Label("Resumen de Locaciones"); // Crea una nueva etiqueta con el título de la tabla
+    title.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;"); // Presenta un título compacto fuera de la animación
 
-        locationTable = new TableView<>(); // Crea una nueva instancia de TableView parametrizada con LocationRow para almacenar las filas de locaciones
+    locationTable = new TableView<>(); // Crea una nueva instancia de TableView parametrizada con LocationRow para almacenar las filas de locaciones
+    locationTable.setStyle("-fx-font-size: 13px;"); // Ajusta el tamaño del texto de la tabla para mantener la interfaz ligera
 
         // Columnas
         TableColumn<LocationRow, String> nameCol = new TableColumn<>("Locación"); // Crea una nueva columna de tabla parametrizada con LocationRow y String para mostrar nombres de locaciones con el encabezado "Locación"
@@ -136,10 +138,12 @@ public class ResultsTablePanel extends BorderPane { // Declaración de la clase 
             } // Cierre del método updateItem
         }); // Cierre del paréntesis de setCellFactory
 
-        locationTable.getColumns().addAll( // Agrega todas las columnas a la tabla de locaciones en el orden especificado
-            nameCol, capacityCol, entriesCol, timePerEntryCol, // Primera línea de columnas: nombre, capacidad, entradas, tiempo por entrada
-            avgContentCol, maxContentCol, currentContentCol, utilizationCol // Segunda línea de columnas: contenido promedio, contenido máximo, contenido actual, utilización
-        ); // Cierre del paréntesis de addAll
+        locationTable.getColumns().setAll( // Agrega todas las columnas a la tabla de locaciones en el orden especificado
+            Arrays.asList(
+                nameCol, capacityCol, entriesCol, timePerEntryCol,
+                avgContentCol, maxContentCol, currentContentCol, utilizationCol
+            )
+        ); // Cierre del paréntesis de setAll
 
         VBox.setVgrow(locationTable, javafx.scene.layout.Priority.ALWAYS); // Establece que la tabla debe expandirse verticalmente para ocupar todo el espacio disponible
         container.getChildren().addAll(title, locationTable); // Agrega la etiqueta de título y la tabla al contenedor VBox
@@ -151,10 +155,11 @@ public class ResultsTablePanel extends BorderPane { // Declaración de la clase 
         VBox container = new VBox(10); // Crea un nuevo VBox con espaciado de 10 píxeles entre elementos
         container.setPadding(new Insets(10)); // Establece un margen interno de 10 píxeles en todos los lados del contenedor
 
-        Label title = new Label("Resumen de Entidades (Piezas)"); // Crea una nueva etiqueta con el título de la tabla
-        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;"); // Establece el estilo de la etiqueta con fuente de 16 píxeles y negrita usando CSS
+    Label title = new Label("Resumen de Entidades (Piezas)"); // Crea una nueva etiqueta con el título de la tabla
+    title.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;"); // Presenta un título compacto fuera de la animación
 
-        entityTable = new TableView<>(); // Crea una nueva instancia de TableView parametrizada con EntityRow para almacenar las filas de entidades
+    entityTable = new TableView<>(); // Crea una nueva instancia de TableView parametrizada con EntityRow para almacenar las filas de entidades
+    entityTable.setStyle("-fx-font-size: 13px;"); // Ajusta el tamaño del texto de la tabla para mantener la interfaz ligera
 
         // Columnas
         TableColumn<EntityRow, String> metricCol = new TableColumn<>("Métrica"); // Crea una nueva columna parametrizada con EntityRow y String para mostrar nombres de métricas con el encabezado "Métrica"
@@ -171,7 +176,7 @@ public class ResultsTablePanel extends BorderPane { // Declaración de la clase 
         unitCol.setPrefWidth(150); // Establece el ancho preferido de la columna en 150 píxeles
         unitCol.setStyle("-fx-alignment: CENTER;"); // Establece la alineación del contenido de la columna al centro usando CSS
 
-        entityTable.getColumns().addAll(metricCol, valueCol, unitCol); // Agrega las tres columnas a la tabla de entidades en el orden especificado
+    entityTable.getColumns().setAll(Arrays.asList(metricCol, valueCol, unitCol)); // Agrega las tres columnas a la tabla de entidades en el orden especificado
 
         VBox.setVgrow(entityTable, javafx.scene.layout.Priority.ALWAYS); // Establece que la tabla debe expandirse verticalmente para ocupar todo el espacio disponible
         container.getChildren().addAll(title, entityTable); // Agrega la etiqueta de título y la tabla al contenedor VBox
