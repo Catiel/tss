@@ -272,20 +272,23 @@ public class MainController { // Declaración de la clase pública MainControlle
 
     @FXML
     private void handleParameters() {
-        // TODO: ParametersDialog necesita actualización para sistema Multi-Engrane
-        // Temporalmente deshabilitado
-        updateStatus("Diálogo de parámetros en desarrollo para Multi-Engrane");
-        
-        /* CÓDIGO ORIGINAL (sistema viejo):
+        if (engine != null && engine.isRunning()) {
+            updateStatus("Detén la simulación antes de cambiar parámetros");
+            return;
+        }
+
         ParametersDialog dialog = new ParametersDialog(parameters);
         dialog.showAndWait();
         if (dialog.isAccepted()) {
             engine = new SimulationEngine(parameters);
             setupAnimationPanel();
             realTimeChartsPanel.initializeState(engine.getStatistics());
+            locationTable.getItems().clear();
+            entityStatsText.clear();
             updateStatus("Parámetros actualizados");
+        } else {
+            updateStatus("Cambios de parámetros cancelados");
         }
-        */
     }
 
     private void handleSimulationComplete() { // Método privado que maneja la finalización de la simulación

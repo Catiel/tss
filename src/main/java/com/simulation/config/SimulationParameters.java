@@ -129,5 +129,44 @@ public class SimulationParameters {
     // Probabilidades de routing (2 getters)
     public double getInspeccion1ToEmpaqueProb() { return inspeccion1ToEmpaqueProb; }
     public double getInspeccion1ToInspeccion2Prob() { return inspeccion1ToInspeccion2Prob; }
+
+    // === SETTERS ===
+
+    public void setConveyor1Capacity(int value) { this.conveyor1Capacity = value; }
+    public void setAlmacenCapacity(int value) { this.almacenCapacity = value; }
+    public void setCortadoraCapacity(int value) { this.cortadoraCapacity = value; }
+    public void setTornoCapacity(int value) { this.tornoCapacity = value; }
+    public void setConveyor2Capacity(int value) { this.conveyor2Capacity = value; }
+    public void setFresadoraCapacity(int value) { this.fresadoraCapacity = value; }
+    public void setAlmacen2Capacity(int value) { this.almacen2Capacity = value; }
+    public void setPinturaCapacity(int value) { this.pinturaCapacity = value; }
+    public void setInspeccion1Capacity(int value) { this.inspeccion1Capacity = value; }
+    public void setInspeccion2Capacity(int value) { this.inspeccion2Capacity = value; }
+    public void setEmpaqueCapacity(int value) { this.empaqueCapacity = value; }
+    public void setEmbarqueCapacity(int value) { this.embarqueCapacity = value; }
+
+    public void setArrivalMeanTime(double value) { this.arrivalMeanTime = value; }
+    public void setConveyor1Time(double value) { this.conveyor1Time = value; }
+    public void setConveyor2Time(double value) { this.conveyor2Time = value; }
+    public void setTransportWorkerTime(double value) { this.transportWorkerTime = value; }
+
+    public void setAlmacenProcessMean(double value) { this.almacenProcessMean = value; }
+    public void setAlmacenProcessStdDev(double value) { this.almacenProcessStdDev = value; }
+    public void setCortadoraProcessMean(double value) { this.cortadoraProcessMean = value; }
+    public void setTornoProcessMean(double value) { this.tornoProcessMean = value; }
+    public void setTornoProcessStdDev(double value) { this.tornoProcessStdDev = value; }
+    public void setFresadoraProcessMean(double value) { this.fresadoraProcessMean = value; }
+    public void setAlmacen2ProcessMean(double value) { this.almacen2ProcessMean = value; }
+    public void setAlmacen2ProcessStdDev(double value) { this.almacen2ProcessStdDev = value; }
+    public void setPinturaProcessMean(double value) { this.pinturaProcessMean = value; }
+    public void setInspeccion1ProcessMean(double value) { this.inspeccion1ProcessMean = value; }
+    public void setInspeccion1ProcessStdDev(double value) { this.inspeccion1ProcessStdDev = value; }
+    public void setInspeccion2ProcessMean(double value) { this.inspeccion2ProcessMean = value; }
+    public void setEmpaqueProcessMean(double value) { this.empaqueProcessMean = value; }
+    public void setEmpaqueProcessStdDev(double value) { this.empaqueProcessStdDev = value; }
+    public void setEmbarqueProcessMean(double value) { this.embarqueProcessMean = value; }
+
+    public void setInspeccion1ToEmpaqueProb(double value) { this.inspeccion1ToEmpaqueProb = value; }
+    public void setInspeccion1ToInspeccion2Prob(double value) { this.inspeccion1ToInspeccion2Prob = value; }
 }
 
