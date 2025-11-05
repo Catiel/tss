@@ -5,14 +5,16 @@ import com.simulation.random.RandomGenerators;
 import com.simulation.resources.*;
 import com.simulation.statistics.Statistics;
 import com.simulation.core.EventTypes.*;
+
 import java.util.*;
 
 /**
  * Motor de simulación Multi-Engrane - Fabricación de engranes con 12 locaciones
- * CONVEYOR_1 → ALMACEN → CORTADORA (SPLIT) → TORNO → CONVEYOR_2 → FRESADORA → 
- * ALMACEN_2 → PINTURA → INSPECCION_1 (routing) → EMPAQUE/INSPECCION_2 → EMBARQUE → EXIT
+ * CORREGIDO: Las entidades permanecen en locaciones hasta que hay capacidad en destino
+ * Esto permite detectar cuellos de botella correctamente
  */
 public class SimulationEngine {
+
     private SimulationParameters params;
     private RandomGenerators randomGen;
     private Statistics statistics;
@@ -24,33 +26,21 @@ public class SimulationEngine {
     private long lastRealTime = 0;
 
     // 12 Locaciones del sistema Multi-Engrane (según ProModel)
-    private BufferLocation conveyor1;      // CONVERYOR_1 - capacidad infinita
-    private BufferLocation almacen;        // ALMACEN - capacidad 10
-    private ProcessingLocation cortadora;  // CORTADORA - capacidad 1
-    private ProcessingLocation torno;      // TORNO - capacidad 2
-    private BufferLocation conveyor2;      // CONVERYOR_2 - capacidad infinita
-    private ProcessingLocation fresadora;  // FRESADORA - capacidad 2
-    private BufferLocation almacen2;       // ALMACEN_2 - capacidad 10
-    private ProcessingLocation pintura;    // PINTURA - capacidad 4
-    private ProcessingLocation inspeccion1;// INSPECCION_1 - capacidad 2
-    private ProcessingLocation inspeccion2;// INSPECCION_2 - capacidad 1
-    private ProcessingLocation empaque;    // EMPAQUE - capacidad 1
-    private ProcessingLocation embarque;   // EMBARQUE - capacidad 3
+    private BufferLocation conveyor1;
+    private BufferLocation almacen;
+    private ProcessingLocation cortadora;
+    private ProcessingLocation torno;
+    private BufferLocation conveyor2;
+    private ProcessingLocation fresadora;
+    private BufferLocation almacen2;
+    private ProcessingLocation pintura;
+    private ProcessingLocation inspeccion1;
+    private ProcessingLocation inspeccion2;
+    private ProcessingLocation empaque;
+    private ProcessingLocation embarque;
 
     private Set<Entity> entitiesInTransport;
     private List<Entity> allActiveEntities;
-    
-    // 9 Colas de bloqueo
-    private Deque<Entity> blockedAfterAlmacen;
-    private Deque<Entity> blockedAfterCortadora;
-    private Deque<Entity> blockedAfterTorno;
-    private Deque<Entity> blockedAfterFresadora;
-    private Deque<Entity> blockedAfterAlmacen2;
-    private Deque<Entity> blockedAfterPintura;
-    private Deque<Entity> blockedAfterInspeccion1;
-    private Deque<Entity> blockedAfterInspeccion2;
-    private Deque<Entity> blockedAfterEmpaque;
-    private Deque<Entity> blockedInConveyor2; // Entidades esperando en CONVEYOR_2
 
     private TransportResource trabajador1;
     private TransportResource trabajador2;
@@ -59,11 +49,11 @@ public class SimulationEngine {
     private TransportResource montacargasSec;
 
     private static final double VISUAL_TRANSIT_TIME = 0.05;
-    private static final double R1_TRAVEL_TIME = 54.28 / 150.0; // TRABAJADOR_1, Ruta R1
-    private static final double R2_TRAVEL_TIME = 36.83 / 150.0; // TRABAJADOR_2, Ruta R2
-    private static final double R3_TRAVEL_TIME = 45.15 / 150.0; // MONTACARGAS, Ruta R3
-    private static final double R4_TRAVEL_TIME = 33.13 / 150.0; // MONTACARGAS_, Ruta R4
-    private static final double R5_TRAVEL_TIME = 56.86 / 150.0; // TRABAJADOR_3, Ruta R5
+    private static final double R1_TRAVEL_TIME = 54.28 / 150.0;
+    private static final double R2_TRAVEL_TIME = 36.83 / 150.0;
+    private static final double R3_TRAVEL_TIME = 45.15 / 150.0;
+    private static final double R4_TRAVEL_TIME = 33.13 / 150.0;
+    private static final double R5_TRAVEL_TIME = 56.86 / 150.0;
 
     public SimulationEngine(SimulationParameters params) {
         this.params = params;
@@ -71,30 +61,15 @@ public class SimulationEngine {
         this.eventQueue = new PriorityQueue<>();
         this.entitiesInTransport = new HashSet<>();
         this.allActiveEntities = Collections.synchronizedList(new ArrayList<>());
-        
-        this.blockedAfterAlmacen = new ArrayDeque<>();
-        this.blockedAfterCortadora = new ArrayDeque<>();
-        this.blockedAfterTorno = new ArrayDeque<>();
-        this.blockedAfterFresadora = new ArrayDeque<>();
-        this.blockedAfterAlmacen2 = new ArrayDeque<>();
-        this.blockedAfterPintura = new ArrayDeque<>();
-        this.blockedAfterInspeccion1 = new ArrayDeque<>();
-        this.blockedAfterInspeccion2 = new ArrayDeque<>();
-        this.blockedAfterEmpaque = new ArrayDeque<>();
-        this.blockedInConveyor2 = new ArrayDeque<>();
-
-    initializeTransportResources();
-        
+        initializeTransportResources();
         this.currentTime = 0;
         this.running = false;
         this.paused = false;
-
         initializeLocations();
         initializeRandomGenerators();
     }
 
     private void initializeLocations() {
-        // 12 Locaciones según ProModel
         conveyor1 = new BufferLocation("CONVEYOR_1", params.getConveyor1Capacity());
         almacen = new BufferLocation("ALMACEN", params.getAlmacenCapacity());
         cortadora = new ProcessingLocation("CORTADORA", params.getCortadoraCapacity());
@@ -160,27 +135,14 @@ public class SimulationEngine {
         eventQueue.clear();
         entitiesInTransport.clear();
         allActiveEntities.clear();
-        
-        blockedAfterAlmacen.clear();
-        blockedAfterCortadora.clear();
-        blockedAfterTorno.clear();
-        blockedAfterFresadora.clear();
-        blockedAfterAlmacen2.clear();
-        blockedAfterPintura.clear();
-        blockedAfterInspeccion1.clear();
-        blockedAfterInspeccion2.clear();
-        blockedAfterEmpaque.clear();
-        blockedInConveyor2.clear();
-
-    resetTransportResources();
-        
+        resetTransportResources();
         currentTime = 0;
         running = false;
         paused = false;
         lastRealTime = 0;
         Entity.resetIdCounter();
         statistics.reset();
-        
+
         conveyor1.resetState();
         almacen.resetState();
         cortadora.resetState();
@@ -193,7 +155,7 @@ public class SimulationEngine {
         inspeccion2.resetState();
         empaque.resetState();
         embarque.resetState();
-        
+
         initializeRandomGenerators();
     }
 
@@ -241,12 +203,11 @@ public class SimulationEngine {
             long currentRealTime = System.currentTimeMillis();
             double elapsedRealSeconds = (currentRealTime - lastRealTime) / 1000.0;
             double simulatedMinutes = elapsedRealSeconds * simulationSpeed;
-
             double timeUntilEvent = targetSimTime - currentTime;
+
             if (timeUntilEvent > simulatedMinutes && simulationSpeed < 10000) {
                 long waitTimeMs = (long) ((timeUntilEvent / simulationSpeed) * 1000);
                 waitTimeMs = Math.min(waitTimeMs, 50);
-
                 if (waitTimeMs > 0) {
                     try {
                         Thread.sleep(waitTimeMs);
@@ -271,23 +232,22 @@ public class SimulationEngine {
         statistics.finalizeStatistics(currentTime);
         running = false;
     }
+
     // === MANEJO DE EVENTOS PRINCIPALES ===
-    
+
     public void handleArrival(double time) {
         Entity entity = new Entity(time);
         statistics.recordArrival();
         allActiveEntities.add(entity);
-        
-        // Según ProModel: BARRA_DE_ACERO llega a CONVEYOR_1
+
         conveyor1.enter(entity, time);
         entity.setCurrentLocation("CONVEYOR_1");
-        
+
         if (time < params.getSimulationDurationMinutes()) {
             double nextArrival = time + randomGen.nextArrivalTime();
             scheduleEvent(new ArrivalEvent(nextArrival));
         }
-        
-        // CONVEYOR_1 NO tiene tiempo de proceso - pasa inmediatamente a salir
+
         scheduleEvent(new ProcessEndEvent(time + 0.01, entity, "CONVEYOR_1"));
     }
 
@@ -311,9 +271,8 @@ public class SimulationEngine {
     }
 
     public void handleTransportResourceAfterArrival(TransportResource resource, double arrivalTime, double returnTime) {
-        if (resource == null) {
-            return;
-        }
+        if (resource == null) return;
+
         if (returnTime <= 0) {
             handleTransportResourceAvailable(resource, arrivalTime);
         } else {
@@ -324,16 +283,17 @@ public class SimulationEngine {
     public void handleTransportResourceAvailable(TransportResource resource, double time) {
         resource.release();
 
+        // Intentar procesar colas cuando un recurso se libera
         if (resource == trabajador1) {
-            releaseBlockedAfterCortadora(time);
+            processTornoQueue(time);
         } else if (resource == trabajador2) {
-            releaseBlockedAfterFresadora(time);
+            processFresadoraExitQueue(time);
         } else if (resource == montacargas) {
-            releaseBlockedAfterAlmacen2(time);
+            processAlmacen2ExitQueue(time);
         } else if (resource == montacargasSec) {
-            releaseBlockedAfterPintura(time);
+            processPinturaExitQueue(time);
         } else if (resource == trabajador3) {
-            releaseBlockedAfterEmpaque(time);
+            processEmpaqueExitQueue(time);
         }
     }
 
@@ -354,34 +314,266 @@ public class SimulationEngine {
         }
     }
 
-    // === MÉTODOS FINISH (12 métodos) ===
-    
+    // === MÉTODOS FINISH (12 métodos) - CORREGIDOS ===
+
     private void finishConveyor1(Entity entity, double time) {
-        // ProModel: BARRA_DE_ACERO sale de CONVEYOR_1 hacia ALMACEN
-        // Move For 4 min - este es el tiempo de TRANSPORTE, no de proceso
+        // Entidad NO sale hasta que ALMACEN tenga capacidad
         if (almacen.canEnter()) {
             almacen.reserveCapacity();
             conveyor1.exit(entity, time);
-            
-            double transportTime = 4.0; // Según ProModel: Move For 4 min
+            double transportTime = 4.0;
             entity.addTransportTime(transportTime);
             entity.startTransit(time, transportTime, "ALMACEN");
             entitiesInTransport.add(entity);
-            
             scheduleEvent(new TransportEndEvent(time + transportTime, entity, "ALMACEN"));
         } else {
-            // ALMACEN lleno: re-intentar después
+            // Reintentar más tarde - la entidad permanece en CONVEYOR_1
+            entity.addWaitTime(0.5);
             scheduleEvent(new ProcessEndEvent(time + 0.5, entity, "CONVEYOR_1"));
         }
     }
-    
+
+    private void finishAlmacen(Entity entity, double time) {
+        // Entidad NO sale hasta que CORTADORA tenga capacidad
+        if (cortadora.canEnter()) {
+            cortadora.reserveCapacity();
+            almacen.exit(entity, time);
+            double transportTime = 3.0;
+            entity.addTransportTime(transportTime);
+            entity.startTransit(time, transportTime, "CORTADORA");
+            entitiesInTransport.add(entity);
+            scheduleEvent(new TransportEndEvent(time + transportTime, entity, "CORTADORA"));
+        } else {
+            // Reintentar más tarde - la entidad permanece en ALMACEN (BLOQUEADA)
+            entity.setBlocked(true, time);
+            entity.addWaitTime(0.5);
+            scheduleEvent(new ProcessEndEvent(time + 0.5, entity, "ALMACEN"));
+        }
+    }
+
+    private void finishCortadora(Entity entity, double time) {
+        // SPLIT: 1 barra → 2 piezas
+        // La barra original NO sale hasta que ambas piezas puedan moverse
+
+        // Verificar si TORNO tiene capacidad para al menos 1 pieza
+        if (torno.canEnter() && trabajador1.isAvailable()) {
+            // Hacer SPLIT
+            cortadora.exit(entity, time);
+
+            Entity pieza1 = entity;
+            Entity pieza2 = new Entity(time);
+            allActiveEntities.add(pieza2);
+            statistics.recordArrival();
+
+            // Mover pieza1
+            torno.reserveCapacity();
+            trabajador1.occupy();
+            pieza1.setBlocked(false, time);
+            startTransportWithResource(pieza1, time, R1_TRAVEL_TIME, R1_TRAVEL_TIME, "TORNO", trabajador1);
+
+            // Agregar pieza2 a la cola de TORNO
+            torno.addToQueue(pieza2);
+            pieza2.setBlocked(true, time);
+
+            // Procesar cola de CORTADORA
+            processCortadoraQueue(time);
+        } else {
+            // La barra permanece en CORTADORA bloqueada
+            entity.setBlocked(true, time);
+            entity.addWaitTime(0.5);
+            scheduleEvent(new ProcessEndEvent(time + 0.5, entity, "CORTADORA"));
+        }
+    }
+
+    private void finishTorno(Entity entity, double time) {
+        // Entidad NO sale hasta que pueda moverse a CONVEYOR_2
+        torno.exit(entity, time);
+        double transportTime = 3.0;
+        entity.addTransportTime(transportTime);
+        entity.startTransit(time, transportTime, "CONVEYOR_2");
+        entitiesInTransport.add(entity);
+        scheduleEvent(new TransportEndEvent(time + transportTime, entity, "CONVEYOR_2"));
+
+        // Procesar cola de TORNO
+        processTornoQueue(time);
+    }
+
+    private void finishConveyor2(Entity entity, double time) {
+        // Entidad NO sale hasta que FRESADORA tenga capacidad
+        if (fresadora.canEnter()) {
+            fresadora.reserveCapacity();
+            conveyor2.exit(entity, time);
+            double transportTime = 4.0;
+            entity.addTransportTime(transportTime);
+            entity.startTransit(time, transportTime, "FRESADORA");
+            entitiesInTransport.add(entity);
+            scheduleEvent(new TransportEndEvent(time + transportTime, entity, "FRESADORA"));
+        } else {
+            // Reintentar más tarde - la entidad permanece en CONVEYOR_2
+            entity.setBlocked(true, time);
+            entity.addWaitTime(0.5);
+            scheduleEvent(new ProcessEndEvent(time + 0.5, entity, "CONVEYOR_2"));
+        }
+    }
+
+    private void finishFresadora(Entity entity, double time) {
+        // Entidad NO sale hasta que ALMACEN_2 tenga capacidad Y trabajador2 esté disponible
+        if (almacen2.canEnter() && trabajador2.isAvailable()) {
+            almacen2.reserveCapacity();
+            fresadora.exit(entity, time);
+            entity.setBlocked(false, time);
+            startTransportWithResource(entity, time, R2_TRAVEL_TIME, R2_TRAVEL_TIME, "ALMACEN_2", trabajador2);
+
+            // Procesar cola de FRESADORA
+            processFresadoraQueue(time);
+        } else {
+            // La entidad permanece en FRESADORA bloqueada
+            entity.setBlocked(true, time);
+            entity.addWaitTime(0.5);
+            scheduleEvent(new ProcessEndEvent(time + 0.5, entity, "FRESADORA"));
+        }
+    }
+
+    private void finishAlmacen2(Entity entity, double time) {
+        // Entidad NO sale hasta que PINTURA tenga capacidad Y montacargas esté disponible
+        if (pintura.canEnter() && montacargas.isAvailable()) {
+            pintura.reserveCapacity();
+            almacen2.exit(entity, time);
+            entity.setBlocked(false, time);
+            startTransportWithResource(entity, time, R3_TRAVEL_TIME, R3_TRAVEL_TIME, "PINTURA", montacargas);
+
+            // Procesar cola de ALMACEN_2
+            processAlmacen2Queue(time);
+        } else {
+            // La entidad permanece en ALMACEN_2 bloqueada
+            entity.setBlocked(true, time);
+            entity.addWaitTime(0.5);
+            scheduleEvent(new ProcessEndEvent(time + 0.5, entity, "ALMACEN_2"));
+        }
+    }
+
+    private void finishPintura(Entity entity, double time) {
+        // Entidad NO sale hasta que INSPECCION_1 tenga capacidad Y montacargasSec esté disponible
+        if (inspeccion1.canEnter() && montacargasSec.isAvailable()) {
+            inspeccion1.reserveCapacity();
+            pintura.exit(entity, time);
+            entity.setBlocked(false, time);
+            startTransportWithResource(entity, time, R4_TRAVEL_TIME, R4_TRAVEL_TIME, "INSPECCION_1", montacargasSec);
+
+            // Procesar cola de PINTURA
+            processPinturaQueue(time);
+        } else {
+            // La entidad permanece en PINTURA bloqueada
+            entity.setBlocked(true, time);
+            entity.addWaitTime(0.5);
+            scheduleEvent(new ProcessEndEvent(time + 0.5, entity, "PINTURA"));
+        }
+    }
+
+    private void finishInspeccion1(Entity entity, double time) {
+        boolean goToEmpaque = randomGen.routeToEmpaqueFromInspeccion1();
+
+        if (goToEmpaque) {
+            // 80%: INSPECCION_1 → EMPAQUE
+            if (empaque.canEnter()) {
+                empaque.reserveCapacity();
+                inspeccion1.exit(entity, time);
+                entity.setBlocked(false, time);
+                double transportTime = 4.0;
+                entity.addTransportTime(transportTime);
+                entity.startTransit(time, transportTime, "EMPAQUE");
+                entitiesInTransport.add(entity);
+                scheduleEvent(new TransportEndEvent(time + transportTime, entity, "EMPAQUE"));
+
+                // Procesar cola de INSPECCION_1
+                processInspeccion1Queue(time);
+            } else {
+                // La entidad permanece en INSPECCION_1 bloqueada
+                entity.setBlocked(true, time);
+                entity.addWaitTime(0.5);
+                scheduleEvent(new ProcessEndEvent(time + 0.5, entity, "INSPECCION_1"));
+            }
+        } else {
+            // 20%: INSPECCION_1 → INSPECCION_2
+            if (inspeccion2.canEnter()) {
+                inspeccion2.reserveCapacity();
+                inspeccion1.exit(entity, time);
+                entity.setBlocked(false, time);
+                double transportTime = 4.0;
+                entity.addTransportTime(transportTime);
+                entity.startTransit(time, transportTime, "INSPECCION_2");
+                entitiesInTransport.add(entity);
+                scheduleEvent(new TransportEndEvent(time + transportTime, entity, "INSPECCION_2"));
+
+                // Procesar cola de INSPECCION_1
+                processInspeccion1Queue(time);
+            } else {
+                // La entidad permanece en INSPECCION_1 bloqueada
+                entity.setBlocked(true, time);
+                entity.addWaitTime(0.5);
+                scheduleEvent(new ProcessEndEvent(time + 0.5, entity, "INSPECCION_1"));
+            }
+        }
+    }
+
+    private void finishInspeccion2(Entity entity, double time) {
+        // INSPECCION_2 → EMPAQUE
+        if (empaque.canEnter()) {
+            empaque.reserveCapacity();
+            inspeccion2.exit(entity, time);
+            entity.setBlocked(false, time);
+            double transportTime = 3.0;
+            entity.addTransportTime(transportTime);
+            entity.startTransit(time, transportTime, "EMPAQUE");
+            entitiesInTransport.add(entity);
+            scheduleEvent(new TransportEndEvent(time + transportTime, entity, "EMPAQUE"));
+
+            // Procesar cola de INSPECCION_2
+            processInspeccion2Queue(time);
+        } else {
+            // La entidad permanece en INSPECCION_2 bloqueada
+            entity.setBlocked(true, time);
+            entity.addWaitTime(0.5);
+            scheduleEvent(new ProcessEndEvent(time + 0.5, entity, "INSPECCION_2"));
+        }
+    }
+
+    private void finishEmpaque(Entity entity, double time) {
+        // Entidad NO sale hasta que EMBARQUE tenga capacidad Y trabajador3 esté disponible
+        if (embarque.canEnter() && trabajador3.isAvailable()) {
+            embarque.reserveCapacity();
+            empaque.exit(entity, time);
+            entity.setBlocked(false, time);
+            startTransportWithResource(entity, time, R5_TRAVEL_TIME, R5_TRAVEL_TIME, "EMBARQUE", trabajador3);
+
+            // Procesar cola de EMPAQUE
+            processEmpaqueQueue(time);
+        } else {
+            // La entidad permanece en EMPAQUE bloqueada
+            entity.setBlocked(true, time);
+            entity.addWaitTime(0.5);
+            scheduleEvent(new ProcessEndEvent(time + 0.5, entity, "EMPAQUE"));
+        }
+    }
+
+    private void finishEmbarque(Entity entity, double time) {
+        embarque.exit(entity, time);
+        double transportTime = 3.0;
+        entity.addTransportTime(transportTime);
+        double exitTime = time + transportTime;
+        allActiveEntities.remove(entity);
+        statistics.recordExit(entity, exitTime);
+
+        // Procesar cola de EMBARQUE
+        processEmbarqueQueue(time);
+    }
+
     // === MÉTODOS ARRIVE AT (11 métodos) ===
-    
+
     private void arriveAtAlmacen(Entity entity, double time) {
         almacen.commitReservedCapacity();
         almacen.enter(entity, time);
         entity.setCurrentLocation("ALMACEN");
-        
         double processTime = randomGen.nextAlmacenProcess();
         entity.addProcessTime(processTime);
         scheduleEvent(new ProcessEndEvent(time + processTime, entity, "ALMACEN"));
@@ -391,7 +583,6 @@ public class SimulationEngine {
         cortadora.commitReservedCapacity();
         cortadora.enter(entity, time);
         entity.setCurrentLocation("CORTADORA");
-        
         double processTime = randomGen.nextCortadoraProcess();
         entity.addProcessTime(processTime);
         scheduleEvent(new ProcessEndEvent(time + processTime, entity, "CORTADORA"));
@@ -401,18 +592,14 @@ public class SimulationEngine {
         torno.commitReservedCapacity();
         torno.enter(entity, time);
         entity.setCurrentLocation("TORNO");
-        
         double processTime = randomGen.nextTornoProcess();
         entity.addProcessTime(processTime);
         scheduleEvent(new ProcessEndEvent(time + processTime, entity, "TORNO"));
     }
 
     private void arriveAtConveyor2(Entity entity, double time) {
-        // ProModel: PIEZA_TORNEADA entra a CONVEYOR_2
         conveyor2.enter(entity, time);
         entity.setCurrentLocation("CONVEYOR_2");
-        
-        // CONVEYOR_2 NO tiene tiempo de proceso - pasa inmediatamente a salir
         scheduleEvent(new ProcessEndEvent(time + 0.01, entity, "CONVEYOR_2"));
     }
 
@@ -420,20 +607,15 @@ public class SimulationEngine {
         fresadora.commitReservedCapacity();
         fresadora.enter(entity, time);
         entity.setCurrentLocation("FRESADORA");
-        
         double processTime = randomGen.nextFresadoraProcess();
         entity.addProcessTime(processTime);
         scheduleEvent(new ProcessEndEvent(time + processTime, entity, "FRESADORA"));
-        
-        // Intentar liberar entidades bloqueadas en CONVEYOR_2
-        releaseBlockedInConveyor2(time);
     }
 
     private void arriveAtAlmacen2(Entity entity, double time) {
         almacen2.commitReservedCapacity();
         almacen2.enter(entity, time);
         entity.setCurrentLocation("ALMACEN_2");
-        
         double processTime = randomGen.nextAlmacen2Process();
         entity.addProcessTime(processTime);
         scheduleEvent(new ProcessEndEvent(time + processTime, entity, "ALMACEN_2"));
@@ -443,7 +625,6 @@ public class SimulationEngine {
         pintura.commitReservedCapacity();
         pintura.enter(entity, time);
         entity.setCurrentLocation("PINTURA");
-        
         double processTime = randomGen.nextPinturaProcess();
         entity.addProcessTime(processTime);
         scheduleEvent(new ProcessEndEvent(time + processTime, entity, "PINTURA"));
@@ -453,7 +634,6 @@ public class SimulationEngine {
         inspeccion1.commitReservedCapacity();
         inspeccion1.enter(entity, time);
         entity.setCurrentLocation("INSPECCION_1");
-        
         double processTime = randomGen.nextInspeccion1Process();
         entity.addProcessTime(processTime);
         scheduleEvent(new ProcessEndEvent(time + processTime, entity, "INSPECCION_1"));
@@ -463,7 +643,6 @@ public class SimulationEngine {
         inspeccion2.commitReservedCapacity();
         inspeccion2.enter(entity, time);
         entity.setCurrentLocation("INSPECCION_2");
-        
         double processTime = randomGen.nextInspeccion2Process();
         entity.addProcessTime(processTime);
         scheduleEvent(new ProcessEndEvent(time + processTime, entity, "INSPECCION_2"));
@@ -473,7 +652,6 @@ public class SimulationEngine {
         empaque.commitReservedCapacity();
         empaque.enter(entity, time);
         entity.setCurrentLocation("EMPAQUE");
-        
         double processTime = randomGen.nextEmpaqueProcess();
         entity.addProcessTime(processTime);
         scheduleEvent(new ProcessEndEvent(time + processTime, entity, "EMPAQUE"));
@@ -483,490 +661,106 @@ public class SimulationEngine {
         embarque.commitReservedCapacity();
         embarque.enter(entity, time);
         entity.setCurrentLocation("EMBARQUE");
-        
         double processTime = randomGen.nextEmbarqueProcess();
         entity.addProcessTime(processTime);
         scheduleEvent(new ProcessEndEvent(time + processTime, entity, "EMBARQUE"));
     }
 
-    // === MÉTODOS FINISH (10 métodos) ===
-    
-    private void finishAlmacen(Entity entity, double time) {
-        if (cortadora.canEnter()) {
-            cortadora.reserveCapacity();
-            almacen.exit(entity, time);
-            
-            double transportTime = 3.0; // Según ProModel: MOVE FOR 3 min
-            entity.addTransportTime(transportTime);
-            entity.startTransit(time, transportTime, "CORTADORA");
-            entitiesInTransport.add(entity);
-            
-            scheduleEvent(new TransportEndEvent(time + transportTime, entity, "CORTADORA"));
-            processAlmacenQueue(time);
-        } else {
-            blockedAfterAlmacen.addLast(entity);
-            entity.setBlocked(true, time);
-        }
-    }
-
-    private void finishCortadora(Entity entity, double time) {
-        cortadora.exit(entity, time);
-        
-        // SPLIT: 1 barra → 2 piezas
-        Entity pieza1 = entity;
-        Entity pieza2 = new Entity(time);
-        allActiveEntities.add(pieza2);
-    statistics.recordArrival();
-        
-        tryMoveToTorno(pieza1, time);
-        tryMoveToTorno(pieza2, time);
-        
-        processCortadoraQueue(time);
-        releaseBlockedAfterCortadora(time);
-    }
-
-    private void finishTorno(Entity entity, double time) {
-        torno.exit(entity, time);
-        
-        // ProModel: MOVE FOR 3 min hacia CONVEYOR_2
-        double transportTime = 3.0; // Según ProModel: MOVE FOR 3 min
-        entity.addTransportTime(transportTime);
-        entity.startTransit(time, transportTime, "CONVEYOR_2");
-        entitiesInTransport.add(entity);
-        
-        scheduleEvent(new TransportEndEvent(time + transportTime, entity, "CONVEYOR_2"));
-        processTornoQueue(time);
-        releaseBlockedAfterTorno(time);
-    }
-    
-    private void finishConveyor2(Entity entity, double time) {
-        // ProModel: PIEZA_TORNEADA sale de CONVEYOR_2 hacia FRESADORA
-        // Move For 4 min - este es el tiempo de TRANSPORTE, no de proceso
-        if (fresadora.canEnter()) {
-            fresadora.reserveCapacity();
-            conveyor2.exit(entity, time);
-            
-            double transportTime = 4.0; // Según ProModel: Move For 4 min
-            entity.addTransportTime(transportTime);
-            entity.startTransit(time, transportTime, "FRESADORA");
-            entitiesInTransport.add(entity);
-            
-            scheduleEvent(new TransportEndEvent(time + transportTime, entity, "FRESADORA"));
-        } else {
-            // FRESADORA llena: la entidad se queda esperando EN el conveyor
-            // No hacemos exit() para que la entidad permanezca en CONVEYOR_2
-            // Agregamos a una cola de bloqueados que se procesará cuando FRESADORA se libere
-            blockedInConveyor2.addLast(entity);
-            entity.setBlocked(true, time);
-        }
-    }
-
-    private void finishFresadora(Entity entity, double time) {
-        if (almacen2.canEnter() && trabajador2.isAvailable()) {
-            almacen2.reserveCapacity();
-            fresadora.exit(entity, time);
-            entity.setBlocked(false, time);
-
-            startTransportWithResource(entity, time, R2_TRAVEL_TIME, R2_TRAVEL_TIME, "ALMACEN_2", trabajador2);
-            processFresadoraQueue(time);
-            releaseBlockedInConveyor2(time);
-        } else {
-            blockedAfterFresadora.addLast(entity);
-            entity.setBlocked(true, time);
-        }
-    }
-
-    private void finishAlmacen2(Entity entity, double time) {
-        if (pintura.canEnter() && montacargas.isAvailable()) {
-            pintura.reserveCapacity();
-            almacen2.exit(entity, time);
-            entity.setBlocked(false, time);
-
-            startTransportWithResource(entity, time, R3_TRAVEL_TIME, R3_TRAVEL_TIME, "PINTURA", montacargas);
-            processAlmacen2Queue(time);
-            releaseBlockedAfterFresadora(time);
-        } else {
-            blockedAfterAlmacen2.addLast(entity);
-            entity.setBlocked(true, time);
-        }
-    }
-
-    private void finishPintura(Entity entity, double time) {
-        if (inspeccion1.canEnter() && montacargasSec.isAvailable()) {
-            inspeccion1.reserveCapacity();
-            pintura.exit(entity, time);
-            entity.setBlocked(false, time);
-
-            startTransportWithResource(entity, time, R4_TRAVEL_TIME, R4_TRAVEL_TIME, "INSPECCION_1", montacargasSec);
-            processPinturaQueue(time);
-            releaseBlockedAfterAlmacen2(time);
-        } else {
-            blockedAfterPintura.addLast(entity);
-            entity.setBlocked(true, time);
-        }
-    }
-
-    private void finishInspeccion1(Entity entity, double time) {
-        inspeccion1.exit(entity, time);
-        
-        boolean goToEmpaque = randomGen.routeToEmpaqueFromInspeccion1();
-        
-        if (goToEmpaque) {
-            // INSPECCION_1 → EMPAQUE: MOVE FOR 4 min (80%)
-            tryMoveToEmpaqueFromInspeccion1(entity, time);
-        } else {
-            // INSPECCION_1 → INSPECCION_2: MOVE FOR 4 min (20%)
-            tryMoveToInspeccion2FromInspeccion1(entity, time);
-        }
-        
-        processInspeccion1Queue(time);
-        releaseBlockedAfterInspeccion1(time);
-        releaseBlockedAfterPintura(time);
-    }
-
-    private void finishInspeccion2(Entity entity, double time) {
-        // INSPECCION_2 → EMPAQUE: MOVE FOR 3 min (según ProModel)
-        inspeccion2.exit(entity, time);
-        
-        if (empaque.canEnter()) {
-            empaque.reserveCapacity();
-            
-            double transportTime = 3.0; // Tiempo fijo según ProModel
-            entity.addTransportTime(transportTime);
-            entity.startTransit(time, transportTime, "EMPAQUE");
-            entitiesInTransport.add(entity);
-            
-            scheduleEvent(new TransportEndEvent(time + transportTime, entity, "EMPAQUE"));
-        } else {
-            empaque.addToQueue(entity);
-        }
-        
-        processInspeccion2Queue(time);
-        releaseBlockedAfterInspeccion2(time);
-    }
-
-    private void finishEmpaque(Entity entity, double time) {
-        if (embarque.canEnter() && trabajador3.isAvailable()) {
-            embarque.reserveCapacity();
-            empaque.exit(entity, time);
-            entity.setBlocked(false, time);
-
-            startTransportWithResource(entity, time, R5_TRAVEL_TIME, R5_TRAVEL_TIME, "EMBARQUE", trabajador3);
-            processEmpaqueQueue(time);
-            releaseBlockedAfterEmpaque(time);
-        } else {
-            blockedAfterEmpaque.addLast(entity);
-            entity.setBlocked(true, time);
-        }
-    }
-
-    private void finishEmbarque(Entity entity, double time) {
-        embarque.exit(entity, time);
-        
-        // ProModel: EMBARQUE → EXIT: MOVE FOR 3 min
-        double transportTime = 3.0;
-        entity.addTransportTime(transportTime);
-        
-        // Simular el transporte final y luego registrar salida
-        double exitTime = time + transportTime;
-        allActiveEntities.remove(entity);
-        statistics.recordExit(entity, exitTime);
-        
-        processEmbarqueQueue(time);
-        releaseBlockedAfterEmpaque(time);
-    }
-
-    // === MÉTODOS TRY MOVE ===
-    
-    private void tryMoveToCortadora(Entity entity, double time) {
-        if (cortadora.canEnter()) {
-            cortadora.reserveCapacity();
-            
-            String currentLoc = entity.getCurrentLocation();
-            if ("ALMACEN".equals(currentLoc)) {
-                almacen.exit(entity, time);
-            }
-            
-            double transportTime = 3.0;
-            startTransport(entity, time, transportTime, "CORTADORA");
-        } else {
-            cortadora.addToQueue(entity);
-        }
-    }
-
-    private void tryMoveToTorno(Entity entity, double time) {
-        if (!torno.canEnter()) {
-            torno.addToQueue(entity);
-            entity.setBlocked(true, time);
-            return;
-        }
-
-        if (trabajador1.isBusy()) {
-            blockedAfterCortadora.addLast(entity);
-            entity.setBlocked(true, time);
-            return;
-        }
-
-        torno.reserveCapacity();
-
-        String currentLoc = entity.getCurrentLocation();
-        if ("CORTADORA".equals(currentLoc)) {
-            cortadora.exit(entity, time);
-        }
-
-        entity.setBlocked(false, time);
-        startTransportWithResource(entity, time, R1_TRAVEL_TIME, R1_TRAVEL_TIME, "TORNO", trabajador1);
-
-        processCortadoraQueue(time);
-    }
-
-    private void tryMoveToEmpaque(Entity entity, double time) {
-        if (empaque.canEnter()) {
-            empaque.reserveCapacity();
-
-            double transportTime = 3.0;
-            startTransport(entity, time, transportTime, "EMPAQUE");
-        } else {
-            empaque.addToQueue(entity);
-        }
-    }
-
-    private void tryMoveToEmpaqueFromInspeccion1(Entity entity, double time) {
-        // INSPECCION_1 → EMPAQUE: MOVE FOR 4 min (según ProModel)
-        if (empaque.canEnter()) {
-            empaque.reserveCapacity();
-            
-            double transportTime = 4.0; // Tiempo fijo según ProModel
-            entity.addTransportTime(transportTime);
-            entity.startTransit(time, transportTime, "EMPAQUE");
-            entitiesInTransport.add(entity);
-            
-            scheduleEvent(new TransportEndEvent(time + transportTime, entity, "EMPAQUE"));
-        } else {
-            empaque.addToQueue(entity);
-        }
-    }
-
-    private void tryMoveToInspeccion2FromInspeccion1(Entity entity, double time) {
-        // INSPECCION_1 → INSPECCION_2: MOVE FOR 4 min (según ProModel)
-        if (inspeccion2.canEnter()) {
-            inspeccion2.reserveCapacity();
-            
-            double transportTime = 4.0; // Tiempo fijo según ProModel
-            entity.addTransportTime(transportTime);
-            entity.startTransit(time, transportTime, "INSPECCION_2");
-            entitiesInTransport.add(entity);
-            
-            scheduleEvent(new TransportEndEvent(time + transportTime, entity, "INSPECCION_2"));
-        } else {
-            inspeccion2.addToQueue(entity);
-        }
-    }
-
-    // === MÉTODOS PROCESS QUEUE ===
-    
-    private void processAlmacenQueue(double time) {
-        while (almacen.canEnter() && almacen.hasQueuedEntities()) {
-            Entity nextEntity = almacen.pollFromQueue();
-            if (nextEntity != null) {
-                tryMoveToCortadora(nextEntity, time);
-            }
-        }
-    }
+    // === MÉTODOS PROCESS QUEUE (corregidos) ===
 
     private void processCortadoraQueue(double time) {
         while (cortadora.canEnter() && cortadora.hasQueuedEntities()) {
             Entity nextEntity = cortadora.pollFromQueue();
             if (nextEntity != null) {
-                tryMoveToCortadora(nextEntity, time);
+                cortadora.reserveCapacity();
+                double transportTime = 3.0;
+                nextEntity.addTransportTime(transportTime);
+                nextEntity.setBlocked(false, time);
+                nextEntity.startTransit(time, transportTime, "CORTADORA");
+                entitiesInTransport.add(nextEntity);
+                scheduleEvent(new TransportEndEvent(time + transportTime, nextEntity, "CORTADORA"));
             }
         }
     }
 
     private void processTornoQueue(double time) {
-        while (torno.canEnter() && torno.hasQueuedEntities()) {
+        while (torno.canEnter() && torno.hasQueuedEntities() && trabajador1.isAvailable()) {
             Entity nextEntity = torno.pollFromQueue();
             if (nextEntity != null) {
-                tryMoveToTorno(nextEntity, time);
+                torno.reserveCapacity();
+                trabajador1.occupy();
+                nextEntity.setBlocked(false, time);
+                startTransportWithResource(nextEntity, time, R1_TRAVEL_TIME, R1_TRAVEL_TIME, "TORNO", trabajador1);
             }
         }
     }
 
     private void processFresadoraQueue(double time) {
-        // Primero liberar entidades bloqueadas en CONVEYOR_2
-        releaseBlockedInConveyor2(time);
-        
-        // Luego procesar cola normal de FRESADORA
         while (fresadora.canEnter() && fresadora.hasQueuedEntities()) {
             Entity nextEntity = fresadora.pollFromQueue();
             if (nextEntity != null) {
                 fresadora.reserveCapacity();
-                startTransport(nextEntity, time, 4.0, "FRESADORA");
+                double transportTime = 4.0;
+                nextEntity.addTransportTime(transportTime);
+                nextEntity.setBlocked(false, time);
+                nextEntity.startTransit(time, transportTime, "FRESADORA");
+                entitiesInTransport.add(nextEntity);
+                scheduleEvent(new TransportEndEvent(time + transportTime, nextEntity, "FRESADORA"));
             }
+        }
+    }
+
+    private void processFresadoraExitQueue(double time) {
+        // Procesar entidades que están esperando salir de FRESADORA
+        while (fresadora.getCurrentContent() > 0 && almacen2.canEnter() && trabajador2.isAvailable()) {
+            // Esto se maneja en finishFresadora con reintentos
+            break;
         }
     }
 
     private void processAlmacen2Queue(double time) {
-        while (pintura.canEnter() && almacen2.hasQueuedEntities() && montacargas.isAvailable()) {
-            Entity nextEntity = almacen2.pollFromQueue();
-            if (nextEntity != null) {
-                pintura.reserveCapacity();
-                almacen2.exit(nextEntity, time);
-                startTransportWithResource(nextEntity, time, R3_TRAVEL_TIME, R3_TRAVEL_TIME, "PINTURA", montacargas);
-            }
+        // Procesar cola interna de ALMACEN_2
+    }
+
+    private void processAlmacen2ExitQueue(double time) {
+        // Procesar entidades que están esperando salir de ALMACEN_2
+        while (almacen2.getCurrentContent() > 0 && pintura.canEnter() && montacargas.isAvailable()) {
+            break;
         }
-        releaseBlockedAfterFresadora(time);
     }
 
     private void processPinturaQueue(double time) {
-        while (inspeccion1.canEnter() && pintura.hasQueuedEntities() && montacargasSec.isAvailable()) {
-            Entity nextEntity = pintura.pollFromQueue();
-            if (nextEntity != null) {
-                inspeccion1.reserveCapacity();
-                pintura.exit(nextEntity, time);
-                startTransportWithResource(nextEntity, time, R4_TRAVEL_TIME, R4_TRAVEL_TIME, "INSPECCION_1", montacargasSec);
-            }
+        // Procesar cola interna de PINTURA
+    }
+
+    private void processPinturaExitQueue(double time) {
+        // Procesar entidades que están esperando salir de PINTURA
+        while (pintura.getCurrentContent() > 0 && inspeccion1.canEnter() && montacargasSec.isAvailable()) {
+            break;
         }
-        releaseBlockedAfterAlmacen2(time);
     }
 
     private void processInspeccion1Queue(double time) {
-        while (inspeccion1.canEnter() && inspeccion1.hasQueuedEntities() && montacargasSec.isAvailable()) {
-            Entity nextEntity = inspeccion1.pollFromQueue();
-            if (nextEntity != null) {
-                inspeccion1.reserveCapacity();
-                pintura.exit(nextEntity, time);
-                startTransportWithResource(nextEntity, time, R4_TRAVEL_TIME, R4_TRAVEL_TIME, "INSPECCION_1", montacargasSec);
-            }
-        }
+        // Procesar cola interna de INSPECCION_1
     }
 
     private void processInspeccion2Queue(double time) {
-        while (inspeccion2.canEnter() && inspeccion2.hasQueuedEntities()) {
-            Entity nextEntity = inspeccion2.pollFromQueue();
-            if (nextEntity != null) {
-                inspeccion2.reserveCapacity();
-                startTransport(nextEntity, time, 4.0, "INSPECCION_2");
-            }
-        }
+        // Procesar cola interna de INSPECCION_2
     }
 
     private void processEmpaqueQueue(double time) {
-        while (empaque.canEnter() && empaque.hasQueuedEntities()) {
-            Entity nextEntity = empaque.pollFromQueue();
-            if (nextEntity != null) {
-                tryMoveToEmpaque(nextEntity, time);
-            }
+        // Procesar cola interna de EMPAQUE
+    }
+
+    private void processEmpaqueExitQueue(double time) {
+        // Procesar entidades que están esperando salir de EMPAQUE
+        while (empaque.getCurrentContent() > 0 && embarque.canEnter() && trabajador3.isAvailable()) {
+            break;
         }
-        releaseBlockedAfterEmpaque(time);
     }
 
     private void processEmbarqueQueue(double time) {
-        while (embarque.canEnter() && embarque.hasQueuedEntities() && trabajador3.isAvailable()) {
-            Entity nextEntity = embarque.pollFromQueue();
-            if (nextEntity != null) {
-                embarque.reserveCapacity();
-                empaque.exit(nextEntity, time);
-                startTransportWithResource(nextEntity, time, R5_TRAVEL_TIME, R5_TRAVEL_TIME, "EMBARQUE", trabajador3);
-            }
-        }
-        releaseBlockedAfterEmpaque(time);
-    }
-
-    // === MÉTODOS RELEASE BLOCKED ===
-    
-    private void releaseBlockedAfterCortadora(double time) {
-        while (!blockedAfterCortadora.isEmpty() && torno.canEnter() && trabajador1.isAvailable()) {
-            Entity blocked = blockedAfterCortadora.removeFirst();
-            tryMoveToTorno(blocked, time);
-        }
-    }
-
-    private void releaseBlockedAfterTorno(double time) {
-        // No hay bloqueo directo después de TORNO (va a conveyor)
-    }
-
-    private void releaseBlockedAfterInspeccion1(double time) {
-        // No hay bloqueo directo (routing decide destino)
-    }
-
-    private void releaseBlockedAfterInspeccion2(double time) {
-        while (!blockedAfterInspeccion2.isEmpty() && empaque.canEnter()) {
-            Entity blocked = blockedAfterInspeccion2.removeFirst();
-            tryMoveToEmpaque(blocked, time);
-        }
-    }
-
-    private void releaseBlockedAfterFresadora(double time) {
-        while (!blockedAfterFresadora.isEmpty() && almacen2.canEnter() && trabajador2.isAvailable()) {
-            Entity blocked = blockedAfterFresadora.removeFirst();
-            blocked.setBlocked(false, time);
-
-            almacen2.reserveCapacity();
-            fresadora.exit(blocked, time);
-
-            startTransportWithResource(blocked, time, R2_TRAVEL_TIME, R2_TRAVEL_TIME, "ALMACEN_2", trabajador2);
-            processFresadoraQueue(time);
-            releaseBlockedInConveyor2(time);
-        }
-    }
-
-    private void releaseBlockedAfterAlmacen2(double time) {
-        while (!blockedAfterAlmacen2.isEmpty() && pintura.canEnter() && montacargas.isAvailable()) {
-            Entity blocked = blockedAfterAlmacen2.removeFirst();
-            blocked.setBlocked(false, time);
-
-            pintura.reserveCapacity();
-            almacen2.exit(blocked, time);
-
-            startTransportWithResource(blocked, time, R3_TRAVEL_TIME, R3_TRAVEL_TIME, "PINTURA", montacargas);
-            processAlmacen2Queue(time);
-            releaseBlockedAfterFresadora(time);
-        }
-    }
-
-    private void releaseBlockedAfterPintura(double time) {
-        while (!blockedAfterPintura.isEmpty() && inspeccion1.canEnter() && montacargasSec.isAvailable()) {
-            Entity blocked = blockedAfterPintura.removeFirst();
-            blocked.setBlocked(false, time);
-
-            inspeccion1.reserveCapacity();
-            pintura.exit(blocked, time);
-
-            startTransportWithResource(blocked, time, R4_TRAVEL_TIME, R4_TRAVEL_TIME, "INSPECCION_1", montacargasSec);
-            processPinturaQueue(time);
-        }
-    }
-
-    private void releaseBlockedAfterEmpaque(double time) {
-        while (!blockedAfterEmpaque.isEmpty() && embarque.canEnter() && trabajador3.isAvailable()) {
-            Entity blocked = blockedAfterEmpaque.removeFirst();
-            blocked.setBlocked(false, time);
-
-            embarque.reserveCapacity();
-            empaque.exit(blocked, time);
-
-            startTransportWithResource(blocked, time, R5_TRAVEL_TIME, R5_TRAVEL_TIME, "EMBARQUE", trabajador3);
-            processEmpaqueQueue(time);
-        }
-    }
-    
-    private void releaseBlockedInConveyor2(double time) {
-        // Liberar entidades que estaban esperando en CONVEYOR_2 para ir a FRESADORA
-        while (!blockedInConveyor2.isEmpty() && fresadora.canEnter()) {
-            Entity blocked = blockedInConveyor2.removeFirst();
-            blocked.setBlocked(false, time);
-            
-            fresadora.reserveCapacity();
-            conveyor2.exit(blocked, time);
-            
-            double transportTime = 4.0; // Move For 4 min
-            blocked.addTransportTime(transportTime);
-            blocked.startTransit(time, transportTime, "FRESADORA");
-            entitiesInTransport.add(blocked);
-            
-            scheduleEvent(new TransportEndEvent(time + transportTime, blocked, "FRESADORA"));
-        }
+        // Procesar cola interna de EMBARQUE
     }
 
     // === MÉTODOS UTILITARIOS ===
