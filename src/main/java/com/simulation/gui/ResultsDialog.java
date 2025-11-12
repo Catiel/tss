@@ -1,5 +1,6 @@
 package com.simulation.gui;
 
+import com.simulation.resources.Location;
 import com.simulation.statistics.Statistics;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -53,10 +54,16 @@ public class ResultsDialog {
         resultsGrid.setStyle("-fx-background-color: #ecf0f1; -fx-background-radius: 10px; -fx-padding: 20px;");
 
         // Calcular métricas específicas
-        double avgWaitTimeSillas = stats.getLocation("SALA_SILLAS") != null 
-            ? stats.getLocation("SALA_SILLAS").getAverageTimePerEntry(currentTime) 
-            : 0.0;
+    double avgWaitTime = stats.getAverageWaitTime();
+        double avgSystemTime = stats.getAverageSystemTime();
+        double avgProcessTime = stats.getAverageProcessTime();
         
+        double avgSeatTime = 0.0;
+        Location salaSillas = stats.getLocation("SALA_SILLAS");
+        if (salaSillas != null) {
+            avgSeatTime = salaSillas.getAverageTimePerEntry(currentTime);
+        }
+
         double avgSeated = stats.getAverageSeated(currentTime);
         double avgStanding = stats.getAverageStanding(currentTime);
         int maxWaitingArea = stats.getMaxWaitingArea();
@@ -70,25 +77,25 @@ public class ResultsDialog {
             : 0.0;
 
         // a) Tiempo promedio de espera en la fila
-        addResultRow(resultsGrid, 0, "a)", "Tiempo promedio de espera en la fila:", 
-            String.format("%.2f minutos", avgWaitTimeSillas), "#3498db");
+        addResultRow(resultsGrid, 0, "a)", "Tiempo promedio de espera en la fila.", 
+            String.format("%.2f minutos", avgSeatTime), "#3498db");
 
         // b) Número promedio de personas sentadas
-        addResultRow(resultsGrid, 1, "b)", "Número promedio de personas sentadas:", 
+        addResultRow(resultsGrid, 1, "b)", "Número promedio de personas sentadas.", 
             String.format("%.2f personas", avgSeated), "#27ae60");
 
         // c) Número promedio de personas de pie
-        addResultRow(resultsGrid, 2, "c)", "Número promedio de personas de pie:", 
+        addResultRow(resultsGrid, 2, "c)", "Número promedio de personas de pie.", 
             String.format("%.2f personas", avgStanding), "#f39c12");
 
         // d) Número máximo de personas en la sala de espera
-        addResultRow(resultsGrid, 3, "d)", "Número máximo de personas en sala de espera:", 
+        addResultRow(resultsGrid, 3, "d)", "Número máximo de personas en la sala de espera.", 
             String.format("%d personas", maxWaitingArea), "#e74c3c");
 
         // e) Utilización de los servidores
         String utilizationText = String.format("Servidor 1: %.2f%%  |  Servidor 2: %.2f%%", 
             utilizationServidor1, utilizationServidor2);
-        addResultRow(resultsGrid, 4, "e)", "Utilización de los servidores:", 
+        addResultRow(resultsGrid, 4, "e)", "Utilización de los servidores.", 
             utilizationText, "#9b59b6");
 
         // Estadísticas adicionales
@@ -105,6 +112,9 @@ public class ResultsDialog {
         addSimpleRow(additionalGrid, 2, "Clientes en Sistema:", String.format("%d clientes", 
             stats.getTotalArrivals() - stats.getTotalExits()));
         addSimpleRow(additionalGrid, 3, "Throughput:", String.format("%.2f clientes/hora", stats.getThroughput()));
+        addSimpleRow(additionalGrid, 4, "Tiempo promedio en sistema:", String.format("%.2f minutos", avgSystemTime));
+    addSimpleRow(additionalGrid, 5, "Tiempo promedio en operación:", String.format("%.2f minutos", avgProcessTime));
+    addSimpleRow(additionalGrid, 6, "Tiempo promedio esperando:", String.format("%.2f minutos", avgWaitTime));
 
         // Botón de cerrar
         Button closeButton = new Button("Cerrar");
@@ -123,7 +133,7 @@ public class ResultsDialog {
             closeButton
         );
 
-        Scene scene = new Scene(mainLayout, 700, 650);
+    Scene scene = new Scene(mainLayout, 760, 660);
         dialog.setScene(scene);
         dialog.setResizable(false);
         dialog.show();
@@ -132,12 +142,22 @@ public class ResultsDialog {
     private void addResultRow(GridPane grid, int row, String letter, String description, String value, String color) {
         Label letterLabel = new Label(letter);
         letterLabel.setStyle(String.format("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: %s;", color));
+        letterLabel.setMinWidth(32);
+        letterLabel.setPrefWidth(32);
+        letterLabel.setAlignment(Pos.CENTER_RIGHT);
 
         Label descLabel = new Label(description);
         descLabel.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+        descLabel.setWrapText(true);
+        descLabel.setMaxWidth(360);
+        GridPane.setHgrow(descLabel, javafx.scene.layout.Priority.ALWAYS);
 
         Label valueLabel = new Label(value);
         valueLabel.setStyle(String.format("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: %s;", color));
+        valueLabel.setMinWidth(150);
+        valueLabel.setMaxWidth(Double.MAX_VALUE);
+        valueLabel.setWrapText(true);
+        valueLabel.setAlignment(Pos.CENTER_RIGHT);
 
         grid.add(letterLabel, 0, row);
         grid.add(descLabel, 1, row);
