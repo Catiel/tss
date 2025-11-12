@@ -1,9 +1,9 @@
-package com.simulation.gui; // Declaración del paquete que contiene las clases de interfaz gráfica de usuario (GUI) de la simulación
+package com.simulation.gui;
 
-import com.simulation.core.Entity; // Importa la clase Entity para acceder a las entidades que fluyen por el sistema
-import com.simulation.core.SimulationEngine; // Importa la clase SimulationEngine para acceder al motor de simulación y sus datos
-import com.simulation.resources.InspectionStation; // Importa la clase InspectionStation para acceder a estaciones de inspección especializadas
-import com.simulation.resources.Location; // Importa la clase Location para acceder a las locaciones del sistema
+import com.simulation.core.Entity;
+import com.simulation.core.DigemicEngine; // Motor DIGEMIC
+import com.simulation.resources.InspectionStation;
+import com.simulation.resources.Location;
 import javafx.scene.canvas.Canvas; // Importa la clase Canvas de JavaFX para dibujar gráficos 2D
 import javafx.scene.canvas.GraphicsContext; // Importa la clase GraphicsContext de JavaFX para realizar operaciones de dibujo en el canvas
 import javafx.scene.layout.Pane; // Importa la clase Pane de JavaFX para crear un contenedor de layout
@@ -17,96 +17,94 @@ import java.util.*; // Importa todas las clases del paquete util de Java (List, 
 /** // Inicio del comentario Javadoc de la clase
  * Panel MEJORADO - Muestra TODAS las locaciones aunque no existan en el motor // Descripción de la clase indicando que dibuja todas las locaciones configuradas
  */ // Fin del comentario Javadoc
-public class AnimationPanel extends Pane { // Declaración de la clase pública AnimationPanel que extiende Pane para ser un panel que muestra la animación visual del sistema
-    private Canvas canvas; // Variable privada que almacena el lienzo (canvas) sobre el cual se dibuja la animación
-    private SimulationEngine engine; // Variable privada que almacena la referencia al motor de simulación para acceder a sus datos
+public class AnimationPanel extends Pane {
+    private Canvas canvas;
+    private DigemicEngine engine; // Motor DIGEMIC
 
-    private static final double WIDTH = 1600; // Constante estática final que define el ancho del canvas en píxeles
-    private static final double HEIGHT = 1250; // Constante estática final que define la altura del canvas en píxeles
-    private static final double BOX_SIZE = 120; // Constante estática final que define el tamaño de las cajas que representan locaciones en píxeles
-    private static final double COUNTER_WIDTH = 210; // Constante estática final que define el ancho de los contadores de estadísticas en píxeles
-    private static final double COUNTER_HEIGHT = 86; // Constante estática final que define la altura de los contadores de estadísticas en píxeles
-    private static final double COUNTER_START_X = 1300; // Constante estática final que define la posición X inicial de los contadores en píxeles
-    private static final double COUNTER_START_Y = 80; // Constante estática final que define la posición Y inicial de los contadores en píxeles
+    private static final double WIDTH = 1600;
+    private static final double HEIGHT = 1250;
+    private static final double BOX_SIZE = 120;
+    private static final double COUNTER_WIDTH = 210;
+    private static final double COUNTER_HEIGHT = 86;
+    private static final double COUNTER_START_X = 1300;
+    private static final double COUNTER_START_Y = 80;
 
-    private Map<String, double[]> locationPositions; // Variable privada que almacena un mapa de nombres de locaciones a sus posiciones [x, y] en el canvas
-    private Map<String, Color> locationColors; // Variable privada que almacena un mapa de nombres de locaciones a sus colores representativos
-    private Map<String, String> locationIcons; // Variable privada que almacena un mapa de nombres de locaciones a sus iconos emoji
+    private Map<String, double[]> locationPositions;
+    private Map<String, Color> locationColors;
+    private Map<String, String> locationIcons;
 
-    private List<VirtualTransit> virtualTransits; // Variable privada que almacena una lista de tránsitos virtuales para animaciones suaves
-    private double gearRotation = 0; // Variable privada que almacena el ángulo de rotación actual de los engranes para animación, inicializada en 0
+    private List<VirtualTransit> virtualTransits;
+    private double gearRotation = 0;
 
-    public AnimationPanel(SimulationEngine engine) { // Constructor público que inicializa el panel de animación recibiendo el motor de simulación como parámetro
-        this.engine = engine; // Asigna el motor de simulación recibido a la variable de instancia
-        this.canvas = new Canvas(WIDTH, HEIGHT); // Crea un nuevo canvas con el ancho y altura definidos
-        this.locationPositions = new HashMap<>(); // Crea un nuevo HashMap vacío para almacenar las posiciones de las locaciones
-        this.locationColors = new HashMap<>(); // Crea un nuevo HashMap vacío para almacenar los colores de las locaciones
-        this.locationIcons = new HashMap<>(); // Crea un nuevo HashMap vacío para almacenar los iconos de las locaciones
-        this.virtualTransits = new ArrayList<>(); // Crea una nueva ArrayList vacía para almacenar los tránsitos virtuales
+    public AnimationPanel(DigemicEngine engine) { // Constructor recibe DigemicEngine
+        this.engine = engine;
+        this.canvas = new Canvas(WIDTH, HEIGHT);
+        this.locationPositions = new HashMap<>();
+        this.locationColors = new HashMap<>();
+        this.locationIcons = new HashMap<>();
+        this.virtualTransits = new ArrayList<>();
 
-        initializePositions(); // Llama al método para inicializar las posiciones de todas las locaciones en el canvas
-        initializeColors(); // Llama al método para inicializar los colores de todas las locaciones
-        initializeIcons(); // Llama al método para inicializar los iconos de todas las locaciones
+        initializePositions();
+        initializeColors();
+        initializeIcons();
 
-        getChildren().add(canvas); // Agrega el canvas como hijo de este Pane para que sea visible
+        getChildren().add(canvas);
         setMinSize(WIDTH, HEIGHT); // Establece el tamaño mínimo del panel con el ancho y altura definidos
         setPrefSize(WIDTH, HEIGHT); // Establece el tamaño preferido del panel con el ancho y altura definidos
         setMaxSize(WIDTH, HEIGHT); // Establece el tamaño máximo del panel con el ancho y altura definidos
     } // Cierre del constructor AnimationPanel
 
-    private void initializePositions() { // Método privado que inicializa las posiciones [x, y] de todas las 12 locaciones en el canvas
-        double y1 = 100; // Define la coordenada Y de la primera fila de locaciones
-        double spacing = 220; // Define el espaciado horizontal entre locaciones en píxeles
+    // === MÉTODOS HELPER PARA ACCESO AL MOTOR ===
+    
+    private Location getLocationFromEngine(String name) {
+        return engine.getLocation(name);
+    }
 
-        locationPositions.put("CONVEYOR_1", new double[]{60, y1}); // Establece la posición del primer conveyor en [60, 100]
-        locationPositions.put("ALMACEN", new double[]{60 + spacing, y1}); // Establece la posición del almacén en [280, 100]
-        locationPositions.put("CORTADORA", new double[]{60 + spacing * 2, y1}); // Establece la posición de la cortadora en [500, 100]
-        locationPositions.put("TORNO", new double[]{60 + spacing * 3, y1}); // Establece la posición del torno en [720, 100]
+    private double getCurrentTimeFromEngine() {
+        return engine.getCurrentTime();
+    }
 
-        double y2 = 320; // Define la coordenada Y de la segunda fila de locaciones
-        locationPositions.put("CONVEYOR_2", new double[]{60 + spacing * 3, y2}); // Establece la posición del segundo conveyor en [720, 320]
-        locationPositions.put("FRESADORA", new double[]{60 + spacing * 2, y2}); // Establece la posición de la fresadora en [500, 320]
-        locationPositions.put("ALMACEN_2", new double[]{60 + spacing, y2}); // Establece la posición del segundo almacén en [280, 320]
-        locationPositions.put("PINTURA", new double[]{60, y2}); // Establece la posición de pintura en [60, 320]
+    private List<Entity> getAllActiveEntitiesFromEngine() {
+        return engine.getAllActiveEntities();
+    }
 
-        double y3 = 540; // Define la coordenada Y de la tercera fila de locaciones
-        locationPositions.put("INSPECCION_1", new double[]{60, y3}); // Establece la posición de la primera inspección en [60, 540]
+    private com.simulation.statistics.Statistics getStatisticsFromEngine() {
+        return engine.getStatistics();
+    }
 
-        double y4 = 680; // Define la coordenada Y de la cuarta fila de locaciones
-        locationPositions.put("INSPECCION_2", new double[]{60, y4}); // Establece la posición de la segunda inspección en [60, 680]
 
-        locationPositions.put("EMPAQUE", new double[]{330, 610}); // Establece la posición de empaque en [330, 610]
-        locationPositions.put("EMBARQUE", new double[]{600, 610}); // Establece la posición de embarque en [600, 610]
+    private void initializePositions() { // Método privado que inicializa las posiciones X-Y de cada locación DIGEMIC en el canvas
+        // Layout de oficina de pasaportes mejorado para representar el flujo correcto
+        
+        // Columna izquierda: Entrada y Zona de Formas
+        locationPositions.put("ENTRADA", new double[]{60, 150}); // Puerta de entrada (arriba izquierda)
+        locationPositions.put("ZONA_FORMAS", new double[]{60, 380}); // Área de llenado de formularios (abajo de entrada)
+        
+        // Columna central: Áreas de espera
+        locationPositions.put("SALA_SILLAS", new double[]{380, 150}); // Sala con sillas (centro arriba) - 40 capacidad
+        locationPositions.put("SALA_DE_PIE", new double[]{380, 380}); // Área de pie (centro abajo) - sin límite
+        
+        // Columna derecha: Ventanillas de servicio
+        locationPositions.put("SERVIDOR_1", new double[]{700, 200}); // Primera ventanilla (derecha arriba)
+        locationPositions.put("SERVIDOR_2", new double[]{700, 380}); // Segunda ventanilla (derecha abajo)
     } // Cierre del método initializePositions
 
-    private void initializeColors() { // Método privado que inicializa los colores representativos de todas las locaciones
-        locationColors.put("CONVEYOR_1", Color.rgb(96, 125, 139)); // Establece el color del primer conveyor como gris azulado
-        locationColors.put("ALMACEN", Color.rgb(255, 241, 118)); // Establece el color del almacén como amarillo claro
-        locationColors.put("CORTADORA", Color.rgb(239, 83, 80)); // Establece el color de la cortadora como rojo
-        locationColors.put("TORNO", Color.rgb(129, 199, 132)); // Establece el color del torno como verde
-        locationColors.put("CONVEYOR_2", Color.rgb(96, 125, 139)); // Establece el color del segundo conveyor como gris azulado
-        locationColors.put("FRESADORA", Color.rgb(156, 39, 176)); // Establece el color de la fresadora como morado
-        locationColors.put("ALMACEN_2", Color.rgb(255, 241, 118)); // Establece el color del segundo almacén como amarillo claro
-        locationColors.put("PINTURA", Color.rgb(255, 167, 38)); // Establece el color de pintura como naranja
-        locationColors.put("INSPECCION_1", Color.rgb(189, 189, 189)); // Establece el color de la primera inspección como gris
-        locationColors.put("INSPECCION_2", Color.rgb(189, 189, 189)); // Establece el color de la segunda inspección como gris
-        locationColors.put("EMPAQUE", Color.rgb(121, 85, 72)); // Establece el color de empaque como marrón
-        locationColors.put("EMBARQUE", Color.rgb(33, 150, 243)); // Establece el color de embarque como azul
+    private void initializeColors() { // Método privado que inicializa los colores representativos de todas las locaciones DIGEMIC
+        locationColors.put("ENTRADA", Color.rgb(76, 175, 80)); // Verde para entrada
+        locationColors.put("ZONA_FORMAS", Color.rgb(255, 193, 7)); // Amarillo para zona de formularios
+        locationColors.put("SALA_SILLAS", Color.rgb(33, 150, 243)); // Azul para sala con sillas
+        locationColors.put("SALA_DE_PIE", Color.rgb(156, 39, 176)); // Morado para área de pie
+        locationColors.put("SERVIDOR_1", Color.rgb(244, 67, 54)); // Rojo para servidor 1
+        locationColors.put("SERVIDOR_2", Color.rgb(244, 67, 54)); // Rojo para servidor 2
     } // Cierre del método initializeColors
 
-    private void initializeIcons() { // Método privado que inicializa los iconos emoji de todas las locaciones
-        locationIcons.put("CONVEYOR_1", "→"); // Establece el icono del primer conveyor como flecha derecha
-        locationIcons.put("ALMACEN", "📦"); // Establece el icono del almacén como caja
-        locationIcons.put("CORTADORA", "✂"); // Establece el icono de la cortadora como tijeras
-        locationIcons.put("TORNO", "⚙"); // Establece el icono del torno como engrane
-        locationIcons.put("CONVEYOR_2", "→"); // Establece el icono del segundo conveyor como flecha derecha
-        locationIcons.put("FRESADORA", "🔧"); // Establece el icono de la fresadora como llave inglesa
-        locationIcons.put("ALMACEN_2", "📦"); // Establece el icono del segundo almacén como caja
-        locationIcons.put("PINTURA", "🎨"); // Establece el icono de pintura como paleta de pintor
-        locationIcons.put("INSPECCION_1", "🔍"); // Establece el icono de la primera inspección como lupa
-        locationIcons.put("INSPECCION_2", "🔍"); // Establece el icono de la segunda inspección como lupa
-        locationIcons.put("EMPAQUE", "📦"); // Establece el icono de empaque como caja
-        locationIcons.put("EMBARQUE", "🚚"); // Establece el icono de embarque como camión
+    private void initializeIcons() { // Método privado que inicializa los iconos emoji de todas las locaciones DIGEMIC
+        locationIcons.put("ENTRADA", "🚪"); // Puerta de entrada
+        locationIcons.put("ZONA_FORMAS", "📝"); // Formularios
+        locationIcons.put("SALA_SILLAS", "�"); // Sillas
+        locationIcons.put("SALA_DE_PIE", "🧍"); // Personas de pie
+        locationIcons.put("SERVIDOR_1", "�"); // Servidor/ventanilla 1
+        locationIcons.put("SERVIDOR_2", "�"); // Servidor/ventanilla 2
     } // Cierre del método initializeIcons
 
     public void render() { // Método público que renderiza (dibuja) toda la animación en el canvas
@@ -117,7 +115,7 @@ public class AnimationPanel extends Pane { // Declaración de la clase pública 
 
         drawTitle(gc); // Llama al método para dibujar el título del sistema
         drawConnections(gc); // Llama al método para dibujar las conexiones (flechas) entre locaciones
-        drawAllLocations(gc); // Llama al método para dibujar todas las 12 locaciones
+        drawAllLocations(gc); // Llama al método para dibujar todas las 6 locaciones DIGEMIC
         drawCounters(gc); // Llama al método para dibujar los contadores de estadísticas de cada locación
 
         detectVirtualTransits(); // Llama al método para actualizar y limpiar los tránsitos virtuales
@@ -125,9 +123,8 @@ public class AnimationPanel extends Pane { // Declaración de la clase pública 
         drawVirtualTransitEntities(gc); // Llama al método para dibujar las entidades virtuales en tránsito
 
         drawGlobalInfo(gc); // Llama al método para dibujar el panel de información global del sistema
-        drawExitLabel(gc); // Llama al método para dibujar la etiqueta de salida (EXIT)
 
-        gearRotation += 0.05; // Incrementa el ángulo de rotación de los engranes en 0.05 radianes para animación
+        gearRotation += 0.05; // Incrementa el ángulo de rotación para animaciones
         if (gearRotation > 2 * Math.PI) { // Condición que verifica si el ángulo de rotación excede 2π (360 grados)
             gearRotation = 0; // Reinicia el ángulo de rotación a 0 para comenzar de nuevo
         } // Cierre del bloque condicional if
@@ -137,31 +134,33 @@ public class AnimationPanel extends Pane { // Declaración de la clase pública 
         gc.setFill(Color.rgb(33, 33, 33)); // Establece el color de relleno como gris muy oscuro para el título
         gc.setFont(Font.font("Arial", FontWeight.BOLD, 26)); // Establece la fuente como Arial, negrita, tamaño 26
         gc.setTextAlign(TextAlignment.CENTER); // Establece la alineación del texto al centro
-        gc.fillText("⚙️ SISTEMA DE FABRICACIÓN DE ENGRANES - MULTI-ENGRANE", WIDTH / 2, 35); // Dibuja el título centrado en la parte superior del canvas
+        gc.fillText("🛂 DIGEMIC - SISTEMA DE EXPEDICIÓN DE PASAPORTES", WIDTH / 2, 35); // Dibuja el título centrado en la parte superior del canvas
 
         gc.setFont(Font.font("Arial", FontWeight.NORMAL, 14)); // Establece la fuente como Arial, normal, tamaño 14
         gc.setFill(Color.rgb(100, 100, 100)); // Establece el color de relleno como gris medio para el subtítulo
-        gc.fillText("Flujo: Conveyor→Almacén→Corte→Torno→Conveyor→Fresado→Almacén→Pintura→Inspección→Empaque→Embarque", WIDTH / 2, 60); // Dibuja el subtítulo describiendo el flujo del proceso
+        gc.fillText("Entrada(10%→Formas,90%→Sillas/Pie) | Formas→Sillas/Pie | Pie→Sillas→Servidor1/2", WIDTH / 2, 60); // Dibuja el subtítulo describiendo el flujo del proceso
     } // Cierre del método drawTitle
 
-    private void drawConnections(GraphicsContext gc) { // Método privado que dibuja todas las conexiones (líneas y flechas) entre locaciones recibiendo el contexto gráfico como parámetro
-        gc.setStroke(Color.rgb(120, 120, 140)); // Establece el color de trazo como gris azulado para las líneas de conexión
+    private void drawConnections(GraphicsContext gc) { // Método privado que dibuja todas las conexiones (líneas y flechas) entre locaciones DIGEMIC
+        gc.setStroke(Color.rgb(100, 150, 200)); // Color azul suave para las conexiones
         gc.setLineWidth(3); // Establece el grosor de la línea en 3 píxeles
         gc.setLineDashes(5, 5); // Establece un patrón de línea discontinua con segmentos de 5 píxeles
 
-        drawConnection(gc, "CONVEYOR_1", "ALMACEN"); // Dibuja conexión horizontal de CONVEYOR_1 a ALMACEN
-        drawConnection(gc, "ALMACEN", "CORTADORA"); // Dibuja conexión horizontal de ALMACEN a CORTADORA
-        drawConnection(gc, "CORTADORA", "TORNO"); // Dibuja conexión horizontal de CORTADORA a TORNO
-        drawConnectionVertical(gc, "TORNO", "CONVEYOR_2"); // Dibuja conexión vertical de TORNO a CONVEYOR_2
-        drawConnectionReverse(gc, "FRESADORA", "CONVEYOR_2"); // Dibuja conexión horizontal inversa de FRESADORA a CONVEYOR_2
-        drawConnectionReverse(gc, "ALMACEN_2", "FRESADORA"); // Dibuja conexión horizontal inversa de ALMACEN_2 a FRESADORA
-        drawConnectionReverse(gc, "PINTURA", "ALMACEN_2"); // Dibuja conexión horizontal inversa de PINTURA a ALMACEN_2
-        drawConnectionVertical(gc, "PINTURA", "INSPECCION_1"); // Dibuja conexión vertical de PINTURA a INSPECCION_1
-        drawConnectionVertical(gc, "INSPECCION_1", "INSPECCION_2"); // Dibuja conexión vertical de INSPECCION_1 a INSPECCION_2
-        drawConnectionDiagonal(gc, "INSPECCION_1", "EMPAQUE"); // Dibuja conexión diagonal de INSPECCION_1 a EMPAQUE
-        drawConnectionDiagonal(gc, "INSPECCION_2", "EMPAQUE"); // Dibuja conexión diagonal de INSPECCION_2 a EMPAQUE
-        drawConnection(gc, "EMPAQUE", "EMBARQUE"); // Dibuja conexión horizontal de EMPAQUE a EMBARQUE
-        drawExitArrow(gc); // Dibuja la flecha de salida desde EMBARQUE
+        // ENTRADA: 10% a ZONA_FORMAS, 90% intenta SALA_SILLAS (si llena → SALA_DE_PIE)
+        drawConnectionVertical(gc, "ENTRADA", "ZONA_FORMAS"); // 10% van a llenar formularios
+        drawConnection(gc, "ENTRADA", "SALA_SILLAS"); // 90% intentan ir a sillas primero
+        drawConnectionDiagonal(gc, "ENTRADA", "SALA_DE_PIE"); // Si sillas llena, van a pie
+        
+        // ZONA_FORMAS: intenta SALA_SILLAS primero, si llena → SALA_DE_PIE
+        drawConnection(gc, "ZONA_FORMAS", "SALA_SILLAS"); // Intenta sillas
+        drawConnectionDiagonal(gc, "ZONA_FORMAS", "SALA_DE_PIE"); // Si llena, va a pie
+        
+        // SALA_DE_PIE: espera y se mueve a SALA_SILLAS cuando hay espacio
+        drawConnectionVertical(gc, "SALA_DE_PIE", "SALA_SILLAS"); // Espera a que haya sillas disponibles
+        
+        // SALA_SILLAS: SOLO desde aquí van a servidores
+        drawConnection(gc, "SALA_SILLAS", "SERVIDOR_1"); // A servidor 1 (FIRST disponible)
+        drawConnectionDiagonal(gc, "SALA_SILLAS", "SERVIDOR_2"); // A servidor 2 (FIRST disponible)
 
         gc.setLineDashes(null); // Restablece el patrón de línea a sólida (sin discontinuidades)
     } // Cierre del método drawConnections
@@ -268,19 +267,19 @@ public class AnimationPanel extends Pane { // Declaración de la clase pública 
         gc.fillPolygon(new double[]{x2, x3, x4}, new double[]{y2, y3, y4}, 3); // Dibuja un triángulo relleno como punta de flecha
     } // Cierre del método drawArrow
 
-    private void drawAllLocations(GraphicsContext gc) { // Método privado que dibuja todas las 12 locaciones del sistema recibiendo el contexto gráfico como parámetro
-        // DIBUJAR TODAS las locaciones, existan o no en el motor
-        String[] allLocations = { // Define un array con los nombres de todas las 12 locaciones
-            "CONVEYOR_1", "ALMACEN", "CORTADORA", "TORNO", // Primera línea de locaciones
-            "CONVEYOR_2", "FRESADORA", "ALMACEN_2", "PINTURA", // Segunda línea de locaciones
-            "INSPECCION_1", "INSPECCION_2", "EMPAQUE", "EMBARQUE" // Tercera línea de locaciones
+    private void drawAllLocations(GraphicsContext gc) { // Método privado que dibuja todas las 6 locaciones DIGEMIC recibiendo el contexto gráfico como parámetro
+        // DIBUJAR TODAS las locaciones DIGEMIC
+        String[] allLocations = { // Define un array con los nombres de todas las 6 locaciones DIGEMIC
+            "ENTRADA", "ZONA_FORMAS", // Entrada y zona de formularios
+            "SALA_SILLAS", "SALA_DE_PIE", // Áreas de espera
+            "SERVIDOR_1", "SERVIDOR_2" // Ventanillas de atención
         }; // Cierre de la declaración del array
 
-        for (String name : allLocations) { // Bucle for-each que itera sobre cada nombre de locación en el array
-            Location location = engine.getLocation(name); // Obtiene el objeto Location del motor (puede ser null si no existe)
+        for (String name : allLocations) {
+            Location location = getLocationFromEngine(name); // Usar método helper
             // SIEMPRE dibujar, aunque location sea null
-            drawLocationSafe(gc, name, location); // Llama al método seguro que dibuja la locación incluso si es null
-        } // Cierre del bucle for-each
+            drawLocationSafe(gc, name, location);
+        }
     } // Cierre del método drawAllLocations
 
     /** // Inicio del comentario Javadoc del método
@@ -313,14 +312,8 @@ public class AnimationPanel extends Pane { // Declaración de la clase pública 
         // ICONO - SIEMPRE visible
         gc.setTextAlign(TextAlignment.CENTER); // Establece la alineación del texto al centro
         gc.setFill(Color.WHITE); // Establece el color de relleno como blanco para el icono
-
-        if (name.contains("CONVEYOR")) { // Condición que verifica si el nombre contiene "CONVEYOR"
-            gc.setFont(Font.font("Arial", FontWeight.BOLD, 56)); // Establece la fuente como Arial, negrita, tamaño 56 para la flecha
-            gc.fillText("→", pos[0] + BOX_SIZE / 2, pos[1] + BOX_SIZE * 0.62); // Dibuja la flecha centrada en la caja
-        } else { // Bloque else que se ejecuta para todas las demás locaciones
-            gc.setFont(Font.font("Segoe UI Emoji", 40)); // Establece la fuente como Segoe UI Emoji, tamaño 40 para los emojis
-            gc.fillText(icon, pos[0] + BOX_SIZE / 2, pos[1] + BOX_SIZE * 0.58); // Dibuja el emoji centrado en la caja
-        } // Cierre del bloque else
+        gc.setFont(Font.font("Segoe UI Emoji", 40)); // Establece la fuente como Segoe UI Emoji, tamaño 40 para los emojis
+        gc.fillText(icon, pos[0] + BOX_SIZE / 2, pos[1] + BOX_SIZE * 0.58); // Dibuja el emoji centrado en la caja
 
         // Nombre
         gc.setFill(Color.rgb(33, 33, 33)); // Establece el color de relleno como gris muy oscuro para el nombre
@@ -341,23 +334,23 @@ public class AnimationPanel extends Pane { // Declaración de la clase pública 
         } // Cierre del bloque condicional if
 
         // Barra de utilización
-        double utilization = location != null ? location.getUtilization(engine.getCurrentTime()) : 0; // Obtiene el porcentaje de utilización de la locación, o 0 si es null
-        drawUtilizationBar(gc, pos[0], pos[1] + BOX_SIZE + 8, BOX_SIZE, utilization); // Dibuja la barra de utilización debajo de la caja
+        double utilization = location != null ? location.getUtilization(getCurrentTimeFromEngine()) : 0; // Usar método helper
+        drawUtilizationBar(gc, pos[0], pos[1] + BOX_SIZE + 8, BOX_SIZE, utilization);
 
-        // Piezas (solo para no-conveyors)
-        if (!name.contains("CONVEYOR") && location != null) { // Condición que verifica si no es un conveyor Y la locación existe
-            drawEntitiesInLocation(gc, pos[0], pos[1], currentContent, capacity); // Dibuja las piezas individuales dentro de la locación
+        // Dibujar personas dentro de las locaciones (clientes esperando)
+        if (location != null) { // Condición que verifica que la locación existe
+            drawEntitiesInLocation(gc, pos[0], pos[1], currentContent, capacity); // Dibuja los círculos representando clientes
         } // Cierre del bloque condicional if
     } // Cierre del método drawLocationSafe
 
     private String getDisplayName(String name) { // Método privado que retorna un nombre formateado para mostrar recibiendo el nombre interno como parámetro
         switch (name) { // Switch que determina qué nombre formateado retornar basado en el nombre interno
-            case "ALMACEN": return "ALMACEN 1"; // Si es ALMACEN, retorna "ALMACEN 1"
-            case "ALMACEN_2": return "ALMACEN 2"; // Si es ALMACEN_2, retorna "ALMACEN 2"
-            case "CONVEYOR_1": return "CONVEYOR 1"; // Si es CONVEYOR_1, retorna "CONVEYOR 1"
-            case "CONVEYOR_2": return "CONVEYOR 2"; // Si es CONVEYOR_2, retorna "CONVEYOR 2"
-            case "INSPECCION_1": return "INSPECCION 1"; // Si es INSPECCION_1, retorna "INSPECCION 1"
-            case "INSPECCION_2": return "INSPECCION 2"; // Si es INSPECCION_2, retorna "INSPECCION 2"
+            case "ENTRADA": return "ENTRADA"; // Puerta de entrada
+            case "ZONA_FORMAS": return "ZONA FORMAS"; // Área de llenado de formularios
+            case "SALA_SILLAS": return "SALA SILLAS"; // Sala de espera con sillas
+            case "SALA_DE_PIE": return "SALA DE PIE"; // Área para esperar de pie
+            case "SERVIDOR_1": return "SERVIDOR 1"; // Primera ventanilla
+            case "SERVIDOR_2": return "SERVIDOR 2"; // Segunda ventanilla
             default: return name; // Para todos los demás casos, retorna el nombre sin modificar
         } // Cierre del switch
     } // Cierre del método getDisplayName
@@ -434,22 +427,22 @@ public class AnimationPanel extends Pane { // Declaración de la clase pública 
         } // Cierre del bucle for externo
     } // Cierre del método drawEntitiesInLocation
 
-    private void drawCounters(GraphicsContext gc) { // Método privado que dibuja los contadores de estadísticas de todas las locaciones recibiendo el contexto gráfico como parámetro
+    private void drawCounters(GraphicsContext gc) { // Método privado que dibuja los contadores de estadísticas de todas las locaciones DIGEMIC
         double startX = COUNTER_START_X; // Establece la posición X inicial usando la constante definida
         double startY = COUNTER_START_Y; // Establece la posición Y inicial usando la constante definida
         double spacing = COUNTER_HEIGHT + 6; // Calcula el espaciado vertical entre contadores sumando la altura más 6 píxeles
 
-        String[] locations = { // Define un array con los nombres de todas las locaciones para las cuales se dibujarán contadores
-            "CONVEYOR_1", "ALMACEN", "CORTADORA", "TORNO", // Primera línea de locaciones
-            "CONVEYOR_2", "FRESADORA", "ALMACEN_2", "PINTURA", // Segunda línea de locaciones
-            "INSPECCION_1", "INSPECCION_2", "EMPAQUE", "EMBARQUE" // Tercera línea de locaciones
+        String[] locations = { // Define un array con los nombres de todas las 6 locaciones DIGEMIC
+            "ENTRADA", "ZONA_FORMAS", // Entrada y zona de formularios
+            "SALA_SILLAS", "SALA_DE_PIE", // Áreas de espera
+            "SERVIDOR_1", "SERVIDOR_2" // Ventanillas de atención
         }; // Cierre de la declaración del array
 
-        for (int i = 0; i < locations.length; i++) { // Bucle for que itera sobre cada índice del array de locaciones
-            Location loc = engine.getLocation(locations[i]); // Obtiene el objeto Location del motor (puede ser null si no existe)
+        for (int i = 0; i < locations.length; i++) {
+            Location loc = getLocationFromEngine(locations[i]); // Usar método helper
             // SIEMPRE dibujar contador, aunque loc sea null
-            drawCounterSafe(gc, startX, startY + i * spacing, locations[i], loc); // Dibuja el contador en la posición calculada
-        } // Cierre del bucle for
+            drawCounterSafe(gc, startX, startY + i * spacing, locations[i], loc);
+        }
     } // Cierre del método drawCounters
 
     private void drawCounterSafe(GraphicsContext gc, double x, double y, String name, Location location) { // Método privado que dibuja un contador de estadísticas de forma segura recibiendo el contexto gráfico, posición, nombre y objeto Location como parámetros
@@ -476,17 +469,17 @@ public class AnimationPanel extends Pane { // Declaración de la clase pública 
         gc.setFont(Font.font("Arial", FontWeight.NORMAL, 14)); // Establece la fuente como Arial, normal, tamaño 14 para las estadísticas
         gc.setFill(Color.rgb(50, 50, 50)); // Establece el color de relleno como gris oscuro para el texto de estadísticas
 
-        int entries = location != null ? location.getTotalEntries() : 0; // Obtiene el total de entradas de la locación, o 0 si es null
-        gc.fillText("Entradas: " + entries, x + 12, y + 46); // Dibuja el texto de entradas totales
+        int entries = location != null ? location.getTotalEntries() : 0;
+        gc.fillText("Entradas: " + entries, x + 12, y + 46);
 
-        double util = location != null ? location.getUtilization(engine.getCurrentTime()) : 0; // Obtiene el porcentaje de utilización, o 0 si es null
-        gc.fillText(String.format("Utilización: %.0f%%", util), x + 12, y + 65); // Dibuja el texto de utilización formateado sin decimales
+        double util = location != null ? location.getUtilization(getCurrentTimeFromEngine()) : 0; // Usar método helper
+        gc.fillText(String.format("Utilización: %.0f%%", util), x + 12, y + 65);
 
-        int queue = location != null ? location.getQueueSize() : 0; // Obtiene el tamaño de la cola, o 0 si es null
-        gc.fillText("Cola: " + queue, x + 130, y + 46); // Dibuja el texto del tamaño de cola en la columna derecha
+        int queue = location != null ? location.getQueueSize() : 0;
+        gc.fillText("Cola: " + queue, x + 130, y + 46);
 
-        double avgContent = location != null ? location.getAverageContent(engine.getCurrentTime()) : 0; // Obtiene el contenido promedio, o 0 si es null
-        gc.fillText(String.format("Prom: %.1f", avgContent), x + 130, y + 65); // Dibuja el texto del contenido promedio con 1 decimal en la columna derecha
+        double avgContent = location != null ? location.getAverageContent(getCurrentTimeFromEngine()) : 0; // Usar método helper
+        gc.fillText(String.format("Prom: %.1f", avgContent), x + 130, y + 65);
 
         double barWidth = COUNTER_WIDTH - 24; // Calcula el ancho de la barra de utilización restando los márgenes
         double barHeight = 8; // Define la altura de la barra en píxeles
@@ -512,14 +505,14 @@ public class AnimationPanel extends Pane { // Declaración de la clase pública 
         }); // Cierre del paréntesis de removeIf
     } // Cierre del método detectVirtualTransits
 
-    private void drawTransitEntities(GraphicsContext gc) { // Método privado que dibuja todas las entidades reales que están en tránsito recibiendo el contexto gráfico como parámetro
-        List<Entity> allEntities = engine.getAllActiveEntities(); // Obtiene la lista de todas las entidades activas del motor
-        if (allEntities == null) return; // Si la lista es null, sale del método prematuramente
+    private void drawTransitEntities(GraphicsContext gc) {
+        List<Entity> allEntities = getAllActiveEntitiesFromEngine(); // Usar método helper
+        if (allEntities == null) return;
 
-        double currentTime = engine.getCurrentTime(); // Obtiene el tiempo actual de la simulación
+        double currentTime = getCurrentTimeFromEngine(); // Usar método helper
 
-        for (Entity entity : allEntities) { // Bucle for-each que itera sobre cada entidad activa
-            if (entity == null || !entity.isInTransit()) continue; // Si la entidad es null o no está en tránsito, salta a la siguiente iteración
+        for (Entity entity : allEntities) {
+            if (entity == null || !entity.isInTransit()) continue;
 
             String from = entity.getCurrentLocation(); // Obtiene la locación de origen de la entidad
             String to = entity.getDestinationLocation(); // Obtiene la locación de destino de la entidad
@@ -612,21 +605,21 @@ public class AnimationPanel extends Pane { // Declaración de la clase pública 
         gc.setTextAlign(TextAlignment.LEFT); // Establece la alineación del texto a la izquierda
         gc.fillText("📊 Estadísticas en Tiempo Real", infoX + 15, infoY + 30); // Dibuja el título del panel con un emoji
 
-        gc.setFont(Font.font("Arial", FontWeight.NORMAL, 13)); // Establece la fuente como Arial, normal, tamaño 13 para las estadísticas
+        gc.setFont(Font.font("Arial", FontWeight.NORMAL, 13));
 
-        double currentTime = engine.getCurrentTime(); // Obtiene el tiempo actual de la simulación en minutos
-        int totalMinutes = (int) Math.floor(currentTime); // Convierte el tiempo a minutos enteros redondeando hacia abajo
-        int hours = totalMinutes / 60; // Calcula las horas dividiendo los minutos entre 60
-        int minutes = totalMinutes % 60; // Calcula los minutos restantes usando el operador módulo
+        double currentTime = getCurrentTimeFromEngine(); // Usar método helper
+        int totalMinutes = (int) Math.floor(currentTime);
+        int hours = totalMinutes / 60;
+        int minutes = totalMinutes % 60;
 
-        gc.fillText(String.format("⏱ Tiempo: %02d:%02d h", hours, minutes), // Dibuja el tiempo formateado en formato HH:MM
-                infoX + 15, infoY + 60); // con la posición especificada
+        gc.fillText(String.format("⏱ Tiempo: %02d:%02d h", hours, minutes),
+                infoX + 15, infoY + 60);
 
-        int totalArrivals = engine.getStatistics().getTotalArrivals(); // Obtiene el total de arribos desde las estadísticas
-        gc.fillText("📥 Arribos: " + totalArrivals, infoX + 15, infoY + 85); // Dibuja el texto de arribos totales con un emoji
+        int totalArrivals = getStatisticsFromEngine().getTotalArrivals(); // Usar método helper
+        gc.fillText("📥 Arribos: " + totalArrivals, infoX + 15, infoY + 85);
 
-        int totalExits = engine.getStatistics().getTotalExits(); // Obtiene el total de salidas (piezas completadas) desde las estadísticas
-        gc.fillText("📤 Completadas: " + totalExits, infoX + 250, infoY + 60); // Dibuja el texto de piezas completadas en la columna derecha
+        int totalExits = getStatisticsFromEngine().getTotalExits(); // Usar método helper
+        gc.fillText("📤 Completadas: " + totalExits, infoX + 250, infoY + 60);
 
         double throughput = currentTime > 0 ? (totalExits / currentTime) * 60 : 0; // Calcula el throughput en piezas por hora, o 0 si no hay tiempo
         gc.fillText(String.format("⚡ Throughput: %.2f/hora", throughput), // Dibuja el throughput formateado con 2 decimales

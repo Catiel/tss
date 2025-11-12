@@ -10,6 +10,10 @@ public class Statistics { // Declaración de la clase pública Statistics que re
     private int totalExits; // Variable privada que almacena el número total de salidas del sistema (piezas completadas)
     private double totalSystemTime; // Variable privada que almacena la suma acumulada de todos los tiempos en sistema de las entidades que salieron
     private double simulationDuration; // Variable privada que almacena la duración total de la simulación en minutos
+    private double totalWaitTime; // Variable privada que almacena la suma de tiempos de espera de las entidades completadas
+    private double totalProcessTime; // Variable privada que almacena la suma de tiempos de operación de las entidades completadas
+    private double totalTransportTime; // Variable privada que almacena la suma de tiempos de movimiento de las entidades completadas
+    private double totalBlockTime; // Variable privada que almacena la suma de tiempos de bloqueo de las entidades completadas
 
     private Map<String, Location> locations; // Variable privada que almacena un mapa de nombres de locaciones a sus objetos Location
     private List<Double> entitySystemTimes; // Variable privada que almacena una lista de todos los tiempos en sistema individuales para cálculos estadísticos
@@ -21,6 +25,10 @@ public class Statistics { // Declaración de la clase pública Statistics que re
         this.simulationDuration = 0; // Inicializa la duración de la simulación en 0
         this.locations = new HashMap<>(); // Crea un nuevo HashMap vacío para almacenar las locaciones
         this.entitySystemTimes = new ArrayList<>(); // Crea una nueva ArrayList vacía para almacenar los tiempos en sistema individuales
+    this.totalWaitTime = 0; // Inicializa el acumulador de tiempo de espera en 0
+    this.totalProcessTime = 0; // Inicializa el acumulador de tiempo de operación en 0
+    this.totalTransportTime = 0; // Inicializa el acumulador de tiempo de transporte en 0
+    this.totalBlockTime = 0; // Inicializa el acumulador de tiempo de bloqueo en 0
     } // Cierre del constructor Statistics
 
     public void registerLocation(Location location) { // Método público que registra una locación en las estadísticas recibiendo el objeto Location como parámetro
@@ -36,6 +44,10 @@ public class Statistics { // Declaración de la clase pública Statistics que re
         double systemTime = entity.getTotalSystemTime(currentTime); // Obtiene el tiempo total que la entidad pasó en el sistema llamando al método de la entidad
         totalSystemTime += systemTime; // Acumula el tiempo en sistema de esta entidad al total acumulado
         entitySystemTimes.add(systemTime); // Agrega el tiempo en sistema de esta entidad a la lista de tiempos individuales
+    totalWaitTime += entity.getTotalWaitTime(); // Acumula el tiempo total de espera de la entidad
+    totalProcessTime += entity.getTotalProcessTime(); // Acumula el tiempo total de operación de la entidad
+    totalTransportTime += entity.getTotalTransportTime(); // Acumula el tiempo total de transporte de la entidad
+    totalBlockTime += entity.getTotalBlockTime(); // Acumula el tiempo total de bloqueo de la entidad
     } // Cierre del método recordExit
 
     public void finalizeStatistics(double currentTime) { // Método público que finaliza la recopilación de estadísticas recibiendo el tiempo actual como parámetro
@@ -64,6 +76,26 @@ public class Statistics { // Declaración de la clase pública Statistics que re
     public double getSimulationDuration() { // Método público getter que retorna la duración de la simulación de tipo double
         return simulationDuration; // Retorna el valor de la variable simulationDuration
     } // Cierre del método getSimulationDuration
+
+    public double getAverageWaitTime() { // Método público que retorna el tiempo promedio de espera
+        if (totalExits == 0) return 0; // Evita división por cero cuando no hay salidas
+        return totalWaitTime / totalExits; // Retorna el promedio de tiempos de espera
+    }
+
+    public double getAverageProcessTime() { // Método público que retorna el tiempo promedio en operación
+        if (totalExits == 0) return 0; // Evita división por cero cuando no hay salidas
+        return totalProcessTime / totalExits; // Retorna el promedio de tiempos de operación
+    }
+
+    public double getAverageTransportTime() { // Método público que retorna el tiempo promedio en lógica de movimiento
+        if (totalExits == 0) return 0; // Evita división por cero cuando no hay salidas
+        return totalTransportTime / totalExits; // Retorna el promedio de tiempos de transporte
+    }
+
+    public double getAverageBlockTime() { // Método público que retorna el tiempo promedio en bloqueo
+        if (totalExits == 0) return 0; // Evita división por cero cuando no hay salidas
+        return totalBlockTime / totalExits; // Retorna el promedio de tiempos de bloqueo
+    }
 
     public Map<String, Location> getLocations() { // Método público getter que retorna el mapa de locaciones de tipo Map<String, Location>
         return locations; // Retorna la referencia al mapa de locaciones
@@ -130,6 +162,10 @@ public class Statistics { // Declaración de la clase pública Statistics que re
         totalSystemTime = 0; // Reinicia el acumulador de tiempo total en sistema a 0
         simulationDuration = 0; // Reinicia la duración de la simulación a 0
         entitySystemTimes.clear(); // Limpia la lista de tiempos en sistema eliminando todos los elementos
+        totalWaitTime = 0; // Reinicia el acumulador de tiempos de espera a 0
+        totalProcessTime = 0; // Reinicia el acumulador de tiempos de operación a 0
+        totalTransportTime = 0; // Reinicia el acumulador de tiempos de transporte a 0
+        totalBlockTime = 0; // Reinicia el acumulador de tiempos de bloqueo a 0
     } // Cierre del método reset
 
     @Override // Anotación que indica que este método sobrescribe el método toString de la clase Object

@@ -1,24 +1,67 @@
-package com.simulation.core; // Declaración del paquete que contiene las clases principales (core) de la simulación
+package com.simulation.core;
 
-import com.simulation.resources.TransportResource;
+/**
+ * Tipos de eventos para DIGEMIC (Sistema de expedición de pasaportes)
+ */
+public class EventTypes {
 
-public class EventTypes { // Declaración de la clase pública EventTypes que agrupa todos los tipos específicos de eventos de la simulación
+    // ========= EVENTOS DIGEMIC =========
+    
+    /**
+     * Evento de arribo de cliente al sistema DIGEMIC
+     */
+    public static class ArrivalEvent extends Event {
+        public ArrivalEvent(double time) {
+            super(time, null);
+        }
 
-    // Evento de arribo de pieza
-    public static class ArrivalEvent extends Event { // Declaración de clase estática pública anidada ArrivalEvent que extiende Event y representa el arribo de una nueva pieza al sistema
-        public ArrivalEvent(double time) { // Constructor público que inicializa un evento de arribo recibiendo solo el tiempo como parámetro
-            super(time, null); // Llamada al constructor de la clase padre Event pasando el tiempo y null como entidad porque aún no se ha creado la pieza
-        } // Cierre del constructor ArrivalEvent
+        @Override
+        public void execute(Object engineObj) {
+            DigemicEngine engine = (DigemicEngine) engineObj;
+            engine.handleArrival(time);
+        }
+    }
 
-        @Override // Anotación que indica que este método sobrescribe el método abstracto execute de la clase padre Event
-        public void execute(SimulationEngine engine) { // Método público que ejecuta la lógica del evento de arribo recibiendo el motor de simulación como parámetro
-            engine.handleArrival(time); // Invoca el método handleArrival del motor de simulación pasando el tiempo del arribo para procesar la llegada de una nueva pieza
-        } // Cierre del método execute
-    } // Cierre de la clase ArrivalEvent
+    /**
+     * Evento de fin de proceso en una locación
+     */
+    public static class ProcessEndEvent extends Event {
+        private String locationName;
 
-    // Evento de fin de transporte
-    public static class TransportEndEvent extends Event { // Declaración de clase estática pública anidada TransportEndEvent que extiende Event y representa la finalización de un transporte
-        private String destinationName; // Variable privada que almacena el nombre de la ubicación de destino donde terminó el transporte
+        public ProcessEndEvent(double time, Entity entity, String location) {
+            super(time, entity);
+            this.locationName = location;
+        }
+
+        @Override
+        public void execute(Object engineObj) {
+            DigemicEngine engine = (DigemicEngine) engineObj;
+            engine.handleProcessEnd(entity, locationName, time);
+        }
+    }
+
+    /**
+     * Evento de fin de pausa de servidor (cada 10 pasaportes)
+     */
+    public static class ServerPauseEndEvent extends Event {
+        private String serverName;
+
+        public ServerPauseEndEvent(double time, String serverName) {
+            super(time, null);
+            this.serverName = serverName;
+        }
+
+        @Override
+        public void execute(Object engineObj) {
+            DigemicEngine engine = (DigemicEngine) engineObj;
+            engine.handleServerPauseEnd(serverName, time);
+        }
+    }
+
+    /* ========= EVENTOS MULTI-ENGRANE (Deshabilitados) =========
+
+    public static class TransportEndEvent extends Event {
+        private String destinationName;
         private TransportResource resource;
         private double resourceReturnTime;
 
@@ -26,35 +69,23 @@ public class EventTypes { // Declaración de la clase pública EventTypes que ag
             this(time, entity, destination, null, 0.0);
         }
 
-        public TransportEndEvent(double time, Entity entity, String destination, TransportResource resource, double resourceReturnTime) { // Constructor público que inicializa un evento de fin de transporte recibiendo tiempo, entidad y destino como parámetros
-            super(time, entity); // Llamada al constructor de la clase padre Event pasando el tiempo y la entidad que está siendo transportada
-            this.destinationName = destination; // Asigna el nombre del destino recibido como parámetro a la variable de instancia destinationName
+        public TransportEndEvent(double time, Entity entity, String destination, TransportResource resource, double resourceReturnTime) {
+            super(time, entity);
+            this.destinationName = destination;
             this.resource = resource;
             this.resourceReturnTime = resourceReturnTime;
-        } // Cierre del constructor TransportEndEvent
+        }
 
-        @Override // Anotación que indica que este método sobrescribe el método abstracto execute de la clase padre Event
-        public void execute(SimulationEngine engine) { // Método público que ejecuta la lógica del evento de fin de transporte recibiendo el motor de simulación como parámetro
-            engine.handleTransportEnd(entity, destinationName, time); // Invoca el método handleTransportEnd del motor pasando la entidad, nombre del destino y tiempo para procesar la llegada de la entidad a su destino
-            if (resource != null) {
-                engine.handleTransportResourceAfterArrival(resource, time, resourceReturnTime);
+        @Override
+        public void execute(Object engineObj) {
+            if (engineObj instanceof SimulationEngine) {
+                SimulationEngine engine = (SimulationEngine) engineObj;
+                engine.handleTransportEnd(entity, destinationName, time);
+                if (resource != null) {
+                    engine.handleTransportResourceAfterArrival(resource, time, resourceReturnTime);
+                }
             }
-        } // Cierre del método execute
-    } // Cierre de la clase TransportEndEvent
-
-    // Evento de fin de proceso
-    public static class ProcessEndEvent extends Event { // Declaración de clase estática pública anidada ProcessEndEvent que extiende Event y representa la finalización de un proceso en una estación
-        private String locationName; // Variable privada que almacena el nombre de la ubicación donde finalizó el procesamiento
-
-        public ProcessEndEvent(double time, Entity entity, String location) { // Constructor público que inicializa un evento de fin de proceso recibiendo tiempo, entidad y ubicación como parámetros
-            super(time, entity); // Llamada al constructor de la clase padre Event pasando el tiempo y la entidad que está siendo procesada
-            this.locationName = location; // Asigna el nombre de la ubicación recibido como parámetro a la variable de instancia locationName
-        } // Cierre del constructor ProcessEndEvent
-
-        @Override // Anotación que indica que este método sobrescribe el método abstracto execute de la clase padre Event
-        public void execute(SimulationEngine engine) { // Método público que ejecuta la lógica del evento de fin de proceso recibiendo el motor de simulación como parámetro
-            engine.handleProcessEnd(entity, locationName, time); // Invoca el método handleProcessEnd del motor pasando la entidad, nombre de ubicación y tiempo para procesar la finalización del procesamiento
-        } // Cierre del método execute
+        }
     }
 
     public static class ResourceReleaseEvent extends Event {
@@ -66,12 +97,13 @@ public class EventTypes { // Declaración de la clase pública EventTypes que ag
         }
 
         @Override
-        public void execute(SimulationEngine engine) {
-            engine.handleTransportResourceAvailable(resource, time);
+        public void execute(Object engineObj) {
+            if (engineObj instanceof SimulationEngine) {
+                SimulationEngine engine = (SimulationEngine) engineObj;
+                engine.handleTransportResourceAvailable(resource, time);
+            }
         }
     }
-
-    // NOTA: InspectionOperationEndEvent del sistema viejo fue removido
-    // En Multi-Engrane, INSPECCION_1 e INSPECCION_2 son procesos simples sin operaciones múltiples
+    */
 }
 

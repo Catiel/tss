@@ -21,6 +21,9 @@ public abstract class Location { // Declaración de la clase abstracta pública 
     protected double contentTimeIntegral; // Variable protegida que almacena la integral de tiempo del contenido para calcular promedios ponderados por tiempo
     protected double busyTimeIntegral; // Variable protegida que almacena la integral de tiempo ocupado (cuando hay al menos una entidad) para calcular utilización
     protected double lastContentUpdateTime; // Variable protegida que almacena el último tiempo en que se actualizaron las integrales de tiempo
+    protected int maxContent; // Variable protegida que almacena el contenido máximo observado durante la simulación
+    protected Map<Entity, Double> entryTimes; // Variable protegida que almacena el tiempo de entrada de cada entidad actualmente en la locación
+    protected double totalTimeInLocation; // Variable protegida que acumula el tiempo total que las entidades han permanecido en la locación
 
     public Location(String name, int capacity) { // Constructor público que inicializa una locación recibiendo el nombre y capacidad como parámetros
         this.name = name; // Asigna el nombre recibido a la variable de instancia
@@ -33,6 +36,9 @@ public abstract class Location { // Declaración de la clase abstracta pública 
         this.contentTimeIntegral = 0; // Inicializa la integral de contenido en 0
         this.busyTimeIntegral = 0; // Inicializa la integral de tiempo ocupado en 0
         this.lastContentUpdateTime = 0; // Inicializa el último tiempo de actualización en 0
+        this.maxContent = 0; // Inicializa el contenido máximo en 0
+    this.entryTimes = new HashMap<>(); // Inicializa el mapa que almacenará los tiempos de entrada por entidad
+    this.totalTimeInLocation = 0; // Inicializa el acumulador de tiempo total en locación en 0
     } // Cierre del constructor Location
 
     /** // Inicio del comentario Javadoc del método
@@ -52,10 +58,14 @@ public abstract class Location { // Declaración de la clase abstracta pública 
         if (currentContent < capacity) { // Condición que verifica si hay espacio disponible en la locación
             updateTimeIntegrals(currentTime); // Actualiza las integrales de tiempo antes de agregar la entidad
             currentContent++; // Incrementa el contenido actual de la locación
+            if (currentContent > maxContent) { // Verifica si el contenido actual supera el máximo observado
+                maxContent = currentContent; // Actualiza el contenido máximo
+            } // Cierre del bloque condicional if
             if (capacity != Integer.MAX_VALUE && pendingArrivals > 0) { // Condición que verifica si hay llegadas pendientes y capacidad no es infinita
                 pendingArrivals--; // Decrementa las llegadas pendientes porque una entidad ha llegado
             } // Cierre del bloque condicional if
             totalEntries++; // Incrementa el total de entradas
+            entryTimes.put(entity, currentTime); // Registra el tiempo de entrada de la entidad para cálculos de permanencia
         } // Cierre del bloque condicional if
     } // Cierre del método enter
 
@@ -67,6 +77,10 @@ public abstract class Location { // Declaración de la clase abstracta pública 
             updateTimeIntegrals(currentTime); // Actualiza las integrales de tiempo antes de remover la entidad
             currentContent--; // Decrementa el contenido actual de la locación
             totalExits++; // Incrementa el total de salidas
+            Double entryTime = entryTimes.remove(entity); // Obtiene y elimina el tiempo de entrada registrado para la entidad
+            if (entryTime != null && currentTime >= entryTime) { // Verifica que exista tiempo registrado y el tiempo actual sea válido
+                totalTimeInLocation += (currentTime - entryTime); // Acumula la permanencia de la entidad en la locación
+            }
         } // Cierre del bloque condicional if
     } // Cierre del método exit
 
@@ -127,6 +141,10 @@ public abstract class Location { // Declaración de la clase abstracta pública 
         return totalExits; // Retorna el total de entidades que han salido de la locación
     } // Cierre del método getTotalExits
 
+    public int getMaxContent() { // Método público que retorna el contenido máximo observado de tipo int sin recibir parámetros
+        return maxContent; // Retorna el pico máximo de entidades que hubo en la locación
+    } // Cierre del método getMaxContent
+
     /** // Inicio del comentario Javadoc del método
      * Calcula el porcentaje de utilización de la locación // Descripción del método
      * CORREGIDO: Para capacidad > 1, usa contentTimeIntegral / (capacity * currentTime) // Nota sobre la fórmula corregida
@@ -151,8 +169,21 @@ public abstract class Location { // Declaración de la clase abstracta pública 
      * Calcula el tiempo promedio por entrada // Descripción del método
      */ // Fin del comentario Javadoc
     public double getAverageTimePerEntry(double currentTime) { // Método público que calcula el tiempo promedio por entrada recibiendo el tiempo actual como parámetro y retornando double
-        if (totalEntries == 0) return 0; // Si no hay entradas, retorna 0
-        return currentTime / totalEntries; // Retorna el tiempo total dividido entre el número de entradas
+        if (totalEntries == 0) { // Condición que verifica si no hay entradas registradas
+            return 0; // No se puede calcular tiempo promedio sin entradas
+        }
+
+        double accumulatedTime = totalTimeInLocation; // Parte del tiempo total ya acumulado por salidas
+        if (!entryTimes.isEmpty()) { // Si hay entidades todavía dentro de la locación
+            for (Map.Entry<Entity, Double> entry : entryTimes.entrySet()) { // Recorre cada entidad restante
+                double entryTime = entry.getValue(); // Tiempo en que la entidad ingresó
+                if (currentTime > entryTime) { // Solo suma si el tiempo actual es posterior al tiempo de entrada
+                    accumulatedTime += (currentTime - entryTime); // Acumula la permanencia parcial hasta el tiempo actual
+                }
+            }
+        }
+
+        return accumulatedTime / totalEntries; // Retorna el tiempo promedio por entrada real
     } // Cierre del método getAverageTimePerEntry
 
     /** // Inicio del comentario Javadoc del método
@@ -203,5 +234,8 @@ public abstract class Location { // Declaración de la clase abstracta pública 
         contentTimeIntegral = 0; // Reinicia la integral de contenido a 0
         busyTimeIntegral = 0; // Reinicia la integral de tiempo ocupado a 0
         lastContentUpdateTime = 0; // Reinicia el último tiempo de actualización a 0
+        maxContent = 0; // Reinicia el contenido máximo a 0
+        entryTimes.clear(); // Limpia los tiempos de entrada registrados
+        totalTimeInLocation = 0; // Reinicia el acumulador de tiempo total en locación
     } // Cierre del método resetState
 } // Cierre de la clase Location

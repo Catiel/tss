@@ -1,9 +1,9 @@
 package com.simulation.gui; // Declaración del paquete que contiene las clases de interfaz gráfica de usuario (GUI) de la simulación
 
-import com.simulation.config.SimulationParameters; // Importa la clase SimulationParameters para acceder a los parámetros de configuración de la simulación
-import com.simulation.core.SimulationEngine; // Importa la clase SimulationEngine que es el motor principal que ejecuta la simulación
-import com.simulation.resources.Location; // Importa la clase Location que representa las locaciones del sistema
-import com.simulation.statistics.Statistics; // Importa la clase Statistics para acceder a las estadísticas de la simulación
+import com.simulation.config.SimulationParameters;
+import com.simulation.core.DigemicEngine; // NUEVO: Motor DIGEMIC
+import com.simulation.resources.Location;
+import com.simulation.statistics.Statistics;
 import javafx.animation.AnimationTimer; // Importa la clase AnimationTimer de JavaFX para crear un loop de animación de alto rendimiento
 import javafx.application.Platform; // Importa la clase Platform de JavaFX para ejecutar código en el hilo de la interfaz gráfica
 import javafx.fxml.FXML; // Importa la anotación FXML para inyectar elementos definidos en archivos FXML
@@ -36,7 +36,8 @@ public class MainController { // Declaración de la clase pública MainControlle
     // Tablas de resultados
     @FXML private TableView<LocationStats> locationTable; // Variable privada anotada con @FXML que representa la tabla de estadísticas de locaciones inyectada desde FXML
     @FXML private TableColumn<LocationStats, String> locNameCol; // Variable privada anotada con @FXML que representa la columna de nombre de locación inyectada desde FXML
-    @FXML private TableColumn<LocationStats, Integer> locCapacityCol; // Variable privada anotada con @FXML que representa la columna de capacidad inyectada desde FXML
+    @FXML private TableColumn<LocationStats, String> locCapacityCol; // Variable privada anotada con @FXML que representa la columna de capacidad inyectada desde FXML
+    @FXML private TableColumn<LocationStats, String> locScheduledTimeCol; // Columna para mostrar el tiempo programado en horas
     @FXML private TableColumn<LocationStats, Integer> locEntriesCol; // Variable privada anotada con @FXML que representa la columna de entradas totales inyectada desde FXML
     @FXML private TableColumn<LocationStats, Double> locTimePerEntryCol; // Variable privada anotada con @FXML que representa la columna de tiempo por entrada inyectada desde FXML
     @FXML private TableColumn<LocationStats, Double> locAvgContentCol; // Variable privada anotada con @FXML que representa la columna de contenido promedio inyectada desde FXML
@@ -46,27 +47,76 @@ public class MainController { // Declaración de la clase pública MainControlle
 
     @FXML private TextArea entityStatsText; // Variable privada anotada con @FXML que representa el área de texto para estadísticas de entidades inyectada desde FXML
 
-    private SimulationParameters parameters; // Variable privada que almacena los parámetros de configuración de la simulación
-    private SimulationEngine engine; // Variable privada que almacena la referencia al motor de simulación
-    private AnimationPanel animationPanel; // Variable privada que almacena el panel de animación personalizado
+    private SimulationParameters parameters;
+    private DigemicEngine engine; // Motor DIGEMIC
+    private AnimationPanel animationPanel;
     @FXML private ScrollPane animationScrollPane; // ScrollPane definido en FXML que contiene la animación
     private RealTimeChartsPanel realTimeChartsPanel; // NUEVO: Panel de gráficas en tiempo real // Variable privada que almacena el panel de gráficas en tiempo real
     private AnimationTimer animationTimer; // Variable privada que almacena el timer de animación para actualizar la interfaz periódicamente
     private Thread simulationThread; // Variable privada que almacena el hilo donde se ejecuta la simulación
 
-    public void initialize() { // Método público initialize que es llamado automáticamente por JavaFX después de cargar el FXML para inicializar el controlador
-        parameters = new SimulationParameters(); // Crea una nueva instancia de SimulationParameters con valores por defecto
-        engine = new SimulationEngine(parameters); // Crea una nueva instancia de SimulationEngine con los parámetros creados
+    public void initialize() {
+        parameters = new SimulationParameters();
+        
+        // Crear motor DIGEMIC
+        engine = new DigemicEngine(parameters);
 
-        setupAnimationPanel(); // Llama al método para configurar el panel de animación
-        setupRealTimeCharts(); // NUEVO // Llama al método para configurar el panel de gráficas en tiempo real
-        setupControls(); // Llama al método para configurar los controles de la interfaz (botones, sliders, etc.)
-        setupResultsTables(); // Llama al método para configurar las tablas de resultados
-        setupAnimationLoop(); // Llama al método para configurar el loop de animación
-        realTimeChartsPanel.initializeState(engine.getStatistics()); // Inicializa el estado del panel de gráficas en tiempo real con las estadísticas del motor
+        setupAnimationPanel();
+        setupRealTimeCharts();
+        setupControls();
+        setupResultsTables();
+        setupAnimationLoop();
+        realTimeChartsPanel.initializeState(getStatistics());
 
-        updateStatus("Listo para iniciar"); // Actualiza el mensaje de estado a "Listo para iniciar"
-    } // Cierre del método initialize
+        updateStatus("Listo para iniciar - Sistema DIGEMIC");
+    }
+
+    // === MÉTODOS HELPER PARA ACCESO AL MOTOR ===
+    
+    private Statistics getStatistics() {
+        return ((DigemicEngine) engine).getStatistics();
+    }
+
+    private double getCurrentTime() {
+        return ((DigemicEngine) engine).getCurrentTime();
+    }
+
+    private boolean isRunning() {
+        return ((DigemicEngine) engine).isRunning();
+    }
+
+    private boolean isPaused() {
+        return ((DigemicEngine) engine).isPaused();
+    }
+
+    private void setSimulationSpeed(double speed) {
+        ((DigemicEngine) engine).setSimulationSpeed(speed);
+    }
+
+    private void initializeEngine() {
+        ((DigemicEngine) engine).initialize();
+    }
+
+    private void runEngine() {
+        ((DigemicEngine) engine).run();
+    }
+
+    private void stopEngine() {
+        ((DigemicEngine) engine).stop();
+    }
+
+    private void pauseEngine() {
+        ((DigemicEngine) engine).pause();
+    }
+
+    private void resumeEngine() {
+        ((DigemicEngine) engine).resume();
+    }
+
+    private Location getLocation(String name) {
+        return ((DigemicEngine) engine).getLocation(name);
+    }
+
 
     private void setupAnimationPanel() { // Método privado que configura el panel de animación y lo agrega a la pestaña correspondiente
         animationPanel = new AnimationPanel(engine); // Crea una nueva instancia de AnimationPanel pasando el motor de simulación
@@ -111,19 +161,20 @@ public class MainController { // Declaración de la clase pública MainControlle
         speedSlider.setMax(1000); // Establece el valor máximo del slider de velocidad en 1000
         speedSlider.setValue(100); // Establece el valor inicial del slider de velocidad en 100 (velocidad normal)
 
-        speedSlider.valueProperty().addListener((obs, oldVal, newVal) -> { // Agrega un listener a la propiedad value del slider que se ejecuta cuando cambia el valor
-            double speed = newVal.doubleValue(); // Convierte el nuevo valor del slider a double
-            engine.setSimulationSpeed(speed); // Establece la velocidad de simulación en el motor con el valor del slider
-            updateSpeedLabel(speed); // Actualiza la etiqueta de velocidad para mostrar el nuevo valor
-        }); // Cierre del paréntesis de addListener
+        speedSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
+            double speed = newVal.doubleValue();
+            setSimulationSpeed(speed); // Usar método helper
+            updateSpeedLabel(speed);
+        });
 
         updateSpeedLabel(100); // Actualiza la etiqueta de velocidad inicialmente con el valor 100
     } // Cierre del método setupControls
 
     private void setupResultsTables() { // Método privado que configura las tablas de resultados vinculando columnas con propiedades y formateando celdas
         // Configurar tabla de locaciones
-        locNameCol.setCellValueFactory(new PropertyValueFactory<>("name")); // Vincula la columna de nombre con la propiedad "name" de LocationStats
-        locCapacityCol.setCellValueFactory(new PropertyValueFactory<>("capacity")); // Vincula la columna de capacidad con la propiedad "capacity" de LocationStats
+    locNameCol.setCellValueFactory(new PropertyValueFactory<>("name")); // Vincula la columna de nombre con la propiedad "name" de LocationStats
+    locCapacityCol.setCellValueFactory(new PropertyValueFactory<>("capacity")); // Vincula la columna de capacidad con la propiedad "capacity" de LocationStats
+    locScheduledTimeCol.setCellValueFactory(new PropertyValueFactory<>("scheduledTime")); // Vincula la columna de tiempo programado con la propiedad "scheduledTime"
         locEntriesCol.setCellValueFactory(new PropertyValueFactory<>("totalEntries")); // Vincula la columna de entradas con la propiedad "totalEntries" de LocationStats
         locTimePerEntryCol.setCellValueFactory(new PropertyValueFactory<>("timePerEntry")); // Vincula la columna de tiempo por entrada con la propiedad "timePerEntry" de LocationStats
         locAvgContentCol.setCellValueFactory(new PropertyValueFactory<>("avgContent")); // Vincula la columna de contenido promedio con la propiedad "avgContent" de LocationStats
@@ -183,39 +234,39 @@ public class MainController { // Declaración de la clase pública MainControlle
             private long lastUpdate = 0; // Variable privada que almacena el tiempo del último update en nanosegundos, inicializada en 0
             private static final long UPDATE_INTERVAL = 50_000_000; // 50ms // Constante estática final que define el intervalo entre updates en nanosegundos (50 millones = 50ms)
 
-            @Override // Anotación que indica que este método sobrescribe el método handle de AnimationTimer
-            public void handle(long now) { // Método que es llamado en cada frame de la animación recibiendo el tiempo actual en nanosegundos como parámetro
-                if (engine.isRunning() && now - lastUpdate >= UPDATE_INTERVAL) { // Condición que verifica si el motor está corriendo y ha pasado suficiente tiempo desde el último update
-                    updateDisplay(); // Llama al método para actualizar la visualización (tiempo, animación)
-                    updateRealTimeCharts(); // NUEVO: Actualizar gráficas en tiempo real // Llama al método para actualizar las gráficas en tiempo real
-                    lastUpdate = now; // Actualiza el tiempo del último update con el tiempo actual
-                } // Cierre del bloque condicional if
-            } // Cierre del método handle
+            @Override
+            public void handle(long now) {
+                if (isRunning() && now - lastUpdate >= UPDATE_INTERVAL) {
+                    updateDisplay();
+                    updateRealTimeCharts(); // NUEVO: Actualizar gráficas en tiempo real
+                    lastUpdate = now;
+                }
+            }
         }; // Cierre de la declaración de AnimationTimer
     } // Cierre del método setupAnimationLoop
 
-    @FXML // Anotación que indica que este método puede ser llamado desde FXML
-    private void handleStart() { // Método privado que maneja el evento de presionar el botón de inicio
-        if (engine.isRunning()) { // Condición que verifica si el motor ya está corriendo
-            return; // Sale del método prematuramente si ya está corriendo para evitar múltiples inicios
-        } // Cierre del bloque condicional if
+    @FXML
+    private void handleStart() {
+        if (isRunning()) {
+            return;
+        }
 
-        startButton.setDisable(true); // Deshabilita el botón de inicio para evitar múltiples clicks
-        pauseButton.setDisable(false); // Habilita el botón de pausa para permitir pausar la simulación
-        resetButton.setDisable(true); // Deshabilita el botón de reinicio mientras la simulación está corriendo
-        parametersButton.setDisable(true); // Deshabilita el botón de parámetros para evitar cambios durante la ejecución
+        startButton.setDisable(true);
+        pauseButton.setDisable(false);
+        resetButton.setDisable(true);
+        parametersButton.setDisable(true);
 
-        engine.initialize(); // Inicializa el motor de simulación programando el primer evento
+        initializeEngine(); // Usar método helper
 
         // Inicializar gráficas en tiempo real
-        realTimeChartsPanel.initializeState(engine.getStatistics()); // Inicializa el estado del panel de gráficas con las estadísticas del motor
+        realTimeChartsPanel.initializeState(getStatistics()); // Usar método helper
 
-        simulationThread = new Thread(() -> { // Crea un nuevo hilo con una expresión lambda para ejecutar la simulación
-            engine.run(); // Ejecuta el loop principal de la simulación (bloqueante)
+        simulationThread = new Thread(() -> {
+            runEngine(); // Usar método helper
 
-            Platform.runLater(() -> { // Programa la ejecución de código en el hilo de JavaFX cuando la simulación termine
-                handleSimulationComplete(); // Llama al método que maneja la finalización de la simulación
-            }); // Cierre del paréntesis de runLater
+            Platform.runLater(() -> {
+                handleSimulationComplete();
+            });
         }); // Cierre del paréntesis del constructor Thread
 
         simulationThread.setDaemon(true); // Configura el hilo como daemon para que no impida el cierre de la aplicación
@@ -225,39 +276,41 @@ public class MainController { // Declaración de la clase pública MainControlle
         updateStatus("Simulación en ejecución..."); // Actualiza el mensaje de estado indicando que la simulación está corriendo
     } // Cierre del método handleStart
 
-    @FXML // Anotación que indica que este método puede ser llamado desde FXML
-    private void handlePause() { // Método privado que maneja el evento de presionar el botón de pausa/reanudar
-        if (engine.isPaused()) { // Condición que verifica si el motor está actualmente pausado
-            engine.resume(); // Reanuda la simulación cambiando el estado interno del motor
-            pauseButton.setText("Pausar"); // Cambia el texto del botón a "Pausar"
-            updateStatus("Simulación en ejecución..."); // Actualiza el mensaje de estado indicando que se reanudó
-        } else { // Bloque else que se ejecuta si la simulación está corriendo
-            engine.pause(); // Pausa la simulación cambiando el estado interno del motor
-            pauseButton.setText("Reanudar"); // Cambia el texto del botón a "Reanudar"
-            updateStatus("Simulación pausada"); // Actualiza el mensaje de estado indicando que está pausada
-        } // Cierre del bloque else
-    } // Cierre del método handlePause
+    @FXML
+    private void handlePause() {
+        if (isPaused()) { // Usar método helper
+            resumeEngine(); // Usar método helper
+            pauseButton.setText("Pausar");
+            updateStatus("Simulación en ejecución...");
+        } else {
+            pauseEngine(); // Usar método helper
+            pauseButton.setText("Reanudar");
+            updateStatus("Simulación pausada");
+        }
+    }
 
-    @FXML // Anotación que indica que este método puede ser llamado desde FXML
-    private void handleReset() { // Método privado que maneja el evento de presionar el botón de reinicio
-        if (animationTimer != null) { // Condición que verifica si el timer de animación existe
-            animationTimer.stop(); // Detiene el timer de animación para dejar de actualizar la interfaz
-        } // Cierre del bloque condicional if
+    @FXML
+    private void handleReset() {
+        if (animationTimer != null) {
+            animationTimer.stop();
+        }
 
-        if (simulationThread != null && simulationThread.isAlive()) { // Condición que verifica si el hilo de simulación existe y está vivo (corriendo)
-            engine.stop(); // Detiene el motor de simulación cambiando su estado interno
-            try { // Bloque try para intentar esperar a que el hilo termine
-                simulationThread.join(1000); // Espera hasta 1000 milisegundos (1 segundo) a que el hilo termine
-            } catch (InterruptedException e) { // Captura la excepción si el hilo actual es interrumpido mientras espera
-                Thread.currentThread().interrupt(); // Restablece el estado de interrupción del hilo actual
-            } // Cierre del bloque catch
-        } // Cierre del bloque condicional if
+        if (simulationThread != null && simulationThread.isAlive()) {
+            stopEngine(); // Usar método helper
+            try {
+                simulationThread.join(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
 
-        engine = new SimulationEngine(parameters); // Crea una nueva instancia del motor de simulación con los parámetros actuales
-        setupAnimationPanel(); // Reconfigura el panel de animación con el nuevo motor
-        realTimeChartsPanel.initializeState(engine.getStatistics()); // Reinicializa el estado del panel de gráficas con el nuevo motor
+        // Recrear motor DIGEMIC
+        engine = new DigemicEngine(parameters);
+        
+        setupAnimationPanel();
+        realTimeChartsPanel.initializeState(getStatistics()); // Usar método helper
 
-        startButton.setDisable(false); // Habilita el botón de inicio para poder comenzar una nueva simulación
+        startButton.setDisable(false);
         pauseButton.setDisable(true); // Deshabilita el botón de pausa porque no hay simulación corriendo
         pauseButton.setText("Pausar"); // Restablece el texto del botón de pausa a "Pausar"
         resetButton.setDisable(false); // Habilita el botón de reinicio
@@ -272,7 +325,11 @@ public class MainController { // Declaración de la clase pública MainControlle
 
     @FXML
     private void handleParameters() {
-        if (engine != null && engine.isRunning()) {
+        // TODO: DIGEMIC - Implementar diálogo de parámetros específico para DIGEMIC
+        updateStatus("Configuración de parámetros temporalmente deshabilitada");
+        
+        /* CÓDIGO ORIGINAL COMENTADO TEMPORALMENTE
+        if (engine != null && isRunning()) {
             updateStatus("Detén la simulación antes de cambiar parámetros");
             return;
         }
@@ -280,39 +337,45 @@ public class MainController { // Declaración de la clase pública MainControlle
         ParametersDialog dialog = new ParametersDialog(parameters);
         dialog.showAndWait();
         if (dialog.isAccepted()) {
-            engine = new SimulationEngine(parameters);
+            // Recrear motor apropiado según configuración
+            if (useDigemicEngine) {
+                engine = new DigemicEngine(parameters);
+            } else {
+                engine = new SimulationEngine(parameters);
+            }
             setupAnimationPanel();
-            realTimeChartsPanel.initializeState(engine.getStatistics());
+            realTimeChartsPanel.initializeState(getStatistics());
             locationTable.getItems().clear();
             entityStatsText.clear();
             updateStatus("Parámetros actualizados");
         } else {
             updateStatus("Cambios de parámetros cancelados");
         }
+        */
     }
 
-    private void handleSimulationComplete() { // Método privado que maneja la finalización de la simulación
-        animationTimer.stop(); // Detiene el timer de animación porque la simulación terminó
+    private void handleSimulationComplete() {
+        animationTimer.stop();
 
-        startButton.setDisable(true); // Deshabilita el botón de inicio porque ya no se puede reiniciar sin reset
-        pauseButton.setDisable(true); // Deshabilita el botón de pausa porque no hay nada que pausar
-        resetButton.setDisable(false); // Habilita el botón de reinicio para permitir comenzar de nuevo
-        parametersButton.setDisable(false); // Habilita el botón de parámetros para permitir cambios
+        startButton.setDisable(true);
+        pauseButton.setDisable(true);
+        resetButton.setDisable(false);
+        parametersButton.setDisable(false);
 
-        updateStatus("Simulación completada"); // Actualiza el mensaje de estado indicando que la simulación finalizó
-    updateTimeLabel(engine.getCurrentTime()); // Refresca la etiqueta de tiempo con el valor final (ej. 60 horas)
-        updateResults(); // Llama al método para actualizar las tablas de resultados con las estadísticas finales
+        updateStatus("Simulación completada");
+        updateTimeLabel(getCurrentTime()); // Usar método helper
+        updateResults();
 
         // NUEVO: Actualizar gráficas finales
-        updateRealTimeCharts(); // Actualiza las gráficas en tiempo real una última vez con los datos finales
+        updateRealTimeCharts();
 
-        mainTabPane.getSelectionModel().select(chartsTab); // Cambia automáticamente a la pestaña de gráficas para mostrar los resultados
-    } // Cierre del método handleSimulationComplete
+        mainTabPane.getSelectionModel().select(chartsTab);
+    }
 
-    private void updateDisplay() { // Método privado que actualiza la visualización de la interfaz (tiempo y animación)
-        double currentTime = engine.getCurrentTime(); // Obtiene el tiempo actual de la simulación en minutos
+    private void updateDisplay() {
+        double currentTime = getCurrentTime(); // Usar método helper
 
-        Platform.runLater(() -> { // Programa la ejecución de código en el hilo de JavaFX para actualizar la interfaz de forma thread-safe
+        Platform.runLater(() -> {
             // Actualizar tiempo
             updateTimeLabel(currentTime); // Refresca la etiqueta de tiempo en formato HH:MM
 
@@ -330,17 +393,17 @@ public class MainController { // Declaración de la clase pública MainControlle
         timeLabel.setText(String.format("Tiempo: %02d:%02d h", hours, minutes)); // Muestra el tiempo en formato HH:MM
     }
 
-    /** // Inicio del comentario Javadoc del método
-     * NUEVO: Actualiza las gráficas en tiempo real durante la simulación // Descripción del método nuevo
-     */ // Fin del comentario Javadoc
-    private void updateRealTimeCharts() { // Método privado que actualiza las gráficas en tiempo real con los datos actuales
-        Statistics stats = engine.getStatistics(); // Obtiene el objeto de estadísticas del motor
-        double currentTime = engine.getCurrentTime(); // Obtiene el tiempo actual de la simulación en minutos
+    /**
+     * NUEVO: Actualiza las gráficas en tiempo real durante la simulación
+     */
+    private void updateRealTimeCharts() {
+        Statistics stats = getStatistics(); // Usar método helper
+        double currentTime = getCurrentTime(); // Usar método helper
 
-        Platform.runLater(() -> { // Programa la ejecución de código en el hilo de JavaFX para actualizar las gráficas de forma thread-safe
-            realTimeChartsPanel.updateCharts(stats, currentTime); // Llama al método del panel de gráficas para actualizar con las estadísticas y tiempo actuales
-        }); // Cierre del paréntesis de runLater
-    } // Cierre del método updateRealTimeCharts
+        Platform.runLater(() -> {
+            realTimeChartsPanel.updateCharts(stats, currentTime);
+        });
+    }
 
     private void updateStatus(String message) { // Método privado que actualiza el mensaje de estado recibiendo el mensaje como parámetro
         statusLabel.setText("Estado: " + message); // Establece el texto de la etiqueta de estado concatenando "Estado: " con el mensaje recibido
@@ -361,27 +424,30 @@ public class MainController { // Declaración de la clase pública MainControlle
         updateEntityStats(); // Llama al método para actualizar el área de texto de estadísticas de entidades
     } // Cierre del método updateResults
 
-    private void updateLocationStats() { // Método privado que actualiza la tabla de estadísticas de locaciones con los datos finales
-        Statistics stats = engine.getStatistics(); // Obtiene el objeto de estadísticas del motor
-        double currentTime = engine.getCurrentTime(); // Obtiene el tiempo actual de la simulación en minutos
+    private void updateLocationStats() {
+        Statistics stats = getStatistics(); // Usar método helper
+        double currentTime = getCurrentTime(); // Usar método helper
 
-        List<LocationStats> locationStatsList = new ArrayList<>(); // Crea una nueva lista para almacenar objetos LocationStats
-        Map<String, Location> locations = stats.getLocations(); // Obtiene el mapa de locaciones desde las estadísticas
-        for (Map.Entry<String, Location> entry : locations.entrySet()) { // Bucle for-each que itera sobre cada entrada del mapa de locaciones
-            Location loc = entry.getValue(); // Obtiene el objeto Location de la entrada actual
+        List<LocationStats> locationStatsList = new ArrayList<>();
+        Map<String, Location> locations = stats.getLocations();
+        String scheduledTime = formatScheduledHours(parameters.getSimulationDurationMinutes());
+        for (Map.Entry<String, Location> entry : locations.entrySet()) {
+            Location loc = entry.getValue();
 
-            String name = loc.getName(); // Obtiene el nombre de la locación
-            int capacity = loc.getCapacity(); // Obtiene la capacidad de la locación
-            int totalEntries = loc.getTotalEntries(); // Obtiene el número total de entradas a la locación
-            double timePerEntry = loc.getAverageTimePerEntry(currentTime); // Obtiene el tiempo promedio por entrada en la locación
-            double avgContent = loc.getAverageContent(currentTime); // Obtiene el contenido promedio de la locación
-            int maxContent = capacity; // Asigna la capacidad como contenido máximo
-            int currentContent = loc.getCurrentContent(); // Obtiene el contenido actual de la locación
-            double utilization = loc.getUtilization(currentTime); // Obtiene el porcentaje de utilización de la locación
+            String name = loc.getName();
+            int rawCapacity = loc.getCapacity();
+            String capacityDisplay = formatCapacity(rawCapacity);
+            int totalEntries = loc.getTotalEntries();
+            double timePerEntry = loc.getAverageTimePerEntry(currentTime);
+            double avgContent = loc.getAverageContent(currentTime);
+            int maxContent = loc.getMaxContent();
+            int currentContent = loc.getCurrentContent();
+            double utilization = loc.getUtilization(currentTime);
 
-            locationStatsList.add(new LocationStats( // Crea y agrega un nuevo objeto LocationStats a la lista con todos los valores obtenidos
+            locationStatsList.add(new LocationStats(
                 name, // Parámetro 1: nombre
-                capacity, // Parámetro 2: capacidad
+                capacityDisplay, // Parámetro 2: capacidad
+                scheduledTime, // Parámetro 3: tiempo programado
                 totalEntries, // Parámetro 3: entradas totales
                 timePerEntry, // Parámetro 4: tiempo por entrada
                 avgContent, // Parámetro 5: contenido promedio
@@ -394,28 +460,29 @@ public class MainController { // Declaración de la clase pública MainControlle
         locationTable.getItems().setAll(locationStatsList); // Reemplaza todos los items de la tabla con la nueva lista de estadísticas
     } // Cierre del método updateLocationStats
 
-    private void updateEntityStats() { // Método privado que actualiza el área de texto con estadísticas de entidades
-        Statistics stats = engine.getStatistics(); // Obtiene el objeto de estadísticas del motor
+    private void updateEntityStats() {
+        Statistics stats = getStatistics(); // Usar método helper
 
-        StringBuilder sb = new StringBuilder(); // Crea un nuevo StringBuilder para construir el texto de forma eficiente
-        sb.append("=== ESTADÍSTICAS DE ENTIDADES ===\n\n"); // Agrega el título de la sección
-        sb.append(String.format("Total de Arribos: %d\n", stats.getTotalArrivals())); // Agrega el total de arribos formateado
-        sb.append(String.format("Total de Salidas (Completadas): %d\n", stats.getTotalExits())); // Agrega el total de salidas formateado
-        sb.append(String.format("En Sistema Actualmente: %d\n\n", stats.getTotalArrivals() - stats.getTotalExits())); // Agrega el número de entidades en sistema calculado como la diferencia
+        StringBuilder sb = new StringBuilder();
+        sb.append("=== ESTADÍSTICAS DE ENTIDADES ===\n\n");
+        sb.append(String.format("Total de Arribos: %d\n", stats.getTotalArrivals()));
+        sb.append(String.format("Total de Salidas (Completadas): %d\n", stats.getTotalExits()));
+        sb.append(String.format("En Sistema Actualmente: %d\n\n", stats.getTotalArrivals() - stats.getTotalExits()));
 
-        sb.append(String.format("Throughput: %.2f piezas/hora\n\n", stats.getThroughput())); // Agrega el throughput formateado con 2 decimales
-        sb.append("=== TIEMPO EN SISTEMA ===\n"); // Agrega el subtítulo de tiempo en sistema
-        sb.append(String.format("Promedio: %.2f min\n", stats.getAverageSystemTime())); // Agrega el tiempo promedio en sistema formateado con 2 decimales
-        sb.append(String.format("Desviación Estándar: %.2f min\n", stats.getStdDevSystemTime())); // Agrega la desviación estándar del tiempo en sistema formateada con 2 decimales
-        sb.append(String.format("Mínimo: %.2f min\n", stats.getMinSystemTime())); // Agrega el tiempo mínimo en sistema formateado con 2 decimales
-        sb.append(String.format("Máximo: %.2f min\n", stats.getMaxSystemTime())); // Agrega el tiempo máximo en sistema formateado con 2 decimales
+        sb.append(String.format("Throughput: %.2f piezas/hora\n\n", stats.getThroughput()));
+        sb.append("=== TIEMPO EN SISTEMA ===\n");
+        sb.append(String.format("Promedio: %.2f min\n", stats.getAverageSystemTime()));
+        sb.append(String.format("Desviación Estándar: %.2f min\n", stats.getStdDevSystemTime()));
+        sb.append(String.format("Mínimo: %.2f min\n", stats.getMinSystemTime()));
+        sb.append(String.format("Máximo: %.2f min\n", stats.getMaxSystemTime()));
 
-        entityStatsText.setText(sb.toString()); // Establece el texto completo del área de texto con el contenido del StringBuilder
-    } // Cierre del método updateEntityStats
+        entityStatsText.setText(sb.toString());
+    }
 
     public static class LocationStats { // Declaración de clase estática pública interna LocationStats que representa las estadísticas de una locación para la tabla
         private final String name; // Variable final que almacena el nombre de la locación
-        private final Integer capacity; // Variable final que almacena la capacidad de la locación
+        private final String capacity; // Variable final que almacena la capacidad mostrada (formateada)
+        private final String scheduledTime; // Tiempo programado en horas para la simulación
         private final Integer totalEntries; // Variable final que almacena el total de entradas a la locación
         private final Double timePerEntry; // Variable final que almacena el tiempo promedio por entrada
         private final Double avgContent; // Variable final que almacena el contenido promedio de la locación
@@ -424,25 +491,28 @@ public class MainController { // Declaración de la clase pública MainControlle
         private final Double utilization; // Variable final que almacena el porcentaje de utilización de la locación
 
         public LocationStats(String name, // Constructor público que inicializa una instancia de LocationStats recibiendo el nombre como primer parámetro
-                              Integer capacity, // Segundo parámetro: capacidad
-                              Integer totalEntries, // Tercer parámetro: entradas totales
-                              Double timePerEntry, // Cuarto parámetro: tiempo por entrada
-                              Double avgContent, // Quinto parámetro: contenido promedio
-                              Integer maxContent, // Sexto parámetro: contenido máximo
-                              Integer currentContent, // Séptimo parámetro: contenido actual
-                              Double utilization) { // Octavo parámetro: utilización
+                              String capacity, // Segundo parámetro: capacidad formateada
+                              String scheduledTime, // Tercer parámetro: tiempo programado
+                              Integer totalEntries, // Cuarto parámetro: entradas totales
+                              Double timePerEntry, // Quinto parámetro: tiempo por entrada
+                              Double avgContent, // Sexto parámetro: contenido promedio
+                              Integer maxContent, // Séptimo parámetro: contenido máximo
+                              Integer currentContent, // Octavo parámetro: contenido actual
+                              Double utilization) { // Noveno parámetro: utilización
             this.name = name; // Asigna el nombre recibido a la variable de instancia
-            this.capacity = capacity == Integer.MAX_VALUE ? -1 : capacity; // Asigna la capacidad, convirtiendo Integer.MAX_VALUE a -1 para mostrar como infinito
+            this.capacity = capacity; // Asigna directamente la capacidad formateada
+            this.scheduledTime = scheduledTime; // Almacena el tiempo programado
             this.totalEntries = totalEntries; // Asigna las entradas totales recibidas a la variable de instancia
             this.timePerEntry = timePerEntry; // Asigna el tiempo por entrada recibido a la variable de instancia
             this.avgContent = avgContent; // Asigna el contenido promedio recibido a la variable de instancia
-            this.maxContent = maxContent == Integer.MAX_VALUE ? -1 : maxContent; // Asigna el contenido máximo, convirtiendo Integer.MAX_VALUE a -1 para mostrar como infinito
+            this.maxContent = maxContent; // Asigna el contenido máximo observado
             this.currentContent = currentContent; // Asigna el contenido actual recibido a la variable de instancia
             this.utilization = utilization; // Asigna la utilización recibida a la variable de instancia
         } // Cierre del constructor LocationStats
 
         public String getName() { return name; } // Método público getter que retorna el nombre de la locación
-        public Integer getCapacity() { return capacity; } // Método público getter que retorna la capacidad de la locación
+        public String getCapacity() { return capacity; } // Método público getter que retorna la capacidad formateada
+        public String getScheduledTime() { return scheduledTime; } // Getter para el tiempo programado
         public Integer getTotalEntries() { return totalEntries; } // Método público getter que retorna el total de entradas
         public Double getTimePerEntry() { return timePerEntry; } // Método público getter que retorna el tiempo por entrada
         public Double getAvgContent() { return avgContent; } // Método público getter que retorna el contenido promedio
@@ -450,4 +520,16 @@ public class MainController { // Declaración de la clase pública MainControlle
         public Integer getCurrentContent() { return currentContent; } // Método público getter que retorna el contenido actual
         public Double getUtilization() { return utilization; } // Método público getter que retorna la utilización
     } // Cierre de la clase LocationStats
+
+    private String formatCapacity(int capacity) { // Devuelve la capacidad formateada para coincidir con la tabla de resultados
+        if (capacity == Integer.MAX_VALUE) {
+            return "999.999,00"; // Formato similar a ProModel para capacidades infinitas
+        }
+        return String.valueOf(capacity);
+    }
+
+    private String formatScheduledHours(double durationMinutes) { // Convierte minutos programados a horas con dos decimales
+        double hours = durationMinutes / 60.0;
+        return String.format("%.2f", hours);
+    }
 } // Cierre de la clase MainController

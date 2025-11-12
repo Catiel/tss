@@ -71,8 +71,9 @@
                                 </columnResizePolicy>
                                 <columns>
                                     <TableColumn fx:id="locNameCol" text="Locación" prefWidth="150"/>
-                                    <TableColumn fx:id="locCapacityCol" text="Capacidad" prefWidth="80"/>
-                                    <TableColumn fx:id="locEntriesCol" text="Total Entradas" prefWidth="100"/>
+                                    <TableColumn fx:id="locCapacityCol" text="Capacidad" prefWidth="90"/>
+                                    <TableColumn fx:id="locScheduledTimeCol" text="Tiempo Programado (Hr)" prefWidth="160"/>
+                                    <TableColumn fx:id="locEntriesCol" text="Total Entradas" prefWidth="110"/>
                                     <TableColumn fx:id="locTimePerEntryCol" text="Tiempo/Entrada (min)" prefWidth="140"/>
                                     <TableColumn fx:id="locAvgContentCol" text="Contenido Prom" prefWidth="120"/>
                                     <TableColumn fx:id="locMaxContentCol" text="Contenido Máx" prefWidth="110"/>
