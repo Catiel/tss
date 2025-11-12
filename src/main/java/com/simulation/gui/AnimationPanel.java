@@ -20,12 +20,12 @@ public class AnimationPanel extends Pane {
     private Canvas canvas;
     private DigemicEngine engine; // Motor DIGEMIC
 
-    private static final double WIDTH = 1600;
-    private static final double HEIGHT = 1250;
-    private static final double BOX_SIZE = 120;
+    private static final double WIDTH = 1200; // MODIFICADO: Reducido de 1600 a 1200
+    private static final double HEIGHT = 900; // MODIFICADO: Reducido de 1250 a 900
+    private static final double BOX_SIZE = 140; // MODIFICADO: Aumentado de 120 a 140 para mejor visibilidad
     private static final double COUNTER_WIDTH = 210;
     private static final double COUNTER_HEIGHT = 86;
-    private static final double COUNTER_START_X = 1300;
+    private static final double COUNTER_START_X = 950; // MODIFICADO: Ajustado a nuevo ancho
     private static final double COUNTER_START_Y = 80;
 
     private Map<String, double[]> locationPositions;
@@ -33,7 +33,15 @@ public class AnimationPanel extends Pane {
     private Map<String, String> locationIcons;
 
     private List<VirtualTransit> virtualTransits;
+    private Map<Integer, String> visualLocations; // Locaciones visibles (pueden diferir de la real durante tránsito)
+    private Set<Integer> activeTransitEntities; // Entidades actualmente en animación de tránsito
     private double gearRotation = 0;
+    
+    // NUEVO: Variables para control de zoom
+    private double zoomLevel = 1.0;
+    private static final double MIN_ZOOM = 0.5;
+    private static final double MAX_ZOOM = 2.0;
+    private static final double ZOOM_STEP = 0.1;
 
     public AnimationPanel(DigemicEngine engine) { // Constructor recibe DigemicEngine
         this.engine = engine;
@@ -41,7 +49,9 @@ public class AnimationPanel extends Pane {
         this.locationPositions = new HashMap<>();
         this.locationColors = new HashMap<>();
         this.locationIcons = new HashMap<>();
-        this.virtualTransits = new ArrayList<>();
+    this.virtualTransits = new ArrayList<>();
+    this.visualLocations = new HashMap<>(); // Inicializar tracking de locaciones visibles
+    this.activeTransitEntities = new HashSet<>(); // Inicializar set de tránsito
 
         initializePositions();
         initializeColors();
@@ -50,8 +60,48 @@ public class AnimationPanel extends Pane {
         getChildren().add(canvas);
         setMinSize(WIDTH, HEIGHT); // Establece el tamaño mínimo del panel con el ancho y altura definidos
         setPrefSize(WIDTH, HEIGHT); // Establece el tamaño preferido del panel con el ancho y altura definidos
-        setMaxSize(WIDTH, HEIGHT); // Establece el tamaño máximo del panel con el ancho y altura definidos
+        
+        // NUEVO: Configurar zoom con scroll del mouse
+        setupZoomControls();
     } // Cierre del constructor AnimationPanel
+    
+    // NUEVO: Método para configurar controles de zoom
+    private void setupZoomControls() {
+        canvas.setOnScroll(event -> {
+            if (event.isControlDown()) {
+                double delta = event.getDeltaY();
+                if (delta > 0) {
+                    zoomIn();
+                } else {
+                    zoomOut();
+                }
+                event.consume();
+            }
+        });
+    }
+    
+    // NUEVO: Métodos de zoom
+    public void zoomIn() {
+        if (zoomLevel < MAX_ZOOM) {
+            zoomLevel += ZOOM_STEP;
+            canvas.setScaleX(zoomLevel);
+            canvas.setScaleY(zoomLevel);
+        }
+    }
+    
+    public void zoomOut() {
+        if (zoomLevel > MIN_ZOOM) {
+            zoomLevel -= ZOOM_STEP;
+            canvas.setScaleX(zoomLevel);
+            canvas.setScaleY(zoomLevel);
+        }
+    }
+    
+    public void resetZoom() {
+        zoomLevel = 1.0;
+        canvas.setScaleX(1.0);
+        canvas.setScaleY(1.0);
+    }
 
     // === MÉTODOS HELPER PARA ACCESO AL MOTOR ===
     
@@ -73,19 +123,19 @@ public class AnimationPanel extends Pane {
 
 
     private void initializePositions() { // Método privado que inicializa las posiciones X-Y de cada locación DIGEMIC en el canvas
-        // Layout de oficina de pasaportes mejorado para representar el flujo correcto
+        // Layout de oficina de pasaportes optimizado para mejor visualización
         
         // Columna izquierda: Entrada y Zona de Formas
-        locationPositions.put("ENTRADA", new double[]{60, 150}); // Puerta de entrada (arriba izquierda)
-        locationPositions.put("ZONA_FORMAS", new double[]{60, 380}); // Área de llenado de formularios (abajo de entrada)
+        locationPositions.put("ENTRADA", new double[]{60, 120}); // Puerta de entrada (arriba izquierda)
+        locationPositions.put("ZONA_FORMAS", new double[]{60, 340}); // Área de llenado de formularios (abajo de entrada)
         
         // Columna central: Áreas de espera
-        locationPositions.put("SALA_SILLAS", new double[]{380, 150}); // Sala con sillas (centro arriba) - 40 capacidad
-        locationPositions.put("SALA_DE_PIE", new double[]{380, 380}); // Área de pie (centro abajo) - sin límite
+        locationPositions.put("SALA_SILLAS", new double[]{340, 120}); // Sala con sillas (centro arriba) - 40 capacidad
+        locationPositions.put("SALA_DE_PIE", new double[]{340, 340}); // Área de pie (centro abajo) - sin límite
         
         // Columna derecha: Ventanillas de servicio
-        locationPositions.put("SERVIDOR_1", new double[]{700, 200}); // Primera ventanilla (derecha arriba)
-        locationPositions.put("SERVIDOR_2", new double[]{700, 380}); // Segunda ventanilla (derecha abajo)
+        locationPositions.put("SERVIDOR_1", new double[]{620, 160}); // Primera ventanilla (derecha arriba)
+        locationPositions.put("SERVIDOR_2", new double[]{620, 340}); // Segunda ventanilla (derecha abajo)
     } // Cierre del método initializePositions
 
     private void initializeColors() { // Método privado que inicializa los colores representativos de todas las locaciones DIGEMIC
@@ -117,9 +167,9 @@ public class AnimationPanel extends Pane {
         drawAllLocations(gc); // Llama al método para dibujar todas las 6 locaciones DIGEMIC
         drawCounters(gc); // Llama al método para dibujar los contadores de estadísticas de cada locación
 
-        detectVirtualTransits(); // Llama al método para actualizar y limpiar los tránsitos virtuales
-        drawTransitEntities(gc); // Llama al método para dibujar las entidades reales que están en tránsito
-        drawVirtualTransitEntities(gc); // Llama al método para dibujar las entidades virtuales en tránsito
+    detectVirtualTransits(); // Actualiza las animaciones de tránsito en curso
+    drawStationaryEntities(gc); // Dibuja las entidades que están esperando en cada locación
+    drawVirtualTransitEntities(gc); // Dibuja las entidades que se están moviendo entre locaciones
 
         drawGlobalInfo(gc); // Llama al método para dibujar el panel de información global del sistema
 
@@ -245,9 +295,9 @@ public class AnimationPanel extends Pane {
         String icon = locationIcons.get(name); // Obtiene el icono de la locación desde el mapa de iconos
 
         // Si location es null, usar valores por defecto
-        int currentContent = location != null ? location.getCurrentContent() : 0; // Obtiene el contenido actual de la locación, o 0 si es null
-        int capacity = location != null ? location.getCapacity() : Integer.MAX_VALUE; // Obtiene la capacidad de la locación, o Integer.MAX_VALUE si es null
-        int queueSize = location != null ? location.getQueueSize() : 0; // Obtiene el tamaño de la cola de la locación, o 0 si es null
+    int currentContent = getVisualContent(name);
+    int capacity = location != null ? location.getCapacity() : Integer.MAX_VALUE; // Obtiene la capacidad de la locación, o Integer.MAX_VALUE si es null
+    int queueSize = location != null ? location.getQueueSize() : 0; // Obtiene el tamaño de la cola de la locación, o 0 si es null
 
         // Sombra
         gc.setFill(Color.rgb(0, 0, 0, 0.2)); // Establece el color de relleno como negro semitransparente para la sombra
@@ -286,13 +336,13 @@ public class AnimationPanel extends Pane {
         } // Cierre del bloque condicional if
 
         // Barra de utilización
-        double utilization = location != null ? location.getUtilization(getCurrentTimeFromEngine()) : 0; // Usar método helper
+    double utilization = location != null ? location.getUtilization(getCurrentTimeFromEngine()) : 0; // Usar método helper
         drawUtilizationBar(gc, pos[0], pos[1] + BOX_SIZE + 8, BOX_SIZE, utilization);
 
-        // Dibujar personas dentro de las locaciones (clientes esperando)
-        if (location != null) { // Condición que verifica que la locación existe
-            drawEntitiesInLocation(gc, pos[0], pos[1], currentContent, capacity); // Dibuja los círculos representando clientes
-        } // Cierre del bloque condicional if
+        if (name.startsWith("SERVIDOR")) {
+            drawServerBatchProgress(gc, pos[0], pos[1], name);
+        }
+
     } // Cierre del método drawLocationSafe
 
     private String getDisplayName(String name) { // Método privado que retorna un nombre formateado para mostrar recibiendo el nombre interno como parámetro
@@ -347,37 +397,6 @@ public class AnimationPanel extends Pane {
         gc.fillText(String.format("%.0f%%", utilization), x + width / 2, y + barHeight + 15); // Dibuja el porcentaje centrado debajo de la barra
     } // Cierre del método drawUtilizationBar
 
-    private void drawEntitiesInLocation(GraphicsContext gc, double x, double y, int count, int capacity) { // Método privado que dibuja círculos representando piezas individuales dentro de una locación recibiendo el contexto gráfico, posición, cantidad y capacidad como parámetros
-        if (count == 0 || capacity == Integer.MAX_VALUE) return; // Si no hay piezas o la capacidad es infinita, sale del método prematuramente
-
-        int maxDisplay = Math.min(count, capacity); // Calcula el máximo de piezas a mostrar (el menor entre el conteo y la capacidad)
-        int cols = (int) Math.ceil(Math.sqrt(capacity)); // Calcula el número de columnas como la raíz cuadrada de la capacidad redondeada arriba
-        int rows = (int) Math.ceil((double) capacity / cols); // Calcula el número de filas dividiendo la capacidad entre las columnas
-
-        double pieceSize = Math.min((BOX_SIZE - 20) / cols, (BOX_SIZE - 20) / rows) * 0.65; // Calcula el tamaño de cada pieza para que quepan todas
-        double offsetX = x + (BOX_SIZE - cols * pieceSize) / 2; // Calcula el desplazamiento X para centrar la cuadrícula horizontalmente
-        double offsetY = y + (BOX_SIZE - rows * pieceSize) / 2 + 10; // Calcula el desplazamiento Y para centrar la cuadrícula verticalmente
-
-        int drawn = 0; // Inicializa el contador de piezas dibujadas en 0
-        for (int i = 0; i < rows && drawn < maxDisplay; i++) { // Bucle for externo que itera sobre las filas
-            for (int j = 0; j < cols && drawn < maxDisplay; j++) { // Bucle for interno que itera sobre las columnas
-                double px = offsetX + j * pieceSize + pieceSize / 4; // Calcula la posición X de la pieza actual
-                double py = offsetY + i * pieceSize + pieceSize / 4; // Calcula la posición Y de la pieza actual
-
-                gc.setFill(Color.rgb(0, 0, 0, 0.3)); // Establece el color de relleno como negro semitransparente para la sombra
-                gc.fillOval(px + 2, py + 2, pieceSize / 2, pieceSize / 2); // Dibuja un círculo desplazado como sombra de la pieza
-
-                gc.setFill(Color.rgb(33, 150, 243)); // Establece el color de relleno como azul para la pieza
-                gc.fillOval(px, py, pieceSize / 2, pieceSize / 2); // Dibuja el círculo que representa la pieza
-
-                gc.setStroke(Color.rgb(25, 118, 210)); // Establece el color de trazo como azul oscuro para el borde de la pieza
-                gc.setLineWidth(1.5); // Establece el grosor del borde en 1.5 píxeles
-                gc.strokeOval(px, py, pieceSize / 2, pieceSize / 2); // Dibuja el borde del círculo
-
-                drawn++; // Incrementa el contador de piezas dibujadas
-            } // Cierre del bucle for interno
-        } // Cierre del bucle for externo
-    } // Cierre del método drawEntitiesInLocation
 
     private void drawCounters(GraphicsContext gc) { // Método privado que dibuja los contadores de estadísticas de todas las locaciones DIGEMIC
         double startX = COUNTER_START_X; // Establece la posición X inicial usando la constante definida
@@ -450,94 +469,420 @@ public class AnimationPanel extends Pane {
         gc.fillRoundRect(x + 12, barY, fillWidth, barHeight, 4, 4); // Dibuja la barra de progreso con el ancho y color calculados
     } // Cierre del método drawCounterSafe
 
-    private void detectVirtualTransits() { // Método privado que actualiza y limpia los tránsitos virtuales obsoletos sin recibir parámetros
-        virtualTransits.removeIf(vt -> { // Usa removeIf para filtrar y remover tránsitos que cumplan la condición especificada
-            vt.progress += 0.08; // Incrementa el progreso del tránsito virtual en 0.08
-            return vt.progress >= 1.0; // Retorna true si el progreso alcanzó o superó 1.0 (100%) para removerlo de la lista
-        }); // Cierre del paréntesis de removeIf
-    } // Cierre del método detectVirtualTransits
+    private void drawServerBatchProgress(GraphicsContext gc, double baseX, double baseY, String serverName) {
+        int target = engine.getServerBatchTarget();
+        if (target <= 0) {
+            return;
+        }
 
-    private void drawTransitEntities(GraphicsContext gc) {
-        List<Entity> allEntities = getAllActiveEntitiesFromEngine(); // Usar método helper
-        if (allEntities == null) return;
+        int progress = engine.getServerBatchProgress(serverName);
+        boolean paused = engine.isServerPaused(serverName);
 
-        double currentTime = getCurrentTimeFromEngine(); // Usar método helper
+        int columns = 5;
+        int rows = (int) Math.ceil((double) target / columns);
+        double bubbleSize = 12;
+        double bubbleSpacing = 5;
+        double panelPadding = 6;
+
+        double panelWidth = columns * bubbleSize + (columns - 1) * bubbleSpacing + panelPadding * 2;
+        double panelHeight = rows * bubbleSize + (rows - 1) * bubbleSpacing + panelPadding * 2;
+
+        double panelX = baseX + BOX_SIZE + 14;
+        double panelY = baseY + (BOX_SIZE - panelHeight) / 2.0;
+
+        Color baseColor = locationColors.getOrDefault(serverName, Color.rgb(244, 67, 54));
+
+        gc.setFill(Color.rgb(255, 255, 255, 0.9));
+        gc.fillRoundRect(panelX, panelY, panelWidth, panelHeight, 10, 10);
+
+        gc.setStroke(baseColor.darker());
+        gc.setLineWidth(2);
+        gc.strokeRoundRect(panelX, panelY, panelWidth, panelHeight, 10, 10);
+
+        for (int index = 0; index < target; index++) {
+            int row = index / columns;
+            int col = index % columns;
+
+            double centerX = panelX + panelPadding + col * (bubbleSize + bubbleSpacing) + bubbleSize / 2.0;
+            double centerY = panelY + panelPadding + row * (bubbleSize + bubbleSpacing) + bubbleSize / 2.0;
+
+            boolean filled = index < progress;
+
+            Color fillColor;
+            if (filled) {
+                fillColor = paused ? Color.rgb(255, 214, 102) : baseColor;
+            } else {
+                fillColor = Color.rgb(189, 189, 189, 0.6);
+            }
+
+            gc.setFill(fillColor);
+            gc.fillOval(centerX - bubbleSize / 2.0, centerY - bubbleSize / 2.0, bubbleSize, bubbleSize);
+
+            gc.setStroke(filled ? baseColor.darker() : Color.rgb(158, 158, 158));
+            gc.setLineWidth(1.5);
+            gc.strokeOval(centerX - bubbleSize / 2.0, centerY - bubbleSize / 2.0, bubbleSize, bubbleSize);
+        }
+    }
+
+    private int getVisualContent(String locationName) {
+        int count = 0;
+        for (Map.Entry<Integer, String> entry : visualLocations.entrySet()) {
+            if (locationName.equals(entry.getValue()) && !activeTransitEntities.contains(entry.getKey())) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private void detectVirtualTransits() {
+        double currentSimTime = getCurrentTimeFromEngine();
+
+        // Actualizar transiciones existentes en función del tiempo de simulación
+        Iterator<VirtualTransit> iterator = virtualTransits.iterator();
+        while (iterator.hasNext()) {
+            VirtualTransit vt = iterator.next();
+            double elapsed = currentSimTime - vt.startTime;
+            double transitDuration = vt.estimatedDuration > 0 ? vt.estimatedDuration : 0.1;
+            vt.progress = Math.min(1.0, elapsed / transitDuration);
+
+            if (vt.progress >= 1.0) {
+                iterator.remove();
+                activeTransitEntities.remove(vt.entityId);
+                visualLocations.put(vt.entityId, vt.to);
+            }
+        }
+
+        List<Entity> allEntities = getAllActiveEntitiesFromEngine();
+        if (allEntities == null) {
+            return;
+        }
 
         for (Entity entity : allEntities) {
-            if (entity == null || !entity.isInTransit()) continue;
+            if (entity == null) {
+                continue;
+            }
 
-            String from = entity.getCurrentLocation(); // Obtiene la locación de origen de la entidad
-            String to = entity.getDestinationLocation(); // Obtiene la locación de destino de la entidad
-            if (from == null || to == null) continue; // Si alguna locación es null, salta a la siguiente iteración
+            String currentLoc = entity.getCurrentLocation();
+            if (currentLoc == null || currentLoc.isEmpty()) {
+                visualLocations.remove(entity.getId());
+                activeTransitEntities.remove(entity.getId());
+                continue;
+            }
 
-            double progress = entity.getTransitProgress(currentTime); // Calcula el progreso del tránsito (0.0 a 1.0)
+            int entityId = entity.getId();
+            String lastLoc = visualLocations.get(entityId);
 
-            double[] fromPos = getLocationExitPoint(from); // Obtiene el punto de salida de la locación origen
-            double[] toPos = getLocationEntryPoint(to); // Obtiene el punto de entrada de la locación destino
+            if (lastLoc != null && !lastLoc.equals(currentLoc)) {
+                boolean alreadyTransiting = activeTransitEntities.contains(entityId);
+                if (!alreadyTransiting
+                        && locationPositions.containsKey(lastLoc)
+                        && locationPositions.containsKey(currentLoc)) {
+                    double distance = calculateDistance(lastLoc, currentLoc);
+                    double duration = estimateTransitDuration(distance, lastLoc, currentLoc);
 
-            if (fromPos != null && toPos != null) { // Condición que verifica si ambas posiciones son válidas
-                double x = fromPos[0] + (toPos[0] - fromPos[0]) * progress; // Calcula la posición X interpolada según el progreso
-                double y = fromPos[1] + (toPos[1] - fromPos[1]) * progress; // Calcula la posición Y interpolada según el progreso
-                Color baseColor = locationColors.getOrDefault(to, Color.rgb(33, 150, 243)); // Obtiene el color del destino, o azul por defecto
-                drawMovingPiece(gc, x, y, entity.getId(), baseColor); // Dibuja la pieza en movimiento en la posición calculada
-            } // Cierre del bloque condicional if
-        } // Cierre del bucle for-each
-    } // Cierre del método drawTransitEntities
+                    VirtualTransit vt = new VirtualTransit(entityId, lastLoc, currentLoc);
+                    vt.startTime = currentSimTime;
+                    vt.estimatedDuration = duration;
+                    vt.progress = 0.0;
 
-    private void drawVirtualTransitEntities(GraphicsContext gc) { // Método privado que dibuja las entidades en tránsito virtual recibiendo el contexto gráfico como parámetro
-        for (VirtualTransit vt : virtualTransits) { // Bucle for-each que itera sobre cada tránsito virtual en la lista
-            double[] fromPos = getLocationExitPoint(vt.from); // Obtiene el punto de salida de la locación origen del tránsito virtual
-            double[] toPos = getLocationEntryPoint(vt.to); // Obtiene el punto de entrada de la locación destino del tránsito virtual
+                    virtualTransits.add(vt);
+                    activeTransitEntities.add(entityId);
+                }
+            }
 
-            if (fromPos != null && toPos != null) { // Condición que verifica si ambas posiciones son válidas
-                double x = fromPos[0] + (toPos[0] - fromPos[0]) * vt.progress; // Calcula la posición X interpolada según el progreso del tránsito virtual
-                double y = fromPos[1] + (toPos[1] - fromPos[1]) * vt.progress; // Calcula la posición Y interpolada según el progreso del tránsito virtual
-                Color baseColor = locationColors.getOrDefault(vt.to, Color.rgb(33, 150, 243)); // Obtiene el color del destino, o azul por defecto
-                drawMovingPiece(gc, x, y, vt.entityId, baseColor); // Dibuja la pieza virtual en movimiento en la posición calculada
-            } // Cierre del bloque condicional if
-        } // Cierre del bucle for-each
-    } // Cierre del método drawVirtualTransitEntities
+            visualLocations.putIfAbsent(entityId, currentLoc);
+            if (!activeTransitEntities.contains(entityId) && lastLoc == null) {
+                visualLocations.put(entityId, currentLoc);
+            }
+        }
+    }
+    
+    private double calculateDistance(String from, String to) {
+        double[] fromPos = locationPositions.get(from);
+        double[] toPos = locationPositions.get(to);
+        
+        if (fromPos == null || toPos == null) return 100;
+        
+        double dx = toPos[0] - fromPos[0];
+        double dy = toPos[1] - fromPos[1];
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+    
+    private double estimateTransitDuration(double distance, String from, String to) {
+        double baseDuration;
 
-    private double[] getLocationExitPoint(String location) { // Método privado que retorna el punto de salida [x, y] de una locación recibiendo el nombre de la locación como parámetro
-        double[] pos = locationPositions.get(location); // Obtiene la posición base [x, y] de la locación
-        if (pos == null) return null; // Si la posición es null, retorna null
+        if (from.equals("ENTRADA") && to.equals("ZONA_FORMAS")) {
+            baseDuration = 1.8;
+        } else if (from.equals("ENTRADA") && (to.equals("SALA_SILLAS") || to.equals("SALA_DE_PIE"))) {
+            baseDuration = 1.5;
+        } else if (from.equals("ZONA_FORMAS")) {
+            baseDuration = 1.3;
+        } else if (from.equals("SALA_DE_PIE") && to.equals("SALA_SILLAS")) {
+            baseDuration = 1.0;
+        } else if (from.equals("SALA_SILLAS") && (to.equals("SERVIDOR_1") || to.equals("SERVIDOR_2"))) {
+            baseDuration = 1.6;
+        } else {
+            baseDuration = 0.8 + (distance / 320.0);
+        }
 
-        if (location.equals("TORNO") || location.equals("PINTURA") || location.equals("INSPECCION_1")) { // Condición que verifica si la locación tiene salida vertical
-            return new double[]{pos[0] + BOX_SIZE / 2, pos[1] + BOX_SIZE}; // Retorna el punto en el centro horizontal del borde inferior
-        } // Cierre del bloque condicional if
+        double slowFactor = computeAnimationSlowFactor();
+        return baseDuration * slowFactor;
+    }
 
-        return new double[]{pos[0] + BOX_SIZE, pos[1] + BOX_SIZE / 2}; // Para todas las demás locaciones, retorna el punto en el borde derecho
-    } // Cierre del método getLocationExitPoint
+    private double computeAnimationSlowFactor() {
+        double currentSpeed = engine.getSimulationSpeed();
+        if (currentSpeed <= 0) {
+            return 12.0;
+        }
+        double factor = 18.0 / currentSpeed;
+        if (factor < 2.5) {
+            factor = 2.5;
+        } else if (factor > 12.0) {
+            factor = 12.0;
+        }
+        return factor;
+    }
 
-    private double[] getLocationEntryPoint(String location) { // Método privado que retorna el punto de entrada [x, y] de una locación recibiendo el nombre de la locación como parámetro
-        double[] pos = locationPositions.get(location); // Obtiene la posición base [x, y] de la locación
-        if (pos == null) return null; // Si la posición es null, retorna null
+    private void drawStationaryEntities(GraphicsContext gc) {
+        List<Entity> allEntities = getAllActiveEntitiesFromEngine();
+        if (allEntities == null) {
+            return;
+        }
 
-        if (location.equals("CONVEYOR_2") || location.equals("INSPECCION_1") || location.equals("INSPECCION_2")) { // Condición que verifica si la locación tiene entrada vertical
-            return new double[]{pos[0] + BOX_SIZE / 2, pos[1]}; // Retorna el punto en el centro horizontal del borde superior
-        } // Cierre del bloque condicional if
+        Map<String, List<Entity>> grouped = new HashMap<>();
+        for (Entity entity : allEntities) {
+            if (entity == null) {
+                continue;
+            }
+            int entityId = entity.getId();
+            if (activeTransitEntities.contains(entityId)) {
+                continue; // Se está animando el tránsito, no dibujar como estacionario
+            }
 
-        if (location.equals("FRESADORA") || location.equals("ALMACEN_2") || location.equals("PINTURA")) { // Condición que verifica si la locación tiene entrada desde la derecha
-            return new double[]{pos[0] + BOX_SIZE, pos[1] + BOX_SIZE / 2}; // Retorna el punto en el centro vertical del borde derecho
-        } // Cierre del bloque condicional if
+            String currentLoc = entity.getCurrentLocation();
+            if (currentLoc == null || currentLoc.isEmpty()) {
+                visualLocations.remove(entityId);
+                continue;
+            }
 
-        return new double[]{pos[0], pos[1] + BOX_SIZE / 2}; // Para todas las demás locaciones, retorna el punto en el borde izquierdo
-    } // Cierre del método getLocationEntryPoint
+            String visualLoc = visualLocations.computeIfAbsent(entityId, id -> currentLoc);
+            grouped.computeIfAbsent(visualLoc, key -> new ArrayList<>()).add(entity);
+        }
 
-    private void drawMovingPiece(GraphicsContext gc, double x, double y, int entityId, Color baseColor) { // Método privado que dibuja una pieza en movimiento recibiendo el contexto gráfico, posición, ID de entidad y color como parámetros
-        double pieceSize = 16; // Define el tamaño de la pieza en movimiento en píxeles
+        for (Map.Entry<String, List<Entity>> entry : grouped.entrySet()) {
+            List<Entity> entities = entry.getValue();
+            entities.sort(Comparator.comparingInt(Entity::getId));
+            drawEntitiesForLocation(gc, entry.getKey(), entities);
+        }
+    }
 
-        Color shadowColor = baseColor.deriveColor(0, 1.0, 0.4, 0.35); // Crea un color de sombra derivando del color base
-        gc.setFill(shadowColor); // Establece el color de relleno como el color de sombra
-        gc.fillOval(x - pieceSize/2 + 2, y - pieceSize/2 + 2, pieceSize, pieceSize); // Dibuja un círculo desplazado como sombra de la pieza
+    private void drawEntitiesForLocation(GraphicsContext gc, String location, List<Entity> entities) {
+        double[] basePos = locationPositions.get(location);
+        if (basePos == null || entities.isEmpty()) {
+            return;
+        }
 
-        gc.setFill(baseColor); // Establece el color de relleno como el color base
-        gc.fillOval(x - pieceSize/2, y - pieceSize/2, pieceSize, pieceSize); // Dibuja el círculo principal de la pieza
+        int columns = getColumnsForLocation(location);
+        int rows = Math.max(1, (int) Math.ceil((double) entities.size() / columns));
 
-        gc.setStroke(baseColor.darker()); // Establece el color de trazo como una versión más oscura del color base
-        gc.setLineWidth(2); // Establece el grosor del borde en 2 píxeles
-        gc.strokeOval(x - pieceSize/2, y - pieceSize/2, pieceSize, pieceSize); // Dibuja el borde del círculo
-    } // Cierre del método drawMovingPiece
+        double padding = 18;
+        double availableWidth = BOX_SIZE - padding * 2;
+        double availableHeight = BOX_SIZE - padding * 2 - 16; // Dejar espacio para el contador inferior
+        if (location.startsWith("SERVIDOR")) {
+            availableHeight = BOX_SIZE - padding * 2;
+        } else if ("SALA_DE_PIE".equals(location)) {
+            availableHeight = BOX_SIZE - padding * 1.5;
+        }
+
+        double cellWidth = availableWidth / Math.max(1, columns);
+        double cellHeight = availableHeight / Math.max(1, rows);
+
+        for (int index = 0; index < entities.size(); index++) {
+            int row = index / columns;
+            int col = index % columns;
+
+            double centerX = basePos[0] + padding + col * cellWidth + cellWidth / 2;
+            double centerY = basePos[1] + padding + row * cellHeight + cellHeight / 2;
+
+            drawStationaryEntity(gc, centerX, centerY, entities.get(index), location);
+        }
+    }
+
+    private int getColumnsForLocation(String location) {
+        switch (location) {
+            case "ENTRADA":
+                return 3;
+            case "ZONA_FORMAS":
+                return 4;
+            case "SALA_SILLAS":
+                return 8;
+            case "SALA_DE_PIE":
+                return 12;
+            case "SERVIDOR_1":
+            case "SERVIDOR_2":
+                return 1;
+            default:
+                return 4;
+        }
+    }
+
+    private void drawStationaryEntity(GraphicsContext gc, double centerX, double centerY, Entity entity, String location) {
+        double baseSize;
+        if (location.startsWith("SERVIDOR")) {
+            baseSize = 26;
+        } else if ("SALA_SILLAS".equals(location)) {
+            baseSize = 18;
+        } else if ("SALA_DE_PIE".equals(location)) {
+            baseSize = 14;
+        } else {
+            baseSize = 16;
+        }
+
+        double size = baseSize;
+
+        // Sombra
+        gc.setFill(Color.rgb(0, 0, 0, 0.25));
+        gc.fillOval(centerX - size / 2 + 2, centerY - size / 2 + 2, size, size);
+
+        boolean blocked = entity.isBlocked();
+        Color fillColor;
+        if (location.startsWith("SERVIDOR")) {
+            fillColor = Color.rgb(255, 214, 102);
+        } else if (blocked) {
+            fillColor = Color.rgb(255, 111, 0);
+        } else if ("ZONA_FORMAS".equals(location)) {
+            fillColor = Color.rgb(255, 213, 79);
+        } else if ("ENTRADA".equals(location)) {
+            fillColor = Color.rgb(129, 199, 132);
+        } else {
+            fillColor = Color.rgb(33, 150, 243);
+        }
+
+        gc.setFill(fillColor);
+        gc.fillOval(centerX - size / 2, centerY - size / 2, size, size);
+
+        Color borderColor = blocked ? Color.rgb(183, 28, 28) : Color.rgb(25, 118, 210);
+        gc.setStroke(borderColor);
+        gc.setLineWidth(2);
+        gc.strokeOval(centerX - size / 2, centerY - size / 2, size, size);
+
+        gc.setFill(Color.WHITE);
+        gc.setFont(Font.font("Arial", FontWeight.BOLD, 10));
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText(String.valueOf(entity.getId()), centerX, centerY + 3);
+    }
+
+    private void drawVirtualTransitEntities(GraphicsContext gc) {
+        for (VirtualTransit vt : virtualTransits) {
+            double[] fromPos = getLocationExitPoint(vt.from);
+            double[] toPos = getLocationEntryPoint(vt.to);
+
+            if (fromPos != null && toPos != null) {
+                // Interpolación ease-in-out para movimiento más natural
+                double t = vt.progress;
+                double smoothProgress = t < 0.5 
+                    ? 2 * t * t 
+                    : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                
+                double x = fromPos[0] + (toPos[0] - fromPos[0]) * smoothProgress;
+                double y = fromPos[1] + (toPos[1] - fromPos[1]) * smoothProgress;
+                
+                Color baseColor = locationColors.getOrDefault(vt.to, Color.rgb(255, 215, 0));
+                drawMovingPiece(gc, x, y, vt.entityId, baseColor);
+            }
+        }
+    }
+
+    private double[] getLocationExitPoint(String location) {
+        double[] pos = locationPositions.get(location);
+        if (pos == null) return null;
+
+        // Puntos de salida para DIGEMIC
+        if (location.equals("ENTRADA")) {
+            return new double[]{pos[0] + BOX_SIZE / 2, pos[1] + BOX_SIZE}; // Sale por abajo
+        }
+        if (location.equals("ZONA_FORMAS")) {
+            return new double[]{pos[0] + BOX_SIZE, pos[1] + BOX_SIZE / 2}; // Sale por la derecha
+        }
+        if (location.equals("SALA_DE_PIE")) {
+            return new double[]{pos[0] + BOX_SIZE / 2, pos[1]}; // Sale por arriba
+        }
+        if (location.equals("SALA_SILLAS")) {
+            return new double[]{pos[0] + BOX_SIZE, pos[1] + BOX_SIZE / 2}; // Sale por la derecha
+        }
+        
+        // Por defecto, sale por la derecha
+        return new double[]{pos[0] + BOX_SIZE, pos[1] + BOX_SIZE / 2};
+    }
+
+    private double[] getLocationEntryPoint(String location) {
+        double[] pos = locationPositions.get(location);
+        if (pos == null) return null;
+
+        // Puntos de entrada para DIGEMIC
+        if (location.equals("ZONA_FORMAS")) {
+            return new double[]{pos[0] + BOX_SIZE / 2, pos[1]}; // Entra por arriba
+        }
+        if (location.equals("SALA_SILLAS")) {
+            return new double[]{pos[0], pos[1] + BOX_SIZE / 2}; // Entra por la izquierda
+        }
+        if (location.equals("SALA_DE_PIE")) {
+            return new double[]{pos[0], pos[1] + BOX_SIZE / 2}; // Entra por la izquierda
+        }
+        if (location.equals("SERVIDOR_1") || location.equals("SERVIDOR_2")) {
+            return new double[]{pos[0], pos[1] + BOX_SIZE / 2}; // Entran por la izquierda
+        }
+        
+        // Por defecto, entra por la izquierda
+        return new double[]{pos[0], pos[1] + BOX_SIZE / 2};
+    }
+
+    private void drawMovingPiece(GraphicsContext gc, double x, double y, int entityId, Color baseColor) {
+        double pieceSize = 28; // Tamaño grande y visible
+        
+        // Efecto de pulsación suave
+        double pulseEffect = Math.sin(gearRotation * 2) * 0.1 + 1.0;
+        double actualSize = pieceSize * pulseEffect;
+
+        // Triple halo para efecto de profundidad
+        for (int i = 3; i >= 1; i--) {
+            double haloSize = actualSize * (1.2 + i * 0.3);
+            double alpha = 0.15 / i;
+            gc.setFill(Color.rgb(255, 215, 0, alpha));
+            gc.fillOval(x - haloSize/2, y - haloSize/2, haloSize, haloSize);
+        }
+
+        // Sombra profunda
+        gc.setFill(Color.rgb(0, 0, 0, 0.5));
+        gc.fillOval(x - actualSize/2 + 4, y - actualSize/2 + 4, actualSize, actualSize);
+
+        // Cuerpo principal con gradiente simulado (círculo base)
+        gc.setFill(Color.rgb(255, 215, 0)); // Dorado brillante
+        gc.fillOval(x - actualSize/2, y - actualSize/2, actualSize, actualSize);
+        
+        // Highlight superior (simula luz)
+        gc.setFill(Color.rgb(255, 255, 200, 0.6));
+        gc.fillOval(x - actualSize/3, y - actualSize/3, actualSize/2, actualSize/2);
+
+        // Borde exterior grueso y definido
+        gc.setStroke(Color.rgb(204, 140, 0));
+        gc.setLineWidth(3.5);
+        gc.strokeOval(x - actualSize/2, y - actualSize/2, actualSize, actualSize);
+        
+        // Borde interior para más contraste
+        gc.setStroke(Color.rgb(255, 240, 150));
+        gc.setLineWidth(1.5);
+        gc.strokeOval(x - actualSize/2 + 2, y - actualSize/2 + 2, actualSize - 4, actualSize - 4);
+        
+        // Trail effect (estela de movimiento)
+        gc.setFill(Color.rgb(255, 215, 0, 0.2));
+        gc.fillOval(x - actualSize, y - actualSize, actualSize * 2, actualSize * 2);
+        
+        // Centro indicador
+        gc.setFill(Color.WHITE);
+        double centerDot = actualSize / 5;
+        gc.fillOval(x - centerDot/2, y - centerDot/2, centerDot, centerDot);
+    }
 
     private void drawGlobalInfo(GraphicsContext gc) { // Método privado que dibuja el panel de información global del sistema recibiendo el contexto gráfico como parámetro
         double infoX = 50; // Define la posición X del panel de información
@@ -583,22 +928,35 @@ public class AnimationPanel extends Pane {
 
     public void reset() { // Método público que reinicia el panel de animación a su estado inicial sin recibir parámetros
         virtualTransits.clear(); // Limpia la lista de tránsitos virtuales
+        visualLocations.clear();
+        activeTransitEntities.clear();
         gearRotation = 0; // Reinicia el ángulo de rotación de engranes a 0
+        resetZoom(); // NUEVO: Reinicia el zoom
         render(); // Llama al método render para redibujar el canvas limpio
     } // Cierre del método reset
+    
+    // NUEVO: Método público para agregar tránsito virtual
+    public void addVirtualTransit(int entityId, String from, String to) {
+        if (from != null && to != null && !from.equals(to)) {
+            virtualTransits.add(new VirtualTransit(entityId, from, to));
+        }
+    }
 
-    private static class VirtualTransit { // Declaración de clase estática privada interna VirtualTransit que representa un tránsito virtual
-        int entityId; // Variable que almacena el ID de la entidad en tránsito virtual
-        String from; // Variable que almacena el nombre de la locación de origen
-        String to; // Variable que almacena el nombre de la locación de destino
-        double progress; // Variable que almacena el progreso del tránsito (0.0 a 1.0)
+    private static class VirtualTransit {
+        int entityId;
+        String from;
+        String to;
+        double progress;
+        double startTime; // Tiempo de simulación cuando inició el tránsito
+        double estimatedDuration; // Duración estimada en minutos de simulación
 
-        @SuppressWarnings("unused") // Anotación que suprime advertencias de variable no usada
-        VirtualTransit(int entityId, String from, String to) { // Constructor que inicializa un tránsito virtual recibiendo el ID de entidad y locaciones como parámetros
-            this.entityId = entityId; // Asigna el ID de entidad recibido a la variable de instancia
-            this.from = from; // Asigna la locación origen recibida a la variable de instancia
-            this.to = to; // Asigna la locación destino recibida a la variable de instancia
-            this.progress = 0; // Inicializa el progreso en 0 (inicio del tránsito)
-        } // Cierre del constructor VirtualTransit
-    } // Cierre de la clase VirtualTransit
-} // Cierre de la clase AnimationPanel
+        VirtualTransit(int entityId, String from, String to) {
+            this.entityId = entityId;
+            this.from = from;
+            this.to = to;
+            this.progress = 0;
+            this.startTime = 0;
+            this.estimatedDuration = 0.2; // Valor por defecto
+        }
+    }
+}

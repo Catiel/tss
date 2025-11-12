@@ -27,6 +27,13 @@
                 <Separator orientation="VERTICAL"/>
         <Button fx:id="parametersButton" text="⚙ Parámetros"
             style="-fx-font-size: 12px; -fx-padding: 6 14;"/>
+                <Separator orientation="VERTICAL"/>
+        <Button fx:id="zoomInButton" text="🔍+ Zoom In"
+            style="-fx-font-size: 11px; -fx-padding: 6 12;"/>
+        <Button fx:id="zoomOutButton" text="🔍- Zoom Out"
+            style="-fx-font-size: 11px; -fx-padding: 6 12;"/>
+        <Button fx:id="zoomResetButton" text="↺ 100%"
+            style="-fx-font-size: 11px; -fx-padding: 6 12;"/>
 
                 <Region HBox.hgrow="ALWAYS"/>
 

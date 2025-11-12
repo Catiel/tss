@@ -24,6 +24,9 @@ public class MainController { // Declaración de la clase pública MainControlle
     @FXML private Button pauseButton; // Variable privada anotada con @FXML que representa el botón de pausa inyectado desde FXML
     @FXML private Button resetButton; // Variable privada anotada con @FXML que representa el botón de reinicio inyectado desde FXML
     @FXML private Button parametersButton; // Variable privada anotada con @FXML que representa el botón de parámetros inyectado desde FXML
+    @FXML private Button zoomInButton; // NUEVO: Botón para hacer zoom in
+    @FXML private Button zoomOutButton; // NUEVO: Botón para hacer zoom out
+    @FXML private Button zoomResetButton; // NUEVO: Botón para resetear zoom a 100%
     @FXML private Label statusLabel; // Variable privada anotada con @FXML que representa la etiqueta de estado inyectada desde FXML
     @FXML private Label timeLabel; // Variable privada anotada con @FXML que representa la etiqueta de tiempo inyectada desde FXML
     @FXML private Slider speedSlider; // Variable privada anotada con @FXML que representa el deslizador de velocidad inyectado desde FXML
@@ -155,19 +158,26 @@ public class MainController { // Declaración de la clase pública MainControlle
         resetButton.setOnAction(e -> handleReset()); // Establece el manejador de eventos del botón de reinicio para llamar a handleReset cuando se presiona
         parametersButton.setOnAction(e -> handleParameters()); // Establece el manejador de eventos del botón de parámetros para llamar a handleParameters cuando se presiona
 
+        // NUEVO: Controles de zoom
+        zoomInButton.setOnAction(e -> animationPanel.zoomIn());
+        zoomOutButton.setOnAction(e -> animationPanel.zoomOut());
+        zoomResetButton.setOnAction(e -> animationPanel.resetZoom());
+
         pauseButton.setDisable(true); // Deshabilita el botón de pausa inicialmente porque la simulación no está corriendo
 
-        speedSlider.setMin(1); // Establece el valor mínimo del slider de velocidad en 1
-        speedSlider.setMax(1000); // Establece el valor máximo del slider de velocidad en 1000
-        speedSlider.setValue(100); // Establece el valor inicial del slider de velocidad en 100 (velocidad normal)
+        speedSlider.setMin(0.0); // Permite pausar la simulación con 0x
+        speedSlider.setMax(200); // Límite superior más moderado
+        speedSlider.setValue(0.4); // Velocidad inicial muy lenta para visualizar el flujo
+        speedSlider.setBlockIncrement(0.05);
 
         speedSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            double speed = newVal.doubleValue();
+            double speed = Math.max(0.0, newVal.doubleValue());
             setSimulationSpeed(speed); // Usar método helper
             updateSpeedLabel(speed);
         });
 
-        updateSpeedLabel(100); // Actualiza la etiqueta de velocidad inicialmente con el valor 100
+        setSimulationSpeed(speedSlider.getValue());
+        updateSpeedLabel(speedSlider.getValue());
     } // Cierre del método setupControls
 
     private void setupResultsTables() { // Método privado que configura las tablas de resultados vinculando columnas con propiedades y formateando celdas
@@ -257,6 +267,7 @@ public class MainController { // Declaración de la clase pública MainControlle
         parametersButton.setDisable(true);
 
         initializeEngine(); // Usar método helper
+    setSimulationSpeed(speedSlider.getValue());
 
         // Inicializar gráficas en tiempo real
         realTimeChartsPanel.initializeState(getStatistics()); // Usar método helper
@@ -306,6 +317,8 @@ public class MainController { // Declaración de la clase pública MainControlle
 
         // Recrear motor DIGEMIC
         engine = new DigemicEngine(parameters);
+    setSimulationSpeed(speedSlider.getValue());
+    updateSpeedLabel(speedSlider.getValue());
         
         setupAnimationPanel();
         realTimeChartsPanel.initializeState(getStatistics()); // Usar método helper
@@ -369,6 +382,10 @@ public class MainController { // Declaración de la clase pública MainControlle
         // NUEVO: Actualizar gráficas finales
         updateRealTimeCharts();
 
+        // NUEVO: Mostrar cuadro de resultados finales (incisos a-e)
+        ResultsDialog resultsDialog = new ResultsDialog(getStatistics(), getCurrentTime());
+        resultsDialog.show();
+
         mainTabPane.getSelectionModel().select(chartsTab);
     }
 
@@ -409,14 +426,25 @@ public class MainController { // Declaración de la clase pública MainControlle
         statusLabel.setText("Estado: " + message); // Establece el texto de la etiqueta de estado concatenando "Estado: " con el mensaje recibido
     } // Cierre del método updateStatus
 
-    private void updateSpeedLabel(double speed) { // Método privado que actualiza la etiqueta de velocidad recibiendo el valor de velocidad como parámetro
-        if (speed >= 1000) { // Condición que verifica si la velocidad es mayor o igual a 1000 (velocidad máxima)
-            speedLabel.setText("Velocidad: Máxima"); // Establece el texto de la etiqueta como "Velocidad: Máxima"
-        } else if (speed >= 100) { // Condición que verifica si la velocidad es mayor o igual a 100
-            speedLabel.setText(String.format("Velocidad: %.0fx", speed / 100.0)); // Formatea y muestra la velocidad como multiplicador sin decimales (ej: "5x")
-        } else { // Bloque else que se ejecuta si la velocidad es menor a 100
-            speedLabel.setText(String.format("Velocidad: %.1fx", speed / 100.0)); // Formatea y muestra la velocidad como multiplicador con un decimal (ej: "0.5x")
-        } // Cierre del bloque else
+    private void updateSpeedLabel(double speed) {
+        String descriptor;
+        if (speed == 0.0) {
+            descriptor = "pausada";
+        } else if (speed <= 0.1) {
+            descriptor = "ultra lenta";
+        } else if (speed <= 0.5) {
+            descriptor = "muy lenta";
+        } else if (speed <= 1.5) {
+            descriptor = "lenta";
+        } else if (speed <= 5) {
+            descriptor = "normal";
+        } else if (speed <= 20) {
+            descriptor = "rápida";
+        } else {
+            descriptor = "turbo";
+        }
+
+        speedLabel.setText(String.format("Velocidad: %.2fx (%s)", speed, descriptor));
     } // Cierre del método updateSpeedLabel
 
     private void updateResults() { // Método privado que actualiza todas las tablas y áreas de texto de resultados

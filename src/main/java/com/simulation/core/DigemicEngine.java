@@ -27,7 +27,7 @@ public class DigemicEngine {
     private volatile double currentTime;
     private volatile boolean running;
     private volatile boolean paused;
-    private volatile double simulationSpeed = 100.0;
+    private volatile double simulationSpeed = 2.0; // Velocidad inicial más lenta (2x)
     private volatile long lastRealTime = 0L;
 
     // 6 Locaciones del sistema DIGEMIC
@@ -42,10 +42,10 @@ public class DigemicEngine {
     private final List<Entity> allActiveEntities;
 
     // Contadores de pasaportes por servidor (cada 10 → pausa)
-    private int pasaportesAtendidosServidor1 = 0;
-    private int pasaportesAtendidosServidor2 = 0;
-    private boolean servidor1Paused = false;
-    private boolean servidor2Paused = false;
+    private volatile int pasaportesAtendidosServidor1 = 0;
+    private volatile int pasaportesAtendidosServidor2 = 0;
+    private volatile boolean servidor1Paused = false;
+    private volatile boolean servidor2Paused = false;
 
     public DigemicEngine(SimulationParameters params) {
         this.params = params;
@@ -125,11 +125,19 @@ public class DigemicEngine {
     }
 
     public void setSimulationSpeed(double minutesPerSecond) {
-        if (minutesPerSecond <= 0) {
-            throw new IllegalArgumentException("Simulation speed must be positive");
+        if (Double.isNaN(minutesPerSecond) || Double.isInfinite(minutesPerSecond)) {
+            return;
         }
-        this.simulationSpeed = minutesPerSecond;
+        if (minutesPerSecond <= 0) {
+            this.simulationSpeed = 0.0;
+        } else {
+            this.simulationSpeed = minutesPerSecond;
+        }
         lastRealTime = System.currentTimeMillis();
+    }
+
+    public double getSimulationSpeed() {
+        return simulationSpeed;
     }
 
     public void run() {
@@ -165,14 +173,35 @@ public class DigemicEngine {
                 break;
             }
 
+            if (simulationSpeed <= 0.0) {
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+                continue;
+            }
+
             long currentRealTime = System.currentTimeMillis();
             double elapsedRealSeconds = (currentRealTime - lastRealTime) / 1000.0;
             double simulatedMinutes = elapsedRealSeconds * simulationSpeed;
             double timeUntilEvent = targetSimTime - currentTime;
 
-            if (timeUntilEvent > simulatedMinutes && simulationSpeed < 10000) {
+            // MEJORADO: Control de velocidad más preciso
+            if (timeUntilEvent > simulatedMinutes) {
+                // Calcular cuánto tiempo real esperar
                 long waitTimeMs = (long) ((timeUntilEvent / simulationSpeed) * 1000);
-                waitTimeMs = Math.min(waitTimeMs, 50);
+                
+                // Para velocidades bajas, asegurar delays visibles
+                if (simulationSpeed < 10) {
+                    waitTimeMs = Math.min(waitTimeMs, 100); // Max 100ms de espera
+                } else if (simulationSpeed < 100) {
+                    waitTimeMs = Math.min(waitTimeMs, 50); // Max 50ms de espera
+                } else {
+                    waitTimeMs = Math.min(waitTimeMs, 10); // Max 10ms para velocidades altas
+                }
+                
                 if (waitTimeMs > 0) {
                     try {
                         Thread.sleep(waitTimeMs);
@@ -305,28 +334,33 @@ public class DigemicEngine {
             return;
         }
 
+        // PRIORIDAD: Siempre intentar SERVIDOR_1 primero (FIRST)
         if (!servidor1Paused && servidor1.canEnter()) {
             servidor1.reserveCapacity();
             salaSillas.exit(entity, time);
             wakeUpStandingRoom(time);
-            arriveAtServidor1(entity, time);
             updateWaitingAreaSnapshot();
+            
+            servidor1.commitReservedCapacity();
+            servidor1.enter(entity, time);
+            entity.setCurrentLocation("SERVIDOR_1");
+            double servicioTime = randomGen.nextServicioTime();
+            entity.addProcessTime(servicioTime);
+            scheduleEvent(new ProcessEndEvent(time + servicioTime, entity, "SERVIDOR_1"));
         } else if (!servidor2Paused && servidor2.canEnter()) {
             servidor2.reserveCapacity();
             salaSillas.exit(entity, time);
             wakeUpStandingRoom(time);
-            arriveAtServidor2(entity, time);
             updateWaitingAreaSnapshot();
+            
+            servidor2.commitReservedCapacity();
+            servidor2.enter(entity, time);
+            entity.setCurrentLocation("SERVIDOR_2");
+            double servicioTime = randomGen.nextServicioTime();
+            entity.addProcessTime(servicioTime);
+            scheduleEvent(new ProcessEndEvent(time + servicioTime, entity, "SERVIDOR_2"));
         }
-    }
-
-    private void arriveAtServidor1(Entity entity, double time) {
-        servidor1.commitReservedCapacity();
-        servidor1.enter(entity, time);
-        entity.setCurrentLocation("SERVIDOR_1");
-        double servicioTime = randomGen.nextServicioTime();
-        entity.addProcessTime(servicioTime);
-        scheduleEvent(new ProcessEndEvent(time + servicioTime, entity, "SERVIDOR_1"));
+        // Si ambos servidores están ocupados, el cliente espera en SALA_SILLAS
     }
 
     private void finishServidor1(Entity entity, double time) {
@@ -341,15 +375,6 @@ public class DigemicEngine {
         } else {
             completeServerExit(servidor1, entity, time);
         }
-    }
-
-    private void arriveAtServidor2(Entity entity, double time) {
-        servidor2.commitReservedCapacity();
-        servidor2.enter(entity, time);
-        entity.setCurrentLocation("SERVIDOR_2");
-        double servicioTime = randomGen.nextServicioTime();
-        entity.addProcessTime(servicioTime);
-        scheduleEvent(new ProcessEndEvent(time + servicioTime, entity, "SERVIDOR_2"));
     }
 
     private void finishServidor2(Entity entity, double time) {
@@ -449,6 +474,8 @@ public class DigemicEngine {
     }
 
     private void wakeUpWaitingChairs(double time) {
+        // Despertar a TODOS los clientes en SALA_SILLAS para que intenten ir al servidor
+        // Esto asegura que siempre se priorice SERVIDOR_1 (FIRST)
         for (Entity entity : getAllActiveEntities()) {
             if ("SALA_SILLAS".equals(entity.getCurrentLocation())) {
                 scheduleEvent(new ProcessEndEvent(time + 0.01, entity, "SALA_SILLAS"));
@@ -470,5 +497,27 @@ public class DigemicEngine {
         statistics.recordExit(entity, time);
         wakeUpWaitingChairs(time);
         updateWaitingAreaSnapshot();
+    }
+
+    public int getServerBatchProgress(String serverName) {
+        if ("SERVIDOR_1".equals(serverName)) {
+            return pasaportesAtendidosServidor1;
+        } else if ("SERVIDOR_2".equals(serverName)) {
+            return pasaportesAtendidosServidor2;
+        }
+        return 0;
+    }
+
+    public int getServerBatchTarget() {
+        return params.getPasaportesPorPausa();
+    }
+
+    public boolean isServerPaused(String serverName) {
+        if ("SERVIDOR_1".equals(serverName)) {
+            return servidor1Paused;
+        } else if ("SERVIDOR_2".equals(serverName)) {
+            return servidor2Paused;
+        }
+        return false;
     }
 }
