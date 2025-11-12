@@ -44,17 +44,17 @@ public class EventTypes {
      * Evento de fin de pausa de servidor (cada 10 pasaportes)
      */
     public static class ServerPauseEndEvent extends Event {
-        private String serverName;
+        private final String serverName;
 
-        public ServerPauseEndEvent(double time, String serverName) {
-            super(time, null);
+        public ServerPauseEndEvent(double time, Entity entity, String serverName) {
+            super(time, entity);
             this.serverName = serverName;
         }
 
         @Override
         public void execute(Object engineObj) {
             DigemicEngine engine = (DigemicEngine) engineObj;
-            engine.handleServerPauseEnd(serverName, time);
+            engine.handleServerPauseEnd(serverName, entity, time);
         }
     }
 

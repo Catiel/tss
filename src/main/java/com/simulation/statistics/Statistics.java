@@ -14,6 +14,7 @@ public class Statistics { // Declaración de la clase pública Statistics que re
     private double totalProcessTime; // Variable privada que almacena la suma de tiempos de operación de las entidades completadas
     private double totalTransportTime; // Variable privada que almacena la suma de tiempos de movimiento de las entidades completadas
     private double totalBlockTime; // Variable privada que almacena la suma de tiempos de bloqueo de las entidades completadas
+    private int maxWaitingArea; // Máximo simultáneo de personas en la sala de espera (sillas + de pie)
 
     private Map<String, Location> locations; // Variable privada que almacena un mapa de nombres de locaciones a sus objetos Location
     private List<Double> entitySystemTimes; // Variable privada que almacena una lista de todos los tiempos en sistema individuales para cálculos estadísticos
@@ -29,6 +30,7 @@ public class Statistics { // Declaración de la clase pública Statistics que re
     this.totalProcessTime = 0; // Inicializa el acumulador de tiempo de operación en 0
     this.totalTransportTime = 0; // Inicializa el acumulador de tiempo de transporte en 0
     this.totalBlockTime = 0; // Inicializa el acumulador de tiempo de bloqueo en 0
+        this.maxWaitingArea = 0; // Inicializa el máximo observado en la sala de espera en 0
     } // Cierre del constructor Statistics
 
     public void registerLocation(Location location) { // Método público que registra una locación en las estadísticas recibiendo el objeto Location como parámetro
@@ -95,6 +97,27 @@ public class Statistics { // Declaración de la clase pública Statistics que re
     public double getAverageBlockTime() { // Método público que retorna el tiempo promedio en bloqueo
         if (totalExits == 0) return 0; // Evita división por cero cuando no hay salidas
         return totalBlockTime / totalExits; // Retorna el promedio de tiempos de bloqueo
+    }
+
+    public void updateWaitingAreaSnapshot(int seated, int standing) { // Actualiza el máximo observado en la sala de espera
+        int total = Math.max(0, seated) + Math.max(0, standing);
+        if (total > maxWaitingArea) {
+            maxWaitingArea = total;
+        }
+    }
+
+    public double getAverageSeated(double currentTime) { // Retorna el número promedio de personas sentadas
+        Location loc = locations.get("SALA_SILLAS");
+        return loc != null ? loc.getAverageContent(currentTime) : 0.0;
+    }
+
+    public double getAverageStanding(double currentTime) { // Retorna el número promedio de personas de pie
+        Location loc = locations.get("SALA_DE_PIE");
+        return loc != null ? loc.getAverageContent(currentTime) : 0.0;
+    }
+
+    public int getMaxWaitingArea() { // Retorna el máximo simultáneo de personas en la sala de espera
+        return maxWaitingArea;
     }
 
     public Map<String, Location> getLocations() { // Método público getter que retorna el mapa de locaciones de tipo Map<String, Location>
@@ -166,6 +189,7 @@ public class Statistics { // Declaración de la clase pública Statistics que re
         totalProcessTime = 0; // Reinicia el acumulador de tiempos de operación a 0
         totalTransportTime = 0; // Reinicia el acumulador de tiempos de transporte a 0
         totalBlockTime = 0; // Reinicia el acumulador de tiempos de bloqueo a 0
+        maxWaitingArea = 0; // Reinicia el máximo de personas en sala de espera a 0
     } // Cierre del método reset
 
     @Override // Anotación que indica que este método sobrescribe el método toString de la clase Object

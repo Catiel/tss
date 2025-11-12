@@ -1,43 +1,51 @@
 package com.simulation.core;
-
 import com.simulation.config.SimulationParameters;
-import com.simulation.random.RandomGenerators;
-import com.simulation.resources.*;
-import com.simulation.statistics.Statistics;
 import com.simulation.core.EventTypes.*;
+import com.simulation.random.RandomGenerators;
+import com.simulation.resources.BufferLocation;
+import com.simulation.resources.Location;
+import com.simulation.resources.ProcessingLocation;
+import com.simulation.statistics.Statistics;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Set;
 
 /**
- * Motor de simulación DIGEMIC - Sistema de expedición de pasaportes
- * Modelo con 6 locaciones: Entrada, Zona_Formas, Sala_Sillas, Sala_De_Pie, Servidor_1, Servidor_2
+ * Motor de simulación DIGEMIC - Sistema de expedición de pasaportes.
+ * Modelo con 6 locaciones: Entrada, Zona_Formas, Sala_Sillas, Sala_De_Pie, Servidor_1, Servidor_2.
  */
 public class DigemicEngine {
-    
-    private SimulationParameters params;
+
+    private final SimulationParameters params;
     private RandomGenerators randomGen;
-    private Statistics statistics;
-    private PriorityQueue<Event> eventQueue;
-    private double currentTime;
-    private boolean running;
-    private boolean paused;
+    private final Statistics statistics;
+    private final PriorityQueue<Event> eventQueue;
+    private volatile double currentTime;
+    private volatile boolean running;
+    private volatile boolean paused;
     private volatile double simulationSpeed = 100.0;
-    private long lastRealTime = 0;
+    private volatile long lastRealTime = 0L;
 
     // 6 Locaciones del sistema DIGEMIC
     private BufferLocation entrada;
     private BufferLocation zonaFormas;
-    private BufferLocation salaSillas;     // Capacidad 40
-    private BufferLocation salaDePie;      // Capacidad infinita
+    private BufferLocation salaSillas;
+    private BufferLocation salaDePie;
     private ProcessingLocation servidor1;
     private ProcessingLocation servidor2;
 
-    private Set<Entity> entitiesInTransport;
-    private List<Entity> allActiveEntities;
+    private final Set<Entity> entitiesInTransport;
+    private final List<Entity> allActiveEntities;
 
     // Contadores de pasaportes por servidor (cada 10 → pausa)
     private int pasaportesAtendidosServidor1 = 0;
     private int pasaportesAtendidosServidor2 = 0;
+    private boolean servidor1Paused = false;
+    private boolean servidor2Paused = false;
 
     public DigemicEngine(SimulationParameters params) {
         this.params = params;
@@ -45,7 +53,7 @@ public class DigemicEngine {
         this.eventQueue = new PriorityQueue<>();
         this.entitiesInTransport = new HashSet<>();
         this.allActiveEntities = Collections.synchronizedList(new ArrayList<>());
-        this.currentTime = 0;
+        this.currentTime = 0.0;
         this.running = false;
         this.paused = false;
         initializeLocations();
@@ -84,12 +92,14 @@ public class DigemicEngine {
         eventQueue.clear();
         entitiesInTransport.clear();
         allActiveEntities.clear();
-        currentTime = 0;
+        currentTime = 0.0;
         running = false;
         paused = false;
-        lastRealTime = 0;
+        lastRealTime = 0L;
         pasaportesAtendidosServidor1 = 0;
         pasaportesAtendidosServidor2 = 0;
+        servidor1Paused = false;
+        servidor2Paused = false;
         Entity.resetIdCounter();
         statistics.reset();
 
@@ -100,18 +110,26 @@ public class DigemicEngine {
         servidor1.resetState();
         servidor2.resetState();
 
+        statistics.updateWaitingAreaSnapshot(
+                salaSillas.getCurrentContent(),
+                salaDePie.getCurrentContent()
+        );
+
         initializeRandomGenerators();
     }
 
     public void initialize() {
         reset();
         lastRealTime = System.currentTimeMillis();
-        double firstArrival = randomGen.nextArrivalTime();
-        scheduleEvent(new ArrivalEvent(firstArrival));
+        scheduleEvent(new ArrivalEvent(0.0));
     }
 
     public void setSimulationSpeed(double minutesPerSecond) {
+        if (minutesPerSecond <= 0) {
+            throw new IllegalArgumentException("Simulation speed must be positive");
+        }
         this.simulationSpeed = minutesPerSecond;
+        lastRealTime = System.currentTimeMillis();
     }
 
     public void run() {
@@ -132,19 +150,21 @@ public class DigemicEngine {
                 }
             }
 
-            if (!running) break;
+            if (!running) {
+                break;
+            }
 
             Event nextEvent = eventQueue.peek();
             if (nextEvent == null) {
                 break;
             }
 
-            if (nextEvent.getTime() >= endTime) {
+            double targetSimTime = nextEvent.getTime();
+            if (targetSimTime > endTime) {
                 currentTime = endTime;
                 break;
             }
 
-            double targetSimTime = nextEvent.getTime();
             long currentRealTime = System.currentTimeMillis();
             double elapsedRealSeconds = (currentRealTime - lastRealTime) / 1000.0;
             double simulatedMinutes = elapsedRealSeconds * simulationSpeed;
@@ -167,16 +187,13 @@ public class DigemicEngine {
             eventQueue.poll();
             currentTime = targetSimTime;
 
-            if (currentTime >= endTime) {
-                currentTime = endTime;
-                break;
-            }
-
             nextEvent.execute(this);
         }
 
-        statistics.finalizeStatistics(currentTime);
+        statistics.finalizeStatistics(endTime);
+        currentTime = Math.min(currentTime, endTime);
         running = false;
+        paused = false;
     }
 
     // === MANEJO DE EVENTOS PRINCIPALES ===
@@ -189,13 +206,13 @@ public class DigemicEngine {
         entrada.enter(entity, time);
         entity.setCurrentLocation("ENTRADA");
 
-        // Programar siguiente arribo
         if (time < params.getSimulationDurationMinutes()) {
             double nextArrival = time + randomGen.nextArrivalTime();
-            scheduleEvent(new ArrivalEvent(nextArrival));
+            if (nextArrival <= params.getSimulationDurationMinutes()) {
+                scheduleEvent(new ArrivalEvent(nextArrival));
+            }
         }
 
-        // Decisión de routing: 90% directo a sala, 10% a formas
         if (entity.getRoutingDestination() == null) {
             boolean directo = randomGen.goDirectoASala();
             entity.setRoutingDestination(directo ? "SALA" : "FORMAS");
@@ -206,12 +223,26 @@ public class DigemicEngine {
 
     public void handleProcessEnd(Entity entity, String locationName, double time) {
         switch (locationName) {
-            case "ENTRADA": finishEntrada(entity, time); break;
-            case "ZONA_FORMAS": finishZonaFormas(entity, time); break;
-            case "SALA_DE_PIE": finishSalaDePie(entity, time); break;
-            case "SALA_SILLAS": finishSalaSillas(entity, time); break;
-            case "SERVIDOR_1": finishServidor1(entity, time); break;
-            case "SERVIDOR_2": finishServidor2(entity, time); break;
+            case "ENTRADA":
+                finishEntrada(entity, time);
+                break;
+            case "ZONA_FORMAS":
+                finishZonaFormas(entity, time);
+                break;
+            case "SALA_DE_PIE":
+                finishSalaDePie(entity, time);
+                break;
+            case "SALA_SILLAS":
+                finishSalaSillas(entity, time);
+                break;
+            case "SERVIDOR_1":
+                finishServidor1(entity, time);
+                break;
+            case "SERVIDOR_2":
+                finishServidor2(entity, time);
+                break;
+            default:
+                break;
         }
     }
 
@@ -222,69 +253,70 @@ public class DigemicEngine {
         entrada.exit(entity, time);
 
         if ("FORMAS".equals(destination)) {
-            // 10% va a llenar formas
             zonaFormas.enter(entity, time);
             entity.setCurrentLocation("ZONA_FORMAS");
             double formasTime = randomGen.nextZonaFormasTime();
             entity.addProcessTime(formasTime);
             scheduleEvent(new ProcessEndEvent(time + formasTime, entity, "ZONA_FORMAS"));
         } else {
-            // 90% va directo a sala
             tryEnterSala(entity, time);
         }
+        updateWaitingAreaSnapshot();
     }
 
     private void finishZonaFormas(Entity entity, double time) {
         zonaFormas.exit(entity, time);
-        entity.setRoutingDestination(null); // Limpiar
+        entity.setRoutingDestination(null);
         tryEnterSala(entity, time);
     }
 
     private void tryEnterSala(Entity entity, double time) {
-        // Intentar entrar a Sala_Sillas (40 sillas)
         if (salaSillas.canEnter()) {
             salaSillas.enter(entity, time);
             entity.setCurrentLocation("SALA_SILLAS");
             entity.setBlocked(false, time);
             scheduleEvent(new ProcessEndEvent(time + 0.01, entity, "SALA_SILLAS"));
         } else {
-            // No hay sillas, va a Sala_De_Pie
             salaDePie.enter(entity, time);
             entity.setCurrentLocation("SALA_DE_PIE");
             entity.setBlocked(true, time);
-            scheduleEvent(new ProcessEndEvent(time + 0.5, entity, "SALA_DE_PIE"));
+            scheduleEvent(new ProcessEndEvent(time + 0.01, entity, "SALA_DE_PIE"));
         }
+        updateWaitingAreaSnapshot();
     }
 
     private void finishSalaDePie(Entity entity, double time) {
-        // Intentar sentarse si hay silla disponible
+        if (!"SALA_DE_PIE".equals(entity.getCurrentLocation())) {
+            return;
+        }
+
         if (salaSillas.canEnter()) {
             salaDePie.exit(entity, time);
             salaSillas.enter(entity, time);
             entity.setCurrentLocation("SALA_SILLAS");
             entity.setBlocked(false, time);
             scheduleEvent(new ProcessEndEvent(time + 0.01, entity, "SALA_SILLAS"));
-        } else {
-            // Sigue de pie, reintentar
-            entity.addWaitTime(0.5);
-            scheduleEvent(new ProcessEndEvent(time + 0.5, entity, "SALA_DE_PIE"));
+            updateWaitingAreaSnapshot();
         }
     }
 
     private void finishSalaSillas(Entity entity, double time) {
-        // Intentar ir a servidor disponible (FIRST)
-        if (servidor1.canEnter()) {
+        if (!"SALA_SILLAS".equals(entity.getCurrentLocation())) {
+            return;
+        }
+
+        if (!servidor1Paused && servidor1.canEnter()) {
             servidor1.reserveCapacity();
             salaSillas.exit(entity, time);
+            wakeUpStandingRoom(time);
             arriveAtServidor1(entity, time);
-        } else if (servidor2.canEnter()) {
+            updateWaitingAreaSnapshot();
+        } else if (!servidor2Paused && servidor2.canEnter()) {
             servidor2.reserveCapacity();
             salaSillas.exit(entity, time);
+            wakeUpStandingRoom(time);
             arriveAtServidor2(entity, time);
-        } else {
-            // Esperar sentado
-            entity.addWaitTime(0.5);
-            scheduleEvent(new ProcessEndEvent(time + 0.5, entity, "SALA_SILLAS"));
+            updateWaitingAreaSnapshot();
         }
     }
 
@@ -298,19 +330,16 @@ public class DigemicEngine {
     }
 
     private void finishServidor1(Entity entity, double time) {
-        servidor1.exit(entity, time);
         pasaportesAtendidosServidor1++;
-        
-        // Salir del sistema
-        allActiveEntities.remove(entity);
-        statistics.recordExit(entity, time);
 
-        // Verificar si necesita pausa (cada 10 pasaportes)
         if (pasaportesAtendidosServidor1 >= params.getPasaportesPorPausa()) {
             double pausaTime = randomGen.nextPausaServidorTime();
             pasaportesAtendidosServidor1 = 0;
-            // Durante la pausa, el servidor no puede atender
-            scheduleEvent(new ServerPauseEndEvent(time + pausaTime, "SERVIDOR_1"));
+            servidor1Paused = true;
+            entity.addProcessTime(pausaTime);
+            scheduleEvent(new ServerPauseEndEvent(time + pausaTime, entity, "SERVIDOR_1"));
+        } else {
+            completeServerExit(servidor1, entity, time);
         }
     }
 
@@ -324,24 +353,27 @@ public class DigemicEngine {
     }
 
     private void finishServidor2(Entity entity, double time) {
-        servidor2.exit(entity, time);
         pasaportesAtendidosServidor2++;
-        
-        // Salir del sistema
-        allActiveEntities.remove(entity);
-        statistics.recordExit(entity, time);
 
-        // Verificar si necesita pausa (cada 10 pasaportes)
         if (pasaportesAtendidosServidor2 >= params.getPasaportesPorPausa()) {
             double pausaTime = randomGen.nextPausaServidorTime();
             pasaportesAtendidosServidor2 = 0;
-            scheduleEvent(new ServerPauseEndEvent(time + pausaTime, "SERVIDOR_2"));
+            servidor2Paused = true;
+            entity.addProcessTime(pausaTime);
+            scheduleEvent(new ServerPauseEndEvent(time + pausaTime, entity, "SERVIDOR_2"));
+        } else {
+            completeServerExit(servidor2, entity, time);
         }
     }
 
-    public void handleServerPauseEnd(String serverName, double time) {
-        // La pausa terminó, el servidor puede volver a atender
-        // No se necesita acción especial, el servidor ya está disponible
+    public void handleServerPauseEnd(String serverName, Entity entity, double time) {
+        if ("SERVIDOR_1".equals(serverName)) {
+            servidor1Paused = false;
+            completeServerExit(servidor1, entity, time);
+        } else if ("SERVIDOR_2".equals(serverName)) {
+            servidor2Paused = false;
+            completeServerExit(servidor2, entity, time);
+        }
     }
 
     // === MÉTODOS UTILITARIOS ===
@@ -350,7 +382,12 @@ public class DigemicEngine {
         eventQueue.add(event);
     }
 
-    // === GETTERS ===
+    private void updateWaitingAreaSnapshot() {
+        statistics.updateWaitingAreaSnapshot(
+                salaSillas.getCurrentContent(),
+                salaDePie.getCurrentContent()
+        );
+    }
 
     public double getCurrentTime() {
         return currentTime;
@@ -362,6 +399,7 @@ public class DigemicEngine {
 
     public void stop() {
         running = false;
+        paused = false;
     }
 
     public void pause() {
@@ -369,6 +407,7 @@ public class DigemicEngine {
     }
 
     public void resume() {
+        lastRealTime = System.currentTimeMillis();
         paused = false;
     }
 
@@ -382,13 +421,20 @@ public class DigemicEngine {
 
     public Location getLocation(String name) {
         switch (name) {
-            case "ENTRADA": return entrada;
-            case "ZONA_FORMAS": return zonaFormas;
-            case "SALA_SILLAS": return salaSillas;
-            case "SALA_DE_PIE": return salaDePie;
-            case "SERVIDOR_1": return servidor1;
-            case "SERVIDOR_2": return servidor2;
-            default: return null;
+            case "ENTRADA":
+                return entrada;
+            case "ZONA_FORMAS":
+                return zonaFormas;
+            case "SALA_SILLAS":
+                return salaSillas;
+            case "SALA_DE_PIE":
+                return salaDePie;
+            case "SERVIDOR_1":
+                return servidor1;
+            case "SERVIDOR_2":
+                return servidor2;
+            default:
+                return null;
         }
     }
 
@@ -398,13 +444,31 @@ public class DigemicEngine {
 
     public List<Entity> getAllActiveEntities() {
         synchronized (allActiveEntities) {
-            List<Entity> safeCopy = new ArrayList<>();
-            for (Entity entity : allActiveEntities) {
-                if (entity != null) {
-                    safeCopy.add(entity);
-                }
-            }
-            return safeCopy;
+            return new ArrayList<>(allActiveEntities);
         }
+    }
+
+    private void wakeUpWaitingChairs(double time) {
+        for (Entity entity : getAllActiveEntities()) {
+            if ("SALA_SILLAS".equals(entity.getCurrentLocation())) {
+                scheduleEvent(new ProcessEndEvent(time + 0.01, entity, "SALA_SILLAS"));
+            }
+        }
+    }
+
+    private void wakeUpStandingRoom(double time) {
+        for (Entity entity : getAllActiveEntities()) {
+            if ("SALA_DE_PIE".equals(entity.getCurrentLocation())) {
+                scheduleEvent(new ProcessEndEvent(time + 0.01, entity, "SALA_DE_PIE"));
+            }
+        }
+    }
+
+    private void completeServerExit(ProcessingLocation servidor, Entity entity, double time) {
+        servidor.exit(entity, time);
+        allActiveEntities.remove(entity);
+        statistics.recordExit(entity, time);
+        wakeUpWaitingChairs(time);
+        updateWaitingAreaSnapshot();
     }
 }

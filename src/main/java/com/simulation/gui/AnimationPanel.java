@@ -2,7 +2,6 @@ package com.simulation.gui;
 
 import com.simulation.core.Entity;
 import com.simulation.core.DigemicEngine; // Motor DIGEMIC
-import com.simulation.resources.InspectionStation;
 import com.simulation.resources.Location;
 import javafx.scene.canvas.Canvas; // Importa la clase Canvas de JavaFX para dibujar gráficos 2D
 import javafx.scene.canvas.GraphicsContext; // Importa la clase GraphicsContext de JavaFX para realizar operaciones de dibujo en el canvas
@@ -193,20 +192,6 @@ public class AnimationPanel extends Pane {
         drawArrow(gc, x2, y2 - 20, x2, y2); // Dibuja una flecha vertical cerca del punto de llegada
     } // Cierre del método drawConnectionVertical
 
-    private void drawConnectionReverse(GraphicsContext gc, String from, String to) { // Método privado que dibuja una conexión horizontal inversa recibiendo el contexto gráfico y nombres de locaciones como parámetros
-        double[] pos1 = locationPositions.get(from); // Obtiene la posición [x, y] de la locación origen
-        double[] pos2 = locationPositions.get(to); // Obtiene la posición [x, y] de la locación destino
-        if (pos1 == null || pos2 == null) return; // Si alguna posición es null, sale del método prematuramente
-
-        double x1 = pos1[0]; // Calcula el punto X de salida en el borde izquierdo de la caja origen
-        double y1 = pos1[1] + BOX_SIZE / 2; // Calcula el punto Y de salida en el centro vertical de la caja origen
-        double x2 = pos2[0] + BOX_SIZE; // Calcula el punto X de llegada en el borde derecho de la caja destino
-        double y2 = pos2[1] + BOX_SIZE / 2; // Calcula el punto Y de llegada en el centro vertical de la caja destino
-
-        gc.strokeLine(x1, y1, x2, y2); // Dibuja la línea de conexión entre los dos puntos
-        drawArrow(gc, x1 + 20, y1, x1, y1); // Dibuja una flecha apuntando hacia la izquierda cerca del punto de salida
-    } // Cierre del método drawConnectionReverse
-
     private void drawConnectionDiagonal(GraphicsContext gc, String from, String to) { // Método privado que dibuja una conexión diagonal entre dos locaciones recibiendo el contexto gráfico y nombres de locaciones como parámetros
         double[] pos1 = locationPositions.get(from); // Obtiene la posición [x, y] de la locación origen
         double[] pos2 = locationPositions.get(to); // Obtiene la posición [x, y] de la locación destino
@@ -220,39 +205,6 @@ public class AnimationPanel extends Pane {
         gc.strokeLine(x1, y1, x2, y2); // Dibuja la línea diagonal de conexión entre los dos puntos
         drawArrow(gc, x1 + (x2 - x1) * 0.8, y1 + (y2 - y1) * 0.8, x2, y2); // Dibuja una flecha en el 80% del recorrido hacia el destino
     } // Cierre del método drawConnectionDiagonal
-
-    private void drawExitArrow(GraphicsContext gc) { // Método privado que dibuja la flecha de salida desde la locación de embarque recibiendo el contexto gráfico como parámetro
-        double[] embarquePos = locationPositions.get("EMBARQUE"); // Obtiene la posición [x, y] de la locación de embarque
-        if (embarquePos == null) return; // Si la posición es null, sale del método prematuramente
-
-        double x1 = embarquePos[0] + BOX_SIZE; // Calcula el punto X inicial en el borde derecho de la caja de embarque
-        double y1 = embarquePos[1] + BOX_SIZE / 2; // Calcula el punto Y inicial en el centro vertical de la caja de embarque
-        double x2 = x1 + 100; // Calcula el punto X final extendiendo 100 píxeles hacia la derecha
-        double y2 = y1; // El punto Y final es el mismo que el inicial (línea horizontal)
-
-        gc.strokeLine(x1, y1, x2, y2); // Dibuja la línea horizontal de salida
-        drawArrow(gc, x1, y1, x2, y2); // Dibuja una flecha al final de la línea
-    } // Cierre del método drawExitArrow
-
-    private void drawExitLabel(GraphicsContext gc) { // Método privado que dibuja la etiqueta "EXIT" al final del flujo recibiendo el contexto gráfico como parámetro
-        double[] embarquePos = locationPositions.get("EMBARQUE"); // Obtiene la posición [x, y] de la locación de embarque
-        if (embarquePos == null) return; // Si la posición es null, sale del método prematuramente
-
-        double x = embarquePos[0] + BOX_SIZE + 110; // Calcula la posición X de la etiqueta después de la flecha de salida
-        double y = embarquePos[1] + BOX_SIZE / 2; // Calcula la posición Y de la etiqueta centrada verticalmente
-
-        gc.setFill(Color.rgb(76, 175, 80)); // Establece el color de relleno como verde para el fondo de la etiqueta
-        gc.fillRoundRect(x, y - 30, 100, 60, 12, 12); // Dibuja un rectángulo redondeado verde para la etiqueta EXIT
-
-        gc.setStroke(Color.rgb(56, 142, 60)); // Establece el color de trazo como verde oscuro para el borde
-        gc.setLineWidth(3); // Establece el grosor del borde en 3 píxeles
-        gc.strokeRoundRect(x, y - 30, 100, 60, 12, 12); // Dibuja el borde del rectángulo redondeado
-
-        gc.setFill(Color.WHITE); // Establece el color de relleno como blanco para el texto
-        gc.setFont(Font.font("Arial", FontWeight.BOLD, 20)); // Establece la fuente como Arial, negrita, tamaño 20
-        gc.setTextAlign(TextAlignment.CENTER); // Establece la alineación del texto al centro
-        gc.fillText("EXIT", x + 50, y + 5); // Dibuja el texto "EXIT" centrado en la etiqueta
-    } // Cierre del método drawExitLabel
 
     private void drawArrow(GraphicsContext gc, double x1, double y1, double x2, double y2) { // Método privado que dibuja una punta de flecha recibiendo el contexto gráfico y coordenadas como parámetros
         double arrowLength = 12; // Define la longitud de la punta de flecha en píxeles

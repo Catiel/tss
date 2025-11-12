@@ -6,7 +6,6 @@ public class Entity { // Declaración de la clase pública Entity que representa
     private final int id; // Variable final privada que almacena el identificador único e inmutable de esta entidad
     private double creationTime; // Variable privada que almacena el tiempo en que se creó esta entidad en minutos
     private double systemEntryTime; // Variable privada que almacena el tiempo en que esta entidad entró al sistema de simulación
-    private double currentLocationEntryTime; // Variable privada que almacena el tiempo en que esta entidad entró a su locación actual
     private double totalWaitTime; // Variable privada que almacena el tiempo total acumulado que la entidad ha pasado esperando en colas
     private double totalProcessTime; // Variable privada que almacena el tiempo total acumulado que la entidad ha pasado siendo procesada
     private double totalTransportTime; // Variable privada que almacena el tiempo total acumulado que la entidad ha pasado en transporte entre locaciones
@@ -24,7 +23,6 @@ public class Entity { // Declaración de la clase pública Entity que representa
         this.id = nextId++; // Asigna el siguiente ID disponible a esta entidad e incrementa el contador estático para la próxima entidad
         this.creationTime = creationTime; // Asigna el tiempo de creación recibido a la variable de instancia
         this.systemEntryTime = creationTime; // Establece el tiempo de entrada al sistema igual al tiempo de creación
-        this.currentLocationEntryTime = creationTime; // Establece el tiempo de entrada a la locación actual igual al tiempo de creación
         this.totalWaitTime = 0; // Inicializa el tiempo total de espera en 0
         this.totalProcessTime = 0; // Inicializa el tiempo total de proceso en 0
         this.totalTransportTime = 0; // Inicializa el tiempo total de transporte en 0
