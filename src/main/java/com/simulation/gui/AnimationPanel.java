@@ -37,6 +37,7 @@ public class AnimationPanel extends Pane {
     private Map<String, Color> locationColors;
     private Map<String, String> locationIcons;
     private Map<String, Image> locationImages; // Permite usar imágenes personalizadas si existen
+    private Map<String, Integer> lastVisualCounts; // Conteos visibles sincronizados con la animación
 
     private List<VirtualTransit> virtualTransits;
     private Map<Integer, String> visualLocations; // Locaciones visibles (pueden diferir de la real durante tránsito)
@@ -56,6 +57,7 @@ public class AnimationPanel extends Pane {
         this.locationColors = new HashMap<>();
         this.locationIcons = new HashMap<>();
         this.locationImages = new HashMap<>();
+        this.lastVisualCounts = new HashMap<>();
     this.virtualTransits = new ArrayList<>();
     this.visualLocations = new HashMap<>(); // Inicializar tracking de locaciones visibles
     this.activeTransitEntities = new HashSet<>(); // Inicializar set de tránsito
@@ -170,14 +172,18 @@ public class AnimationPanel extends Pane {
         gc.setFill(Color.rgb(240, 242, 245)); // Establece el color de relleno como gris muy claro para el fondo
         gc.fillRect(0, 0, WIDTH, HEIGHT); // Dibuja un rectángulo de fondo que cubre todo el canvas
 
+        List<Entity> allEntities = getAllActiveEntitiesFromEngine();
+        detectVirtualTransits(allEntities); // Actualiza las animaciones de tránsito en curso y sincroniza ubicaciones
+        Map<String, List<Entity>> groupedEntities = groupEntitiesByVisualLocation(allEntities);
+        refreshVisualCounts(groupedEntities);
+
         drawTitle(gc); // Llama al método para dibujar el título del sistema
         drawConnections(gc); // Llama al método para dibujar las conexiones (flechas) entre locaciones
         drawAllLocations(gc); // Llama al método para dibujar todas las 6 locaciones DIGEMIC
         drawCounters(gc); // Llama al método para dibujar los contadores de estadísticas de cada locación
 
-    detectVirtualTransits(); // Actualiza las animaciones de tránsito en curso
-    drawStationaryEntities(gc); // Dibuja las entidades que están esperando en cada locación
-    drawVirtualTransitEntities(gc); // Dibuja las entidades que se están moviendo entre locaciones
+        drawStationaryEntities(gc, groupedEntities); // Dibuja las entidades que están esperando en cada locación
+        drawVirtualTransitEntities(gc); // Dibuja las entidades que se están moviendo entre locaciones
 
         drawGlobalInfo(gc); // Llama al método para dibujar el panel de información global del sistema
 
@@ -303,7 +309,7 @@ public class AnimationPanel extends Pane {
         String icon = locationIcons.get(name); // Obtiene el icono de la locación desde el mapa de iconos
 
         // Si location es null, usar valores por defecto
-    int currentContent = getVisualContent(name);
+        int currentContent = lastVisualCounts.getOrDefault(name, 0);
     int capacity = location != null ? location.getCapacity() : Integer.MAX_VALUE; // Obtiene la capacidad de la locación, o Integer.MAX_VALUE si es null
     int queueSize = location != null ? location.getQueueSize() : 0; // Obtiene el tamaño de la cola de la locación, o 0 si es null
 
@@ -634,17 +640,7 @@ public class AnimationPanel extends Pane {
         }
     }
 
-    private int getVisualContent(String locationName) {
-        int count = 0;
-        for (Map.Entry<Integer, String> entry : visualLocations.entrySet()) {
-            if (locationName.equals(entry.getValue()) && !activeTransitEntities.contains(entry.getKey())) {
-                count++;
-            }
-        }
-        return count;
-    }
-
-    private void detectVirtualTransits() {
+    private void detectVirtualTransits(List<Entity> allEntities) {
         double currentSimTime = getCurrentTimeFromEngine();
 
         // Actualizar transiciones existentes en función del tiempo de simulación
@@ -662,10 +658,12 @@ public class AnimationPanel extends Pane {
             }
         }
 
-        List<Entity> allEntities = getAllActiveEntitiesFromEngine();
         if (allEntities == null) {
+            cleanupVisualState(Collections.emptySet());
             return;
         }
+
+        Set<Integer> activeIds = new HashSet<>();
 
         for (Entity entity : allEntities) {
             if (entity == null) {
@@ -680,6 +678,7 @@ public class AnimationPanel extends Pane {
             }
 
             int entityId = entity.getId();
+            activeIds.add(entityId);
             String lastLoc = visualLocations.get(entityId);
 
             if (lastLoc != null && !lastLoc.equals(currentLoc)) {
@@ -703,6 +702,86 @@ public class AnimationPanel extends Pane {
             visualLocations.putIfAbsent(entityId, currentLoc);
             if (!activeTransitEntities.contains(entityId) && lastLoc == null) {
                 visualLocations.put(entityId, currentLoc);
+            }
+        }
+
+        cleanupVisualState(activeIds);
+    }
+
+    private Map<String, List<Entity>> groupEntitiesByVisualLocation(List<Entity> allEntities) {
+        Map<String, List<Entity>> grouped = new HashMap<>();
+        if (allEntities == null) {
+            return grouped;
+        }
+
+        for (Entity entity : allEntities) {
+            if (entity == null) {
+                continue;
+            }
+
+            int entityId = entity.getId();
+            if (activeTransitEntities.contains(entityId)) {
+                continue; // En tránsito, se dibuja aparte
+            }
+
+            String visualLocation = visualLocations.computeIfAbsent(entityId, id -> entity.getCurrentLocation());
+            if (visualLocation == null || visualLocation.isEmpty()) {
+                continue;
+            }
+
+            grouped.computeIfAbsent(visualLocation, key -> new ArrayList<>()).add(entity);
+        }
+
+        return grouped;
+    }
+
+    private void refreshVisualCounts(Map<String, List<Entity>> grouped) {
+        lastVisualCounts.clear();
+        String[] allLocations = {
+            "ENTRADA", "ZONA_FORMAS",
+            "SALA_SILLAS", "SALA_DE_PIE",
+            "SERVIDOR_1", "SERVIDOR_2"
+        };
+
+        for (String location : allLocations) {
+            int count = 0;
+            List<Entity> list = grouped.get(location);
+            if (list != null) {
+                count = list.size();
+            }
+            if (count == 0) {
+                lastVisualCounts.put(location, 0);
+            }
+            if (location.startsWith("SERVIDOR")) {
+                for (VirtualTransit vt : virtualTransits) {
+                    if (location.equals(vt.to)) {
+                        count++;
+                    }
+                }
+                List<Entity> zeroList = grouped.get(location);
+                if (zeroList == null || zeroList.isEmpty()) {
+                    for (VirtualTransit vt : virtualTransits) {
+                        if (location.equals(vt.from)) {
+                            count++;
+                        }
+                    }
+                }
+            }
+            lastVisualCounts.put(location, count);
+        }
+    }
+
+    private void cleanupVisualState(Set<Integer> activeIds) {
+        if (visualLocations.isEmpty()) {
+            return;
+        }
+
+        Iterator<Integer> cleanupIterator = visualLocations.keySet().iterator();
+        while (cleanupIterator.hasNext()) {
+            int id = cleanupIterator.next();
+            if (!activeIds.contains(id)) {
+                cleanupIterator.remove();
+                activeTransitEntities.remove(id);
             }
         }
     }
@@ -753,34 +832,16 @@ public class AnimationPanel extends Pane {
         return factor;
     }
 
-    private void drawStationaryEntities(GraphicsContext gc) {
-        List<Entity> allEntities = getAllActiveEntitiesFromEngine();
-        if (allEntities == null) {
+    private void drawStationaryEntities(GraphicsContext gc, Map<String, List<Entity>> grouped) {
+        if (grouped == null || grouped.isEmpty()) {
             return;
-        }
-
-        Map<String, List<Entity>> grouped = new HashMap<>();
-        for (Entity entity : allEntities) {
-            if (entity == null) {
-                continue;
-            }
-            int entityId = entity.getId();
-            if (activeTransitEntities.contains(entityId)) {
-                continue; // Se está animando el tránsito, no dibujar como estacionario
-            }
-
-            String currentLoc = entity.getCurrentLocation();
-            if (currentLoc == null || currentLoc.isEmpty()) {
-                visualLocations.remove(entityId);
-                continue;
-            }
-
-            String visualLoc = visualLocations.computeIfAbsent(entityId, id -> currentLoc);
-            grouped.computeIfAbsent(visualLoc, key -> new ArrayList<>()).add(entity);
         }
 
         for (Map.Entry<String, List<Entity>> entry : grouped.entrySet()) {
             List<Entity> entities = entry.getValue();
+            if (entities == null || entities.isEmpty()) {
+                continue;
+            }
             entities.sort(Comparator.comparingInt(Entity::getId));
             drawEntitiesForLocation(gc, entry.getKey(), entities);
         }
@@ -789,6 +850,11 @@ public class AnimationPanel extends Pane {
     private void drawEntitiesForLocation(GraphicsContext gc, String location, List<Entity> entities) {
         double[] basePos = locationPositions.get(location);
         if (basePos == null || entities.isEmpty()) {
+            return;
+        }
+
+        if ("ZONA_FORMAS".equals(location)) {
+            drawZonaFormasEntities(gc, basePos, entities);
             return;
         }
 
@@ -815,6 +881,48 @@ public class AnimationPanel extends Pane {
             double centerY = basePos[1] + padding + row * cellHeight + cellHeight / 2;
 
             drawStationaryEntity(gc, centerX, centerY, entities.get(index), location);
+        }
+    }
+
+    private void drawZonaFormasEntities(GraphicsContext gc, double[] basePos, List<Entity> entities) {
+        double paddingX = 12;
+        double paddingY = 14;
+        double paperWidth = 16;
+        double paperHeight = 20;
+        double spacingX = 6;
+        double spacingY = 6;
+        int columns = 5;
+
+        double originX = basePos[0] + paddingX;
+        double originY = basePos[1] + BOX_SIZE - paddingY - paperHeight;
+
+        for (int index = 0; index < entities.size(); index++) {
+            int row = index / columns;
+            int col = index % columns;
+
+            double x = originX + col * (paperWidth + spacingX);
+            double y = originY - row * (paperHeight + spacingY);
+
+            // Fondo de la hoja
+            gc.setFill(Color.rgb(255, 253, 231, 0.92));
+            gc.fillRoundRect(x, y, paperWidth, paperHeight, 4, 4);
+
+            // Borde
+            gc.setStroke(Color.rgb(255, 213, 79));
+            gc.setLineWidth(1.5);
+            gc.strokeRoundRect(x, y, paperWidth, paperHeight, 4, 4);
+
+            // Línea simulando texto
+            gc.setStroke(Color.rgb(158, 158, 158));
+            gc.setLineWidth(1);
+            gc.strokeLine(x + 3, y + 7, x + paperWidth - 3, y + 7);
+            gc.strokeLine(x + 3, y + 11, x + paperWidth - 3, y + 11);
+
+            // Identificador pequeño
+            gc.setFill(Color.rgb(121, 85, 72));
+            gc.setFont(Font.font("Arial", FontWeight.BOLD, 9));
+            gc.setTextAlign(TextAlignment.CENTER);
+            gc.fillText(String.valueOf(entities.get(index).getId()), x + paperWidth / 2.0, y + paperHeight - 5);
         }
     }
 

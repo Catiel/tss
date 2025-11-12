@@ -14,6 +14,7 @@ import javafx.scene.layout.BorderPane; // Importa la clase BorderPane de JavaFX 
 import java.util.ArrayList; // Importa la clase ArrayList para usar listas dinámicas
 import java.util.List; // Importa la interfaz List para trabajar con colecciones tipo lista
 import java.util.Map; // Importa la interfaz Map para trabajar con mapas clave-valor
+import java.util.Optional;
 
 /** // Inicio del comentario Javadoc de la clase
  * Controlador principal con actualización en tiempo real de gráficas // Descripción del controlador
@@ -338,33 +339,28 @@ public class MainController { // Declaración de la clase pública MainControlle
 
     @FXML
     private void handleParameters() {
-        // TODO: DIGEMIC - Implementar diálogo de parámetros específico para DIGEMIC
-        updateStatus("Configuración de parámetros temporalmente deshabilitada");
-        
-        /* CÓDIGO ORIGINAL COMENTADO TEMPORALMENTE
         if (engine != null && isRunning()) {
             updateStatus("Detén la simulación antes de cambiar parámetros");
             return;
         }
 
         ParametersDialog dialog = new ParametersDialog(parameters);
-        dialog.showAndWait();
-        if (dialog.isAccepted()) {
-            // Recrear motor apropiado según configuración
-            if (useDigemicEngine) {
-                engine = new DigemicEngine(parameters);
-            } else {
-                engine = new SimulationEngine(parameters);
-            }
+        Optional<Boolean> result = dialog.showAndWait();
+        if (result.orElse(false)) {
+            engine = new DigemicEngine(parameters);
+            setSimulationSpeed(speedSlider.getValue());
+            updateSpeedLabel(speedSlider.getValue());
+
             setupAnimationPanel();
             realTimeChartsPanel.initializeState(getStatistics());
             locationTable.getItems().clear();
             entityStatsText.clear();
+
+            updateTimeLabel(0);
             updateStatus("Parámetros actualizados");
         } else {
             updateStatus("Cambios de parámetros cancelados");
         }
-        */
     }
 
     private void handleSimulationComplete() {
