@@ -5,12 +5,17 @@ import com.simulation.core.DigemicEngine; // Motor DIGEMIC
 import com.simulation.resources.Location;
 import javafx.scene.canvas.Canvas; // Importa la clase Canvas de JavaFX para dibujar gráficos 2D
 import javafx.scene.canvas.GraphicsContext; // Importa la clase GraphicsContext de JavaFX para realizar operaciones de dibujo en el canvas
+import javafx.scene.image.Image; // Permite utilizar imágenes personalizadas para las locaciones
 import javafx.scene.layout.Pane; // Importa la clase Pane de JavaFX para crear un contenedor de layout
 import javafx.scene.paint.Color; // Importa la clase Color de JavaFX para definir colores
 import javafx.scene.text.Font; // Importa la clase Font de JavaFX para definir fuentes de texto
 import javafx.scene.text.FontWeight; // Importa la enumeración FontWeight de JavaFX para especificar el grosor de la fuente
 import javafx.scene.text.TextAlignment; // Importa la enumeración TextAlignment de JavaFX para especificar la alineación del texto
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*; // Importa todas las clases del paquete util de Java (List, Map, ArrayList, HashMap, etc.)
 
 /** // Inicio del comentario Javadoc de la clase
@@ -31,6 +36,7 @@ public class AnimationPanel extends Pane {
     private Map<String, double[]> locationPositions;
     private Map<String, Color> locationColors;
     private Map<String, String> locationIcons;
+    private Map<String, Image> locationImages; // Permite usar imágenes personalizadas si existen
 
     private List<VirtualTransit> virtualTransits;
     private Map<Integer, String> visualLocations; // Locaciones visibles (pueden diferir de la real durante tránsito)
@@ -49,6 +55,7 @@ public class AnimationPanel extends Pane {
         this.locationPositions = new HashMap<>();
         this.locationColors = new HashMap<>();
         this.locationIcons = new HashMap<>();
+        this.locationImages = new HashMap<>();
     this.virtualTransits = new ArrayList<>();
     this.visualLocations = new HashMap<>(); // Inicializar tracking de locaciones visibles
     this.activeTransitEntities = new HashSet<>(); // Inicializar set de tránsito
@@ -56,6 +63,7 @@ public class AnimationPanel extends Pane {
         initializePositions();
         initializeColors();
         initializeIcons();
+        initializeImages();
 
         getChildren().add(canvas);
         setMinSize(WIDTH, HEIGHT); // Establece el tamaño mínimo del panel con el ancho y altura definidos
@@ -311,11 +319,15 @@ public class AnimationPanel extends Pane {
         gc.setLineWidth(4); // Establece el grosor del borde en 4 píxeles
         gc.strokeRoundRect(pos[0], pos[1], BOX_SIZE, BOX_SIZE, 12, 12); // Dibuja el borde del rectángulo redondeado
 
-        // ICONO - SIEMPRE visible
-        gc.setTextAlign(TextAlignment.CENTER); // Establece la alineación del texto al centro
-        gc.setFill(Color.WHITE); // Establece el color de relleno como blanco para el icono
-        gc.setFont(Font.font("Segoe UI Emoji", 40)); // Establece la fuente como Segoe UI Emoji, tamaño 40 para los emojis
-        gc.fillText(icon, pos[0] + BOX_SIZE / 2, pos[1] + BOX_SIZE * 0.58); // Dibuja el emoji centrado en la caja
+        Image locationImage = locationImages.get(name);
+        if (locationImage != null) {
+            drawLocationImage(gc, pos[0], pos[1], locationImage);
+        } else {
+            gc.setTextAlign(TextAlignment.CENTER); // Establece la alineación del texto al centro
+            gc.setFill(Color.WHITE); // Establece el color de relleno como blanco para el icono
+            gc.setFont(Font.font("Segoe UI Emoji", 40)); // Establece la fuente como Segoe UI Emoji, tamaño 40 para los emojis
+            gc.fillText(icon, pos[0] + BOX_SIZE / 2, pos[1] + BOX_SIZE * 0.58); // Dibuja el emoji centrado en la caja
+        }
 
         // Nombre
         gc.setFill(Color.rgb(33, 33, 33)); // Establece el color de relleno como gris muy oscuro para el nombre
@@ -469,6 +481,24 @@ public class AnimationPanel extends Pane {
         gc.fillRoundRect(x + 12, barY, fillWidth, barHeight, 4, 4); // Dibuja la barra de progreso con el ancho y color calculados
     } // Cierre del método drawCounterSafe
 
+    private void drawLocationImage(GraphicsContext gc, double baseX, double baseY, Image image) {
+        if (image == null || image.isError()) {
+            return;
+        }
+
+        double availableWidth = BOX_SIZE * 0.7;
+        double availableHeight = BOX_SIZE * 0.65;
+        double scale = Math.min(availableWidth / image.getWidth(), availableHeight / image.getHeight());
+        scale = Math.min(scale, 1.2); // Evitar escalados exagerados
+
+        double drawWidth = image.getWidth() * scale;
+        double drawHeight = image.getHeight() * scale;
+        double drawX = baseX + (BOX_SIZE - drawWidth) / 2.0;
+        double drawY = baseY + (BOX_SIZE - drawHeight) / 2.0 - 6; // Ajuste ligero para dejar espacio al contador
+
+        gc.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+    }
+
     private void drawServerBatchProgress(GraphicsContext gc, double baseX, double baseY, String serverName) {
         int target = engine.getServerBatchTarget();
         if (target <= 0) {
@@ -521,6 +551,86 @@ public class AnimationPanel extends Pane {
             gc.setStroke(filled ? baseColor.darker() : Color.rgb(158, 158, 158));
             gc.setLineWidth(1.5);
             gc.strokeOval(centerX - bubbleSize / 2.0, centerY - bubbleSize / 2.0, bubbleSize, bubbleSize);
+        }
+    }
+
+    private void initializeImages() {
+        loadLocationImageFromResource("ENTRADA", "/images/entrada.png");
+        loadLocationImageFromResource("ZONA_FORMAS", "/images/zona_formas.png");
+        loadLocationImageFromResource("SALA_SILLAS", "/images/sala_sillas.png");
+        loadLocationImageFromResource("SALA_DE_PIE", "/images/sala_de_pie.png");
+        loadLocationImageFromResource("SERVIDOR_1", "/images/servidor_1.png");
+        loadLocationImageFromResource("SERVIDOR_2", "/images/servidor_2.png");
+    }
+
+    private void loadLocationImageFromResource(String locationName, String resourcePath) {
+        if (locationName == null || resourcePath == null) {
+            return;
+        }
+
+        try (InputStream stream = getClass().getResourceAsStream(resourcePath)) {
+            if (stream == null) {
+                return;
+            }
+            Image image = new Image(stream);
+            if (!image.isError()) {
+                locationImages.put(locationName, image);
+            }
+        } catch (IOException ignored) {
+            // Silenciar: la imagen personalizada es opcional
+        }
+    }
+
+    public boolean setLocationImage(String locationName, Image image) {
+        if (locationName == null || image == null || image.isError()) {
+            return false;
+        }
+        locationImages.put(locationName, image);
+        return true;
+    }
+
+    public boolean setLocationImageFromResource(String locationName, String resourcePath) {
+        if (locationName == null || resourcePath == null) {
+            return false;
+        }
+        try (InputStream stream = getClass().getResourceAsStream(resourcePath)) {
+            if (stream == null) {
+                return false;
+            }
+            Image image = new Image(stream);
+            if (image.isError()) {
+                return false;
+            }
+            locationImages.put(locationName, image);
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public boolean setLocationImageFromFile(String locationName, String filePath) {
+        if (locationName == null || filePath == null) {
+            return false;
+        }
+        File file = new File(filePath);
+        if (!file.exists() || !file.isFile()) {
+            return false;
+        }
+        try (InputStream stream = new FileInputStream(file)) {
+            Image image = new Image(stream);
+            if (image.isError()) {
+                return false;
+            }
+            locationImages.put(locationName, image);
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    public void clearLocationImage(String locationName) {
+        if (locationName != null) {
+            locationImages.remove(locationName);
         }
     }
 
