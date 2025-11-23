@@ -27,9 +27,11 @@ public class LocationStatistics {
         this.averageContents = location.getTotalOccupancyTime() / totalSimulationTime;
         this.maxContents = capacity;
         this.currentContents = location.getCurrentOccupancy();
-        
+        // Fórmula de Promodel: (Promedio de contenido / Capacidad) * 100
         if (capacity > 0) {
             this.utilizationPercent = (averageContents / capacity) * 100.0;
+        } else {
+            this.utilizationPercent = 0.0;
         }
     }
 

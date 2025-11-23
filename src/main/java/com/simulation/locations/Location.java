@@ -11,6 +11,10 @@ public class Location {
     private int currentOccupancy;
     private double totalOccupancyTime;
     private double lastUpdateTime;
+    // Tiempo acumulado con ocupación > 0 (utilización de la estación)
+    private double busyTime;
+    // Última ocupación registrada para cálculo de busyTime
+    private int lastOccupancyForBusy;
 
     public Location(LocationType type) {
         this.type = type;
@@ -19,6 +23,8 @@ public class Location {
         this.currentOccupancy = 0;
         this.totalOccupancyTime = 0;
         this.lastUpdateTime = 0;
+        this.busyTime = 0;
+        this.lastOccupancyForBusy = 0;
     }
 
     public boolean canAccept() {
@@ -63,7 +69,13 @@ public class Location {
 
     private void updateOccupancyTime(double currentTime) {
         double timeDelta = currentTime - lastUpdateTime;
+        // Acumular tiempo ponderado por ocupación para promedio
         totalOccupancyTime += currentOccupancy * timeDelta;
+        // Si había ocupación > 0 en el intervalo, sumar a busyTime
+        if (lastOccupancyForBusy > 0) {
+            busyTime += timeDelta;
+        }
+        lastOccupancyForBusy = currentOccupancy;
         lastUpdateTime = currentTime;
     }
 
@@ -81,6 +93,10 @@ public class Location {
 
     public double getTotalOccupancyTime() {
         return totalOccupancyTime;
+    }
+
+    public double getBusyTime() {
+        return busyTime;
     }
 
     public double getLastUpdateTime() {
