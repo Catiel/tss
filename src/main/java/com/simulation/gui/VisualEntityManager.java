@@ -129,13 +129,15 @@ public class VisualEntityManager {
                 gc.rotate(angle);
             }
 
-            // Dibujar imagen centrada
-            double imgSize = ENTITY_SIZE * 1.5;
+            // Dibujar imagen centrada - MÁS GRANDE para mejor visibilidad
+            double imgSize = ENTITY_SIZE * 10.0; // Aumentado de 1.5 a 3.0
             gc.drawImage(img, -imgSize / 2, -imgSize / 2, imgSize, imgSize);
             gc.restore();
 
-            // Etiqueta (siempre visible para identificar)
-            renderLabel(gc, type, x, y);
+            // Etiqueta (siempre visible para identificar) - ajustada para imágenes más
+            // grandes
+            double labelOffset = imgSize / 2;
+            renderLabelWithOffset(gc, type, x, y, labelOffset);
 
         } else {
             // Renderizar FORMA (Fallback)
@@ -231,6 +233,22 @@ public class VisualEntityManager {
         // Texto
         gc.setFill(Color.YELLOW);
         gc.fillText(shortName, x, y + ENTITY_SIZE / 2 + 16);
+    }
+
+    private void renderLabelWithOffset(GraphicsContext gc, String type, double x, double y, double offset) {
+        // Etiqueta GRANDE y CLARA con offset personalizado (para imágenes más grandes)
+        String shortName = getShortEntityName(type);
+        gc.setFont(Font.font("Arial", FontWeight.BOLD, 10));
+        gc.setTextAlign(javafx.scene.text.TextAlignment.CENTER);
+        double textWidth = shortName.length() * 6;
+
+        // Fondo de etiqueta
+        gc.setFill(Color.color(0, 0, 0, 0.9));
+        gc.fillRoundRect(x - textWidth / 2 - 4, y + offset + 4, textWidth + 8, 16, 5, 5);
+
+        // Texto
+        gc.setFill(Color.YELLOW);
+        gc.fillText(shortName, x, y + offset + 16);
     }
 
     private void renderArrow(GraphicsContext gc, double x, double y, double dx, double dy, boolean isMoving) {
