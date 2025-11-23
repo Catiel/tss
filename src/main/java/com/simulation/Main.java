@@ -118,30 +118,30 @@ public class Main {
 
         // CAJAS
         engine.addProcessingRule(new SimpleProcessingRule("ALMACEN_CAJAS", "CAJA_VACIA", 0));
-        engine.addProcessingRule(new SimpleProcessingRule("EMPACADO", "CAJA_VACIA", 10));
+        engine.addProcessingRule(new SimpleProcessingRule("EMPACADO", "CAJA_VACIA", 0)); // WAIT 10 está después del JOIN
         engine.addProcessingRule(new SimpleProcessingRule("ALMACENAJE", "CAJA_CON_CERVEZAS", 5));
         engine.addProcessingRule(new SimpleProcessingRule("MERCADO", "CAJA_CON_CERVEZAS", 0));
     }
 
     private static void setupArrivals(SimulationEngine engine) {
         // 70 horas = 4200 minutos
-        double simulationTime = 4200.0;
+        // Ajustado para coincidir con ProModel (arrivals target basado en entradas a locaciones)
+        
+        // GRANOS_DE_CEBADA: target ~124 arrivals (ProModel: SILO_GRANDE 124 entradas)
+        // Frecuencia: 4200/124 = 33.87 min
+        engine.scheduleArrival("GRANOS_DE_CEBADA", "SILO_GRANDE", 0, 124, 33.87);
 
-        // GRANOS_DE_CEBADA: cada 25 minutos
-        int granosOccurrences = (int) (simulationTime / 25);
-        engine.scheduleArrival("GRANOS_DE_CEBADA", "SILO_GRANDE", 0, granosOccurrences, 25);
+        // LUPULO: target ~400 arrivals (ProModel: SILO_LUPULO 400 entradas)
+        // Frecuencia: 4200/400 = 10.5 min
+        engine.scheduleArrival("LUPULO", "SILO_LUPULO", 0, 400, 10.5);
 
-        // LUPULO: cada 10 minutos
-        int lupuloOccurrences = (int) (simulationTime / 10);
-        engine.scheduleArrival("LUPULO", "SILO_LUPULO", 0, lupuloOccurrences, 10);
+        // LEVADURA: target ~190 arrivals (ProModel: SILO_LEVADURA 190 entradas)
+        // Frecuencia: 4200/190 = 22.11 min
+        engine.scheduleArrival("LEVADURA", "SILO_LEVADURA", 0, 190, 22.11);
 
-        // LEVADURA: cada 20 minutos
-        int levaduraOccurrences = (int) (simulationTime / 20);
-        engine.scheduleArrival("LEVADURA", "SILO_LEVADURA", 0, levaduraOccurrences, 20);
-
-        // CAJA_VACIA: cada 30 minutos
-        int cajasOccurrences = (int) (simulationTime / 30);
-        engine.scheduleArrival("CAJA_VACIA", "ALMACEN_CAJAS", 0, cajasOccurrences, 30);
+        // CAJA_VACIA: target ~114 arrivals (ProModel: ALMACEN_CAJAS 114 entradas)
+        // Frecuencia: 4200/114 = 36.84 min
+        engine.scheduleArrival("CAJA_VACIA", "ALMACEN_CAJAS", 0, 114, 36.84);
     }
 
     // Clase interna para reglas de procesamiento simples

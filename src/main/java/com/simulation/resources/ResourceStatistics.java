@@ -27,4 +27,5 @@ public class ResourceStatistics {
     public double getUtilizationPercent() { return utilizationPercent; }
     public double getAverageMinutesPerTrip() { return averageMinutesPerTrip; }
     public int getTotalTrips() { return totalTrips; }
+    public int getTotalUsages() { return totalTrips; }
 }

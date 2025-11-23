@@ -6,12 +6,16 @@ import com.simulation.entities.Entity;
 import com.simulation.entities.EntityType;
 import com.simulation.locations.Location;
 import com.simulation.resources.Resource;
+import com.simulation.gui.AnimationController;
 
 import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class OperationHandler {
     private final SimulationEngine engine;
     private final Random random;
+    private AnimationController animationController;
 
     // Colas para JOIN operations
     private final Map<String, Queue<Entity>> joinQueues;
@@ -22,22 +26,60 @@ public class OperationHandler {
         this.random = new Random();
         this.joinQueues = new HashMap<>();
         this.joinRequirements = new HashMap<>();
+        this.animationController = null;
 
         initializeJoinRequirements();
     }
 
+    public void setAnimationController(AnimationController controller) {
+        this.animationController = controller;
+    }
+
     private void initializeJoinRequirements() {
+        // COCCION: 1 GRANOS_DE_CEBADA + 4 LUPULO
         joinQueues.put("COCCION_GRANOS_DE_CEBADA", new LinkedList<>());
         joinQueues.put("COCCION_LUPULO", new LinkedList<>());
         joinRequirements.put("COCCION_LUPULO", 4);
 
+        // FERMENTACION: 1 MOSTO + 2 LEVADURA
         joinQueues.put("FERMENTACION_MOSTO", new LinkedList<>());
         joinQueues.put("FERMENTACION_LEVADURA", new LinkedList<>());
         joinRequirements.put("FERMENTACION_LEVADURA", 2);
 
+        // EMPACADO: 1 CAJA_VACIA + 6 BOTELLA_CON_CERVEZA
         joinQueues.put("EMPACADO_CAJA_VACIA", new LinkedList<>());
         joinQueues.put("EMPACADO_BOTELLA_CON_CERVEZA", new LinkedList<>());
         joinRequirements.put("EMPACADO_BOTELLA_CON_CERVEZA", 6);
+        
+        // ACCUM para ALMACENAJE: acumular 6 cajas
+        joinQueues.put("ALMACENAJE_ACCUM", new LinkedList<>());
+        joinRequirements.put("ALMACENAJE_ACCUM", 6);
+    }
+    
+    /**
+     * Maneja la lógica ACCUM - acumula entidades hasta alcanzar cantidad requerida
+     */
+    private void handleAccumulate(Entity entity, String fromLocation, String destination, 
+                                  int quantity, String resourceName) {
+        String accumKey = fromLocation + "_ACCUM";
+        Queue<Entity> accumQueue = joinQueues.get(accumKey);
+        
+        if (accumQueue != null) {
+            accumQueue.add(entity);
+            
+            // Cuando se acumulan suficientes, liberar UNA entidad (no todas)
+            // Las demás siguen esperando en cola para acumularse de nuevo
+            if (accumQueue.size() >= quantity) {
+                // Solo enviar la primera entidad del batch
+                Entity firstEntity = accumQueue.poll();
+                
+                if (resourceName != null && !resourceName.isEmpty()) {
+                    moveWithResource(firstEntity, destination, resourceName);
+                } else {
+                    handleArrival(firstEntity, destination);
+                }
+            }
+        }
     }
 
     public void handleArrival(Entity entity, String locationName) {
@@ -49,12 +91,33 @@ public class OperationHandler {
             entity.setEntryTime(currentTime);
             if (!entity.isTransformed()) {
                 engine.getStatistics().recordEntityEntry(entity);
+                // Notificar creación de entidad
+                engine.notifyEntityCreated(entity, location);
             }
         }
         location.enter(entity, currentTime);
+        
+        // Notificar llegada a locación
+        engine.notifyEntityArrival(entity, location);
 
-        engine.getStatistics().recordLocationEntry(locationName);
+        // Solo contar entrada a locación si NO es entidad secundaria de JOIN
+        // Entidades secundarias: LUPULO (a COCCION), LEVADURA (a FERMENTACION), BOTELLA (a EMPACADO)
+        String entityType = entity.getType().getName();
+        boolean isSecondaryJoinEntity = 
+            (locationName.equals("COCCION") && entityType.equals("LUPULO")) ||
+            (locationName.equals("FERMENTACION") && entityType.equals("LEVADURA")) ||
+            (locationName.equals("EMPACADO") && entityType.equals("BOTELLA_CON_CERVEZA"));
+        
+        if (!isSecondaryJoinEntity) {
+            engine.getStatistics().recordLocationEntry(locationName);
+        }
+        
         scheduleProcessing(entity, locationName);
+
+        // Actualizar GUI si está disponible
+        if (animationController != null) {
+            updateGUILocationOccupancy(locationName);
+        }
     }
 
     public void scheduleProcessing(Entity entity, String locationName) {
@@ -93,16 +156,32 @@ public class OperationHandler {
         } else {
             routeEntity(entity, locationName);
         }
+
+        // Actualizar GUI si está disponible
+        if (animationController != null) {
+            updateGUILocationOccupancy(locationName);
+        }
     }
 
     private boolean isJoinLocation(String locationName, String entityType) {
-        if (locationName.equals("COCCION") && (entityType.equals("GRANOS_DE_CEBADA") || entityType.equals("LUPULO"))) {
+        // Solo las entidades PRINCIPALES que inician el JOIN son manejadas aquí
+        if (locationName.equals("COCCION") && entityType.equals("GRANOS_DE_CEBADA")) {
             return true;
         }
-        if (locationName.equals("FERMENTACION") && (entityType.equals("MOSTO") || entityType.equals("LEVADURA"))) {
+        if (locationName.equals("FERMENTACION") && entityType.equals("MOSTO")) {
             return true;
         }
-        if (locationName.equals("EMPACADO") && (entityType.equals("CAJA_VACIA") || entityType.equals("BOTELLA_CON_CERVEZA"))) {
+        if (locationName.equals("EMPACADO") && entityType.equals("CAJA_VACIA")) {
+            return true;
+        }
+        // LUPULO, LEVADURA y BOTELLA simplemente se encolan (manejado en handleJoinLogic)
+        if (locationName.equals("COCCION") && entityType.equals("LUPULO")) {
+            return true;
+        }
+        if (locationName.equals("FERMENTACION") && entityType.equals("LEVADURA")) {
+            return true;
+        }
+        if (locationName.equals("EMPACADO") && entityType.equals("BOTELLA_CON_CERVEZA")) {
             return true;
         }
         return false;
@@ -114,11 +193,12 @@ public class OperationHandler {
 
         joinQueues.get(queueKey).add(entity);
 
-        if (locationName.equals("COCCION")) {
+        // Solo intentar procesar el JOIN si es la entidad PRINCIPAL
+        if (locationName.equals("COCCION") && entityType.equals("GRANOS_DE_CEBADA")) {
             processJoinCoccion();
-        } else if (locationName.equals("FERMENTACION")) {
+        } else if (locationName.equals("FERMENTACION") && entityType.equals("MOSTO")) {
             processJoinFermentacion();
-        } else if (locationName.equals("EMPACADO")) {
+        } else if (locationName.equals("EMPACADO") && entityType.equals("CAJA_VACIA")) {
             processJoinEmpacado();
         }
     }
@@ -136,7 +216,7 @@ public class OperationHandler {
             double currentTime = engine.getClock().getCurrentTime();
 
             granosEntity.addSystemTime(currentTime - granosEntity.getEntryTime());
-            engine.getStatistics().recordEntityExit(granosEntity);
+            // NO recordEntityExit - se consume en JOIN, no sale del sistema
 
             for (int i = 0; i < 4; i++) {
                 Entity lupuloEntity = lupuloQueue.poll();
@@ -149,12 +229,11 @@ public class OperationHandler {
 
             // Crear MOSTO como transformación
             EntityType mostoType = engine.getEntityType("MOSTO");
-            Entity mosto = new Entity(mostoType, true); // Marcar como transformada
+            Entity mosto = new Entity(mostoType, true);
             mosto.setEntryTime(entryTime);
             mosto.addValueAddedTime(totalValueAdded);
             mosto.addNonValueAddedTime(totalNonValueAdded);
 
-            // Registrar entrada de MOSTO
             engine.getStatistics().recordEntityEntry(mosto);
 
             handleArrival(mosto, "ENFRIAMIENTO");
@@ -174,7 +253,7 @@ public class OperationHandler {
             double currentTime = engine.getClock().getCurrentTime();
 
             mostoEntity.addSystemTime(currentTime - mostoEntity.getEntryTime());
-            engine.getStatistics().recordEntityExit(mostoEntity);
+            // NO recordEntityExit - se consume en JOIN, no sale del sistema
 
             for (int i = 0; i < 2; i++) {
                 Entity levaduraEntity = levaduraQueue.poll();
@@ -187,12 +266,11 @@ public class OperationHandler {
 
             // Crear CERVEZA como transformación
             EntityType cervezaType = engine.getEntityType("CERVEZA");
-            Entity cerveza = new Entity(cervezaType, true); // Marcar como transformada
+            Entity cerveza = new Entity(cervezaType, true);
             cerveza.setEntryTime(entryTime);
             cerveza.addValueAddedTime(totalValueAdded);
             cerveza.addNonValueAddedTime(totalNonValueAdded);
 
-            // Registrar entrada de CERVEZA
             engine.getStatistics().recordEntityEntry(cerveza);
 
             handleArrival(cerveza, "MADURACION");
@@ -212,7 +290,7 @@ public class OperationHandler {
             double currentTime = engine.getClock().getCurrentTime();
 
             cajaEntity.addSystemTime(currentTime - cajaEntity.getEntryTime());
-            engine.getStatistics().recordEntityExit(cajaEntity);
+            // NO recordEntityExit - se consume en JOIN, no sale del sistema
 
             for (int i = 0; i < 6; i++) {
                 Entity botellaEntity = botellaQueue.poll();
@@ -225,15 +303,30 @@ public class OperationHandler {
 
             // Crear CAJA_CON_CERVEZAS como transformación
             EntityType cajaLlenaType = engine.getEntityType("CAJA_CON_CERVEZAS");
-            Entity cajaLlena = new Entity(cajaLlenaType, true); // Marcar como transformada
+            Entity cajaLlena = new Entity(cajaLlenaType, true);
             cajaLlena.setEntryTime(entryTime);
-            cajaLlena.addValueAddedTime(totalValueAdded + 10);
+            cajaLlena.addValueAddedTime(totalValueAdded);
             cajaLlena.addNonValueAddedTime(totalNonValueAdded);
 
-            // Registrar entrada de CAJA_CON_CERVEZAS
+            // Registrar como nueva entidad al sistema (producto final)
             engine.getStatistics().recordEntityEntry(cajaLlena);
-
-            moveWithResource(cajaLlena, "ALMACENAJE", "OPERADOR_EMPACADO");
+            
+            // WAIT 10 min en EMPACADO (procesamiento)
+            cajaLlena.addValueAddedTime(10);
+            engine.getStatistics().recordLocationProcessingTime("EMPACADO", 10);
+            
+            // Programar movimiento a ALMACENAJE después de 10 minutos
+            double currentTimeAfterJoin = engine.getClock().getCurrentTime();
+            final Entity finalCajaLlena = cajaLlena; // Referencia final para closure
+            
+            Event packingEvent = new Event(currentTimeAfterJoin + 10, 0,
+                "Pack caja at EMPACADO") {
+                @Override
+                public void execute() {
+                    moveWithResource(finalCajaLlena, "ALMACENAJE", "OPERADOR_EMPACADO");
+                }
+            };
+            engine.getScheduler().scheduleEvent(packingEvent);
         }
     }
 
@@ -243,26 +336,30 @@ public class OperationHandler {
 
         if (route != null) {
             String destination = route.getDestinationLocation();
+            String moveLogic = route.getMoveLogic();
 
             if ("EXIT".equals(destination)) {
                 handleExit(entity);
-            } else if ("JOIN".equals(destination)) {
-                return;
+            } else if ("JOIN".equals(moveLogic)) {
+                // La entidad va a una locación para participar en un JOIN
+                handleArrival(entity, destination);
             } else {
                 double probability = route.getProbability();
                 if (random.nextDouble() <= probability) {
                     int quantity = route.getQuantity();
 
-                    if (quantity > 1) {
-                        // FIRST 6: registrar salida de entidad original
+                    if ("ACCUM".equals(route.getMoveLogic()) && quantity > 1) {
+                        // ACCUM: acumular entidades antes de mover en batch
+                        handleAccumulate(entity, fromLocation, destination, quantity, route.getResourceName());
+                    } else if (quantity > 1) {
+                        // FIRST 6: NO registrar exit (es transformación interna), SÍ registrar entries
                         double currentTime = engine.getClock().getCurrentTime();
                         entity.addSystemTime(currentTime - entity.getEntryTime());
-                        engine.getStatistics().recordEntityExit(entity);
+                        // NO recordEntityExit - la entidad se transforma, no sale del sistema
 
                         // Crear 6 entidades nuevas transformadas
                         for (int i = 0; i < quantity; i++) {
                             Entity newEntity = createTransformedEntity(entity, destination);
-                            // Registrar entrada de cada botella
                             engine.getStatistics().recordEntityEntry(newEntity);
 
                             if (route.getResourceName() != null && !route.getResourceName().isEmpty()) {
@@ -295,7 +392,7 @@ public class OperationHandler {
         }
 
         if (newType != null) {
-            Entity newEntity = new Entity(newType, true); // Marcar como transformada
+            Entity newEntity = new Entity(newType, true);
             newEntity.setEntryTime(original.getEntryTime());
             newEntity.addValueAddedTime(original.getTotalValueAddedTime());
             newEntity.addNonValueAddedTime(original.getTotalNonValueAddedTime());
@@ -312,15 +409,49 @@ public class OperationHandler {
 
         if (resource != null && resource.isAvailable()) {
             resource.acquire(currentTime);
+            
+            // Notificar que el recurso fue adquirido
+            engine.notifyResourceAcquired(resource, entity);
 
             double moveTime = 2.0;
+
+            // Animar movimiento si hay GUI disponible
+            if (animationController != null) {
+                String currentLocation = entity.getCurrentLocation() != null ?
+                    entity.getCurrentLocation().getType().getName() : "UNKNOWN";
+
+                animationController.animateEntityMovement(
+                    entity,
+                    currentLocation,
+                    destination,
+                    resourceName,
+                    () -> {
+                        // Callback cuando termina la animación
+                        resource.release(engine.getClock().getCurrentTime());
+                        handleArrival(entity, destination);
+                    }
+                );
+            }
 
             Event moveEvent = new Event(currentTime + moveTime, 0,
                 "Move " + entity.getType().getName() + " to " + destination) {
                 @Override
                 public void execute() {
-                    resource.release(engine.getClock().getCurrentTime());
-                    handleArrival(entity, destination);
+                    // Notificar liberación de recurso
+                    engine.notifyResourceReleased(resource, entity);
+                    
+                    Location from = entity.getCurrentLocation();
+                    Location to = engine.getLocation(destination);
+                    if (from != null && to != null) {
+                        // Notificar movimiento de entidad
+                        engine.notifyEntityMove(entity, from, to);
+                    }
+                    
+                    // Solo ejecutar si NO hay GUI (modo consola)
+                    if (animationController == null) {
+                        resource.release(engine.getClock().getCurrentTime());
+                        handleArrival(entity, destination);
+                    }
                 }
             };
 
@@ -337,7 +468,19 @@ public class OperationHandler {
     private void handleExit(Entity entity) {
         double currentTime = engine.getClock().getCurrentTime();
         entity.addSystemTime(currentTime - entity.getEntryTime());
+        
+        Location from = entity.getCurrentLocation();
+        if (from != null) {
+            // Notificar salida del sistema
+            engine.notifyEntityExit(entity, from);
+        }
+        
         engine.getStatistics().recordEntityExit(entity);
+
+        // Actualizar GUI si está disponible
+        if (animationController != null) {
+            updateGUIEntityCount(entity.getType().getName());
+        }
     }
 
     private RoutingRule getRoutingRule(String locationName, String entityType) {
@@ -359,7 +502,7 @@ public class OperationHandler {
             case "FILTRADO":
                 return new RoutingRule("COCCION", 1.0, 1, "FIRST", null);
             case "SILO_LUPULO":
-                return new RoutingRule("COCCION", 1.0, 1, "JOIN", "OPERADOR_LUPULO");
+                return new RoutingRule("COCCION", 1.0, 1, "JOIN", "OPERADOR_LUPADURA");
             case "ENFRIAMIENTO":
                 return new RoutingRule("FERMENTACION", 1.0, 1, "FIRST", null);
             case "SILO_LEVADURA":
@@ -375,11 +518,34 @@ public class OperationHandler {
             case "ALMACEN_CAJAS":
                 return new RoutingRule("EMPACADO", 1.0, 1, "FIRST", null);
             case "ALMACENAJE":
-                return new RoutingRule("MERCADO", 1.0, 1, "FIRST", "CAMION");
+                return new RoutingRule("MERCADO", 1.0, 6, "ACCUM", "CAMION");
             case "MERCADO":
                 return new RoutingRule("EXIT", 1.0, 1, "FIRST", null);
             default:
                 return new RoutingRule("EXIT", 1.0, 1, "FIRST", null);
+        }
+    }
+
+    // Métodos auxiliares para actualizar la GUI
+    private void updateGUILocationOccupancy(String locationName) {
+        if (animationController != null) {
+            Location location = engine.getLocation(locationName);
+            if (location != null) {
+                int occupancy = location.getCurrentOccupancy();
+                int capacity = location.getType().getCapacity();
+
+                // Actualizar el nodo visual de la locación
+                if (animationController.getLocationNodes().containsKey(locationName)) {
+                    animationController.getLocationNodes().get(locationName).setOccupancy(occupancy);
+                    animationController.getLocationNodes().get(locationName).setCapacity(capacity);
+                }
+            }
+        }
+    }
+
+    private void updateGUIEntityCount(String entityType) {
+        if (animationController != null) {
+            // Esta actualización se puede expandir para mostrar contadores en tiempo real
         }
     }
 }

@@ -69,4 +69,15 @@ public class Resource {
     public double getUtilization(double totalTime) {
         return (totalBusyTime / (totalTime * type.getUnits())) * 100.0;
     }
+    
+    public String getName() {
+        return type.getName();
+    }
+    
+    public ResourceStatistics getStatistics() {
+        // Devolver estadísticas básicas del recurso
+        ResourceStatistics stats = new ResourceStatistics(getName());
+        stats.calculate(this, lastUpdateTime, type.getUnits() - availableUnits, totalBusyTime);
+        return stats;
+    }
 }

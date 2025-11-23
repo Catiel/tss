@@ -86,4 +86,12 @@ public class Location {
     public double getLastUpdateTime() {
         return lastUpdateTime;
     }
+    
+    public String getName() {
+        return type.getName();
+    }
+    
+    public Queue<Entity> getQueue() {
+        return queue;
+    }
 }

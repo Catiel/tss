@@ -7,7 +7,9 @@ import com.simulation.statistics.StatisticsCollector;
 import com.simulation.processing.*;
 import com.simulation.arrivals.ArrivalGenerator;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class SimulationEngine {
@@ -20,6 +22,7 @@ public class SimulationEngine {
     private final Map<String, ProcessingRule> processingRules;
     private final ArrivalGenerator arrivalGenerator;
     private double simulationEndTime;
+    private final List<SimulationListener> listeners = new ArrayList<>();
 
     public SimulationEngine() {
         this.clock = new SimulationClock();
@@ -66,6 +69,73 @@ public class SimulationEngine {
         // Finalizar estadísticas
         statistics.calculateLocationStatistics(locations, clock.getCurrentTime());
     }
+    
+    public void setEndTime(double endTime) {
+        this.simulationEndTime = endTime;
+    }
+
+    // Métodos para GUI con ejecución incremental
+    public boolean step(double speedMultiplier) {
+        if (!scheduler.hasEvents() || clock.getCurrentTime() >= simulationEndTime) {
+            return false;
+        }
+        
+        // Ejecutar el siguiente evento
+        Event event = scheduler.getNextEvent();
+        clock.advanceTo(event.getScheduledTime());
+        event.execute();
+        
+        // Actualizar estadísticas parciales
+        statistics.calculateLocationStatistics(locations, clock.getCurrentTime());
+        
+        return scheduler.hasEvents() && clock.getCurrentTime() < simulationEndTime;
+    }
+
+    // Métodos para listeners
+    public void addListener(SimulationListener listener) {
+        listeners.add(listener);
+    }
+    
+    public void removeListener(SimulationListener listener) {
+        listeners.remove(listener);
+    }
+    
+    // Métodos para notificar eventos
+    public void notifyEntityArrival(Entity entity, Location location) {
+        for (SimulationListener listener : listeners) {
+            listener.onEntityArrival(entity, location, clock.getCurrentTime());
+        }
+    }
+    
+    public void notifyEntityMove(Entity entity, Location from, Location to) {
+        for (SimulationListener listener : listeners) {
+            listener.onEntityMove(entity, from, to, clock.getCurrentTime());
+        }
+    }
+    
+    public void notifyEntityExit(Entity entity, Location from) {
+        for (SimulationListener listener : listeners) {
+            listener.onEntityExit(entity, from, clock.getCurrentTime());
+        }
+    }
+    
+    public void notifyResourceAcquired(Resource resource, Entity entity) {
+        for (SimulationListener listener : listeners) {
+            listener.onResourceAcquired(resource, entity, clock.getCurrentTime());
+        }
+    }
+    
+    public void notifyResourceReleased(Resource resource, Entity entity) {
+        for (SimulationListener listener : listeners) {
+            listener.onResourceReleased(resource, entity, clock.getCurrentTime());
+        }
+    }
+    
+    public void notifyEntityCreated(Entity entity, Location location) {
+        for (SimulationListener listener : listeners) {
+            listener.onEntityCreated(entity, location, clock.getCurrentTime());
+        }
+    }
 
     // Getters
     public SimulationClock getClock() { return clock; }
@@ -76,4 +146,6 @@ public class SimulationEngine {
     public Resource getResource(String name) { return resources.get(name); }
     public ProcessingRule getProcessingRule(String location) { return processingRules.get(location); }
     public Map<String, Location> getAllLocations() { return locations; }
+    public Map<String, EntityType> getAllEntityTypes() { return entityTypes; }
+    public Map<String, Resource> getAllResources() { return resources; }
 }
