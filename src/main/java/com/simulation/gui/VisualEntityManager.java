@@ -1,8 +1,6 @@
 package com.simulation.gui;
 
-import com.simulation.entities.Entity;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.effect.Bloom;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.RadialGradient;
@@ -10,7 +8,8 @@ import javafx.scene.paint.Stop;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 

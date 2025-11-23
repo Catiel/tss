@@ -8,9 +8,11 @@ import javafx.scene.text.TextAlignment;
 public class LocationNode {
 
     private final String name;
-    private double x, y;
-    private double width, height;
-    private Color color;
+    private final double x;
+    private final double y;
+    private final double width;
+    private final double height;
+    private final Color color;
     private int currentOccupancy;
     private int capacity;
 

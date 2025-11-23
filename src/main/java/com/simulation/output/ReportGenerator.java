@@ -1,8 +1,8 @@
 package com.simulation.output;
 
-import com.simulation.statistics.StatisticsCollector;
 import com.simulation.entities.EntityStatistics;
 import com.simulation.locations.LocationStatistics;
+import com.simulation.statistics.StatisticsCollector;
 
 import java.io.FileWriter;
 import java.io.IOException;

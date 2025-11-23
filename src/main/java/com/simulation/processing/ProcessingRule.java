@@ -1,7 +1,7 @@
 package com.simulation.processing;
 
-import com.simulation.entities.Entity;
 import com.simulation.core.SimulationEngine;
+import com.simulation.entities.Entity;
 
 public abstract class ProcessingRule {
     protected final String locationName;

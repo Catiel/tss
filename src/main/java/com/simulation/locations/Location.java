@@ -1,6 +1,7 @@
 package com.simulation.locations;
 
 import com.simulation.entities.Entity;
+
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -28,7 +29,7 @@ public class Location {
     }
 
     public boolean canAccept() {
-        return currentOccupancy < type.getCapacity();
+        return currentOccupancy < type.capacity();
     }
 
     public void enter(Entity entity, double currentTime) {
@@ -104,7 +105,7 @@ public class Location {
     }
     
     public String getName() {
-        return type.getName();
+        return type.name();
     }
     
     public Queue<Entity> getQueue() {

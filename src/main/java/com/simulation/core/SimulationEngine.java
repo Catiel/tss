@@ -1,11 +1,14 @@
 package com.simulation.core;
 
-import com.simulation.entities.*;
-import com.simulation.locations.*;
-import com.simulation.resources.*;
-import com.simulation.statistics.StatisticsCollector;
-import com.simulation.processing.*;
 import com.simulation.arrivals.ArrivalGenerator;
+import com.simulation.entities.Entity;
+import com.simulation.entities.EntityType;
+import com.simulation.locations.Location;
+import com.simulation.locations.LocationType;
+import com.simulation.processing.ProcessingRule;
+import com.simulation.resources.Resource;
+import com.simulation.resources.ResourceType;
+import com.simulation.statistics.StatisticsCollector;
 
 import java.util.ArrayList;
 import java.util.HashMap;

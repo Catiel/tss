@@ -1,6 +1,7 @@
 package com.simulation.resources;
 
 import com.simulation.entities.Entity;
+
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -13,7 +14,7 @@ public class Resource {
 
     public Resource(ResourceType type) {
         this.type = type;
-        this.availableUnits = type.getUnits();
+        this.availableUnits = type.units();
         this.waitingQueue = new LinkedList<>();
         this.totalBusyTime = 0;
         this.lastUpdateTime = 0;
@@ -45,7 +46,7 @@ public class Resource {
 
     private void updateBusyTime(double currentTime) {
         double timeDelta = currentTime - lastUpdateTime;
-        int busyUnits = type.getUnits() - availableUnits;
+        int busyUnits = type.units() - availableUnits;
         totalBusyTime += busyUnits * timeDelta;
         lastUpdateTime = currentTime;
     }
@@ -67,17 +68,17 @@ public class Resource {
     }
 
     public double getUtilization(double totalTime) {
-        return (totalBusyTime / (totalTime * type.getUnits())) * 100.0;
+        return (totalBusyTime / (totalTime * type.units())) * 100.0;
     }
     
     public String getName() {
-        return type.getName();
+        return type.name();
     }
     
     public ResourceStatistics getStatistics() {
         // Devolver estadísticas básicas del recurso
         ResourceStatistics stats = new ResourceStatistics(getName());
-        stats.calculate(this, lastUpdateTime, type.getUnits() - availableUnits, totalBusyTime);
+        stats.calculate(this, lastUpdateTime, type.units() - availableUnits, totalBusyTime);
         return stats;
     }
 }

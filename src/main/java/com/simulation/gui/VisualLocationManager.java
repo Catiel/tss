@@ -4,7 +4,6 @@ import com.simulation.core.SimulationEngine;
 import com.simulation.locations.Location;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.effect.DropShadow;
-import javafx.scene.effect.InnerShadow;
 import javafx.scene.paint.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -38,7 +37,7 @@ public class VisualLocationManager {
     
     private void renderLocation(GraphicsContext gc, String name, BrewerySimulationGUI.Point2D pos, Location location) {
         int currentOccupancy = location.getCurrentOccupancy();
-        int capacity = location.getType().getCapacity();
+        int capacity = location.getType().capacity();
         int queueSize = location.getQueueSize();
         
         // Calcular color basado en utilización

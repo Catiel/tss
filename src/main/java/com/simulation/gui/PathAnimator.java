@@ -11,11 +11,13 @@ public class PathAnimator {
 
     private double elapsed = 0;
     private boolean finished = false;
-    private boolean withResource;
+    private final boolean withResource;
 
     // Posiciones iniciales y finales
-    private double startX, startY;
-    private double endX, endY;
+    private final double startX;
+    private final double startY;
+    private final double endX;
+    private final double endY;
 
     public PathAnimator(EntitySprite entity, LocationNode from, LocationNode to,
                        double duration, Runnable onComplete) {

@@ -4,13 +4,11 @@ import com.simulation.core.Event;
 import com.simulation.core.SimulationEngine;
 import com.simulation.entities.Entity;
 import com.simulation.entities.EntityType;
+import com.simulation.gui.AnimationController;
 import com.simulation.locations.Location;
 import com.simulation.resources.Resource;
-import com.simulation.gui.AnimationController;
 
 import java.util.*;
-import java.util.ArrayList;
-import java.util.List;
 
 public class OperationHandler {
     private final SimulationEngine engine;
@@ -181,10 +179,7 @@ public class OperationHandler {
         if (locationName.equals("FERMENTACION") && entityType.equals("LEVADURA")) {
             return true;
         }
-        if (locationName.equals("EMPACADO") && entityType.equals("BOTELLA_CON_CERVEZA")) {
-            return true;
-        }
-        return false;
+        return locationName.equals("EMPACADO") && entityType.equals("BOTELLA_CON_CERVEZA");
     }
 
     private void handleJoinLogic(Entity entity, String locationName) {
@@ -335,8 +330,8 @@ public class OperationHandler {
         RoutingRule route = getRoutingRule(fromLocation, entityType);
 
         if (route != null) {
-            String destination = route.getDestinationLocation();
-            String moveLogic = route.getMoveLogic();
+            String destination = route.destinationLocation();
+            String moveLogic = route.moveLogic();
 
             if ("EXIT".equals(destination)) {
                 handleExit(entity);
@@ -344,13 +339,13 @@ public class OperationHandler {
                 // La entidad va a una locación para participar en un JOIN
                 handleArrival(entity, destination);
             } else {
-                double probability = route.getProbability();
+                double probability = route.probability();
                 if (random.nextDouble() <= probability) {
-                    int quantity = route.getQuantity();
+                    int quantity = route.quantity();
 
-                    if ("ACCUM".equals(route.getMoveLogic()) && quantity > 1) {
+                    if ("ACCUM".equals(route.moveLogic()) && quantity > 1) {
                         // ACCUM: acumular entidades antes de mover en batch
-                        handleAccumulate(entity, fromLocation, destination, quantity, route.getResourceName());
+                        handleAccumulate(entity, fromLocation, destination, quantity, route.resourceName());
                     } else if (quantity > 1) {
                         // FIRST 6: NO registrar exit (es transformación interna), SÍ registrar entries
                         double currentTime = engine.getClock().getCurrentTime();
@@ -362,15 +357,15 @@ public class OperationHandler {
                             Entity newEntity = createTransformedEntity(entity, destination);
                             engine.getStatistics().recordEntityEntry(newEntity);
 
-                            if (route.getResourceName() != null && !route.getResourceName().isEmpty()) {
-                                moveWithResource(newEntity, destination, route.getResourceName());
+                            if (route.resourceName() != null && !route.resourceName().isEmpty()) {
+                                moveWithResource(newEntity, destination, route.resourceName());
                             } else {
                                 handleArrival(newEntity, destination);
                             }
                         }
                     } else {
-                        if (route.getResourceName() != null && !route.getResourceName().isEmpty()) {
-                            moveWithResource(entity, destination, route.getResourceName());
+                        if (route.resourceName() != null && !route.resourceName().isEmpty()) {
+                            moveWithResource(entity, destination, route.resourceName());
                         } else {
                             handleArrival(entity, destination);
                         }
@@ -418,7 +413,7 @@ public class OperationHandler {
             // Animar movimiento si hay GUI disponible
             if (animationController != null) {
                 String currentLocation = entity.getCurrentLocation() != null ?
-                    entity.getCurrentLocation().getType().getName() : "UNKNOWN";
+                    entity.getCurrentLocation().getType().name() : "UNKNOWN";
 
                 animationController.animateEntityMovement(
                     entity,
@@ -532,7 +527,7 @@ public class OperationHandler {
             Location location = engine.getLocation(locationName);
             if (location != null) {
                 int occupancy = location.getCurrentOccupancy();
-                int capacity = location.getType().getCapacity();
+                int capacity = location.getType().capacity();
 
                 // Actualizar el nodo visual de la locación
                 if (animationController.getLocationNodes().containsKey(locationName)) {

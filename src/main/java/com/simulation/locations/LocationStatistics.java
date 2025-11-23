@@ -18,7 +18,7 @@ public class LocationStatistics {
 
     public void calculate(Location location, double totalSimulationTime, int entries, double totalProcessingTime) {
         this.scheduledTime = totalSimulationTime;
-        this.capacity = location.getType().getCapacity();
+        this.capacity = location.getType().capacity();
         this.totalEntries = entries;
         
         if (entries > 0) {

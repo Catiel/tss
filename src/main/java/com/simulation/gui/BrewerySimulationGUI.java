@@ -1,12 +1,11 @@
 package com.simulation.gui;
 
-import com.simulation.Main;
 import com.simulation.core.SimulationEngine;
 import com.simulation.core.SimulationListener;
 import com.simulation.entities.Entity;
 import com.simulation.locations.Location;
-import com.simulation.resources.Resource;
 import com.simulation.processing.ProcessingRule;
+import com.simulation.resources.Resource;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -15,19 +14,18 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.chart.BarChart;
+import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
-import javafx.scene.chart.BarChart;
-import javafx.scene.chart.CategoryAxis;
-import javafx.scene.chart.NumberAxis;
-import javafx.scene.chart.XYChart;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class BrewerySimulationGUI extends Application implements SimulationListener {
@@ -49,8 +47,8 @@ public class BrewerySimulationGUI extends Application implements SimulationListe
     // Animación
     private AnimationTimer animationTimer;
     private Thread simulationThread;
-    private AtomicBoolean running = new AtomicBoolean(false);
-    private AtomicBoolean paused = new AtomicBoolean(false);
+    private final AtomicBoolean running = new AtomicBoolean(false);
+    private final AtomicBoolean paused = new AtomicBoolean(false);
     private double simulationSpeed = 1.0;
     private double currentTime = 0;
     private final double endTime = 4200.0; // 70 horas
@@ -61,7 +59,7 @@ public class BrewerySimulationGUI extends Application implements SimulationListe
     private VisualResourceManager resourceManager;
     
     // Mapa de posiciones de locaciones
-    private Map<String, Point2D> locationPositions = new HashMap<>();
+    private final Map<String, Point2D> locationPositions = new HashMap<>();
     
     @Override
     public void start(Stage primaryStage) {
@@ -412,7 +410,7 @@ public class BrewerySimulationGUI extends Application implements SimulationListe
     
     private void startAnimationTimer() {
         animationTimer = new AnimationTimer() {
-            private long lastUpdate = 0;
+            private final long lastUpdate = 0;
             private int frameCount = 0;
             
             @Override
@@ -770,7 +768,7 @@ public class BrewerySimulationGUI extends Application implements SimulationListe
                         row.utilization.set(String.format("%.2f", stats.getUtilizationPercent()));
                     } else {
                         row.scheduledTime.set(String.format("%.2f", currentTime / 60.0));
-                        row.capacity.set(location.getType().getCapacity());
+                        row.capacity.set(location.getType().capacity());
                         row.totalEntries.set(0);
                         row.avgTimePerEntry.set("0.00");
                         row.avgContents.set("0.00");

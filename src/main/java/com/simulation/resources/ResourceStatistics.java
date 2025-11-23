@@ -12,7 +12,7 @@ public class ResourceStatistics {
     }
 
     public void calculate(Resource resource, double totalTime, int trips, double totalTripTime) {
-        this.units = resource.getType().getUnits();
+        this.units = resource.getType().units();
         this.utilizationPercent = resource.getUtilization(totalTime);
         this.totalTrips = trips;
         

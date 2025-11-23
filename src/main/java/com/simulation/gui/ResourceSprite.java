@@ -8,9 +8,10 @@ public class ResourceSprite {
 
     private final String name;
     private double x, y;
-    private double homeX, homeY;
+    private final double homeX;
+    private final double homeY;
     private final double size = 15;
-    private Color color;
+    private final Color color;
     private boolean isMoving = false;
 
     public ResourceSprite(String name, double x, double y, Color color) {

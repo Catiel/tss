@@ -8,8 +8,8 @@ public class EntitySprite {
 
     private final Entity entity;
     private double x, y;
-    private double size = 8;
-    private Color color;
+    private final double size = 8;
+    private final Color color;
 
     public EntitySprite(Entity entity, double x, double y) {
         this.entity = entity;

@@ -56,7 +56,7 @@ public class PathNode {
     public String toString() {
         return "PathNode{" +
                 "nodeId='" + nodeId + '\'' +
-                ", location=" + (associatedLocation != null ? associatedLocation.getType().getName() : "null") +
+                ", location=" + (associatedLocation != null ? associatedLocation.getType().name() : "null") +
                 ", coordinates=(" + xCoordinate + ", " + yCoordinate + ")" +
                 '}';
     }

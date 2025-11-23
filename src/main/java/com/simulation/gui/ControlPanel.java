@@ -1,7 +1,9 @@
 package com.simulation.gui;
 
 import javafx.geometry.Insets;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 

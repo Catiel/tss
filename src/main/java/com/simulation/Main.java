@@ -1,9 +1,9 @@
 package com.simulation;
 
 import com.simulation.core.SimulationEngine;
+import com.simulation.entities.Entity;
 import com.simulation.output.ReportGenerator;
 import com.simulation.processing.ProcessingRule;
-import com.simulation.entities.Entity;
 
 public class Main {
     public static void main(String[] args) {
