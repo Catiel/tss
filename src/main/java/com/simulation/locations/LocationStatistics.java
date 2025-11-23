@@ -10,6 +10,7 @@ public class LocationStatistics {
     private double maxContents;
     private double currentContents;
     private double utilizationPercent;
+    private double busyUtilizationPercent; // Tiempo ocupado / tiempo total * 100
 
     public LocationStatistics(String locationName) {
         this.locationName = locationName;
@@ -27,11 +28,23 @@ public class LocationStatistics {
         this.averageContents = location.getTotalOccupancyTime() / totalSimulationTime;
         this.maxContents = capacity;
         this.currentContents = location.getCurrentOccupancy();
-        // Fórmula de Promodel: (Promedio de contenido / Capacidad) * 100
+        // Utilización basada en promedio de contenido (estilo Promodel)
         if (capacity > 0) {
             this.utilizationPercent = (averageContents / capacity) * 100.0;
         } else {
             this.utilizationPercent = 0.0;
+        }
+
+        // Utilización basada en tiempo ocupado (backup)
+        if (totalSimulationTime > 0) {
+            busyUtilizationPercent = (location.getBusyTime() / totalSimulationTime) * 100.0;
+        } else {
+            busyUtilizationPercent = 0.0;
+        }
+
+        // Fallback: si la utilización por contenido es ~0 pero hubo tiempo ocupado
+        if (utilizationPercent < 0.01 && busyUtilizationPercent > 0.1) {
+            utilizationPercent = busyUtilizationPercent;
         }
     }
 
@@ -45,4 +58,5 @@ public class LocationStatistics {
     public double getMaxContents() { return maxContents; }
     public double getCurrentContents() { return currentContents; }
     public double getUtilizationPercent() { return utilizationPercent; }
+    public double getBusyUtilizationPercent() { return busyUtilizationPercent; }
 }
