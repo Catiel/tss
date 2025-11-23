@@ -73,7 +73,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>com.simulation.gui.DigemicMain</mainClass>
+                    <mainClass>com.simulation.gui.ValvulaMainApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>
