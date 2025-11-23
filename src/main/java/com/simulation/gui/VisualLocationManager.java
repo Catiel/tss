@@ -105,13 +105,20 @@ public class VisualLocationManager {
         String locName = formatLocationName(name);
         gc.fillText(locName, pos.getX() + LOCATION_SIZE / 2, pos.getY() - 12);
 
-        // Indicador de ocupación ABAJO con fondo oscuro
-        gc.setFill(Color.color(0, 0, 0, 0.85));
-        gc.fillRoundRect(pos.getX() + 5, pos.getY() + LOCATION_SIZE + 8, LOCATION_SIZE - 10, 22, 6, 6);
-        gc.setFont(Font.font("Arial", FontWeight.BOLD, 13));
+        // Indicador de ocupación ABAJO con fondo oscuro - MÁS GRANDE Y VISIBLE
+        gc.setFill(Color.color(0, 0, 0, 0.90));
+        gc.fillRoundRect(pos.getX(), pos.getY() + LOCATION_SIZE + 6, LOCATION_SIZE, 28, 6, 6);
+
+        // Etiqueta "PROCESANDO:" en tamaño pequeño
+        gc.setFont(Font.font("Arial", FontWeight.BOLD, 9));
+        gc.setFill(Color.web("#FFA726")); // Naranja para llamar la atención
+        gc.fillText("PROCESANDO:", pos.getX() + LOCATION_SIZE / 2, pos.getY() + LOCATION_SIZE + 18);
+
+        // Número grande y claro
+        gc.setFont(Font.font("Arial", FontWeight.BOLD, 14));
         gc.setFill(Color.YELLOW);
         String occupancyText = currentOccupancy + "/" + (capacity == Integer.MAX_VALUE ? "∞" : capacity);
-        gc.fillText(occupancyText, pos.getX() + LOCATION_SIZE / 2, pos.getY() + LOCATION_SIZE + 24);
+        gc.fillText(occupancyText, pos.getX() + LOCATION_SIZE / 2, pos.getY() + LOCATION_SIZE + 30);
 
         // Contador TOTAL ENTRIES (Badge Azul en esquina superior derecha)
         if (totalIn > 0) {

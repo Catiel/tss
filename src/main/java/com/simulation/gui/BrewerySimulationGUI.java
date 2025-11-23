@@ -36,7 +36,7 @@ public class BrewerySimulationGUI extends Application implements SimulationListe
     private GraphicsContext gc;
 
     // Controles
-    private Button startButton, pauseButton, stopButton, resetButton;
+    private Button startButton, pauseButton, resetButton, configButton, stopButton;
     private Slider speedSlider;
     private Label timeLabel, statusLabel;
     private ProgressBar progressBar;
@@ -64,6 +64,33 @@ public class BrewerySimulationGUI extends Application implements SimulationListe
 
     // Gestor de rutas
     private PathNetworkManager pathManager;
+
+    // Parámetros configurables de la simulación
+    private double arrivalFreqCebada = 25.0;
+    private double arrivalFreqLupulo = 10.0;
+    private double arrivalFreqLevadura = 20.0;
+    private double arrivalFreqCajas = 30.0;
+
+    private double timeMalteado = 60.0;
+    private double timeSecado = 60.0;
+    private double timeMolienda = 60.0;
+    private double timeMacerado = 90.0;
+    private double timeFiltrado = 30.0;
+    private double timeCoccion = 60.0;
+    private double timeEnfriamiento = 60.0;
+    private double timeFermentacion = 120.0;
+    private double timeMaduracion = 90.0;
+    private double timeInspeccion = 30.0;
+    private double timeEmbotellado = 3.0;
+    private double timeEtiquetado = 1.0;
+    private double timeEmpacado = 10.0;
+    private double timeAlmacenaje = 5.0;
+
+    private double speedOperadorRecepcion = 90.0;
+    private double speedOperadorLupulo = 100.0;
+    private double speedOperadorLevadura = 100.0;
+    private double speedOperadorEmpacado = 100.0;
+    private double speedCamion = 100.0;
 
     @Override
     public void start(Stage primaryStage) {
@@ -134,9 +161,14 @@ public class BrewerySimulationGUI extends Application implements SimulationListe
 
         stopButton = new Button("⏹ Detener");
         stopButton.setStyle(
-                "-fx-background-color: #E74C3C; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20;");
+            "-fx-background-color: #E74C3C; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20;");
         stopButton.setDisable(true);
         stopButton.setOnAction(e -> stopSimulation());
+
+        configButton = new Button("⚙ Configuración");
+        configButton.setStyle(
+                "-fx-background-color: #9B59B6; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20;");
+        configButton.setOnAction(e -> openConfigurationDialog());
 
         resetButton = new Button("🔄 Reiniciar");
         resetButton.setStyle(
@@ -154,7 +186,7 @@ public class BrewerySimulationGUI extends Application implements SimulationListe
         speedSlider.setPrefWidth(200);
         speedSlider.valueProperty().addListener((obs, old, newVal) -> simulationSpeed = newVal.doubleValue());
 
-        controls.getChildren().addAll(startButton, pauseButton, stopButton, resetButton,
+        controls.getChildren().addAll(startButton, pauseButton, stopButton, resetButton, configButton,
                 new Separator(), speedLabel, speedSlider);
 
         // Información de tiempo y progreso
@@ -927,6 +959,7 @@ public class BrewerySimulationGUI extends Application implements SimulationListe
 
         TableColumn<EntityStatsRow, String> avgNonValueCol = new TableColumn<>("T. Movimiento Prom. (Min)");
         avgNonValueCol.setCellValueFactory(data -> data.getValue().avgNonValueTime);
+
         avgNonValueCol.setPrefWidth(170);
         avgNonValueCol.setStyle("-fx-alignment: CENTER;");
 
@@ -1188,45 +1221,48 @@ public class BrewerySimulationGUI extends Application implements SimulationListe
     }
 
     private void setupResources(SimulationEngine engine) {
-        engine.addResource("OPERADOR_RECEPCION", 1, 90.0);
-        engine.addResource("OPERADOR_LUPULO", 1, 100.0);
-        engine.addResource("OPERADOR_LEVADURA", 1, 100.0);
-        engine.addResource("OPERADOR_EMPACADO", 1, 100.0);
-        engine.addResource("CAMION", 1, 100.0);
+        engine.addResource("OPERADOR_RECEPCION", 1, speedOperadorRecepcion);
+        engine.addResource("OPERADOR_LUPULO", 1, speedOperadorLupulo);
+        engine.addResource("OPERADOR_LEVADURA", 1, speedOperadorLevadura);
+        engine.addResource("OPERADOR_EMPACADO", 1, speedOperadorEmpacado);
+        engine.addResource("CAMION", 1, speedCamion);
     }
 
     private void setupProcessingRules(SimulationEngine engine) {
         engine.addProcessingRule(new SimpleProcessingRule("SILO_GRANDE", "GRANOS_DE_CEBADA", 0));
-        engine.addProcessingRule(new SimpleProcessingRule("MALTEADO", "GRANOS_DE_CEBADA", 60));
-        engine.addProcessingRule(new SimpleProcessingRule("SECADO", "GRANOS_DE_CEBADA", 60));
-        engine.addProcessingRule(new SimpleProcessingRule("MOLIENDA", "GRANOS_DE_CEBADA", 60));
-        engine.addProcessingRule(new SimpleProcessingRule("MACERADO", "GRANOS_DE_CEBADA", 90));
-        engine.addProcessingRule(new SimpleProcessingRule("FILTRADO", "GRANOS_DE_CEBADA", 30));
-        engine.addProcessingRule(new SimpleProcessingRule("COCCION", "GRANOS_DE_CEBADA", 60));
+        engine.addProcessingRule(new SimpleProcessingRule("MALTEADO", "GRANOS_DE_CEBADA", timeMalteado));
+        engine.addProcessingRule(new SimpleProcessingRule("SECADO", "GRANOS_DE_CEBADA", timeSecado));
+        engine.addProcessingRule(new SimpleProcessingRule("MOLIENDA", "GRANOS_DE_CEBADA", timeMolienda));
+        engine.addProcessingRule(new SimpleProcessingRule("MACERADO", "GRANOS_DE_CEBADA", timeMacerado));
+        engine.addProcessingRule(new SimpleProcessingRule("FILTRADO", "GRANOS_DE_CEBADA", timeFiltrado));
+        engine.addProcessingRule(new SimpleProcessingRule("COCCION", "GRANOS_DE_CEBADA", timeCoccion));
         engine.addProcessingRule(new SimpleProcessingRule("SILO_LUPULO", "LUPULO", 0));
         engine.addProcessingRule(new SimpleProcessingRule("COCCION", "LUPULO", 0));
-        engine.addProcessingRule(new SimpleProcessingRule("ENFRIAMIENTO", "MOSTO", 60));
-        engine.addProcessingRule(new SimpleProcessingRule("FERMENTACION", "MOSTO", 120));
+        engine.addProcessingRule(new SimpleProcessingRule("ENFRIAMIENTO", "MOSTO", timeEnfriamiento));
+        engine.addProcessingRule(new SimpleProcessingRule("FERMENTACION", "MOSTO", timeFermentacion));
         engine.addProcessingRule(new SimpleProcessingRule("SILO_LEVADURA", "LEVADURA", 0));
         engine.addProcessingRule(new SimpleProcessingRule("FERMENTACION", "LEVADURA", 0));
-        engine.addProcessingRule(new SimpleProcessingRule("MADURACION", "CERVEZA", 90));
-        engine.addProcessingRule(new SimpleProcessingRule("INSPECCION", "CERVEZA", 30));
-        engine.addProcessingRule(new SimpleProcessingRule("EMBOTELLADO", "CERVEZA", 3));
-        engine.addProcessingRule(new SimpleProcessingRule("ETIQUETADO", "BOTELLA_CON_CERVEZA", 1));
+        engine.addProcessingRule(new SimpleProcessingRule("MADURACION", "CERVEZA", timeMaduracion));
+        engine.addProcessingRule(new SimpleProcessingRule("INSPECCION", "CERVEZA", timeInspeccion));
+        engine.addProcessingRule(new SimpleProcessingRule("EMBOTELLADO", "CERVEZA", timeEmbotellado));
+        engine.addProcessingRule(new SimpleProcessingRule("ETIQUETADO", "BOTELLA_CON_CERVEZA", timeEtiquetado));
         engine.addProcessingRule(new SimpleProcessingRule("EMPACADO", "BOTELLA_CON_CERVEZA", 0));
         engine.addProcessingRule(new SimpleProcessingRule("ALMACEN_CAJAS", "CAJA_VACIA", 0));
-        engine.addProcessingRule(new SimpleProcessingRule("EMPACADO", "CAJA_VACIA", 0)); // WAIT 10 está después del
-                                                                                         // JOIN
-        engine.addProcessingRule(new SimpleProcessingRule("ALMACENAJE", "CAJA_CON_CERVEZAS", 5));
+        engine.addProcessingRule(new SimpleProcessingRule("EMPACADO", "CAJA_VACIA", 0)); // WAIT 10 está después del JOIN
+        engine.addProcessingRule(new SimpleProcessingRule("ALMACENAJE", "CAJA_CON_CERVEZAS", timeAlmacenaje));
         engine.addProcessingRule(new SimpleProcessingRule("MERCADO", "CAJA_CON_CERVEZAS", 0));
     }
 
     private void setupArrivals(SimulationEngine engine) {
         double simulationTime = 4200.0;
-        engine.scheduleArrival("GRANOS_DE_CEBADA", "SILO_GRANDE", 0, (int) (simulationTime / 25), 25);
-        engine.scheduleArrival("LUPULO", "SILO_LUPULO", 0, (int) (simulationTime / 10), 10);
-        engine.scheduleArrival("LEVADURA", "SILO_LEVADURA", 0, (int) (simulationTime / 20), 20);
-        engine.scheduleArrival("CAJA_VACIA", "ALMACEN_CAJAS", 0, (int) (simulationTime / 30), 30);
+        engine.scheduleArrival("GRANOS_DE_CEBADA", "SILO_GRANDE", 0, (int) (simulationTime / arrivalFreqCebada),
+                arrivalFreqCebada);
+        engine.scheduleArrival("LUPULO", "SILO_LUPULO", 0, (int) (simulationTime / arrivalFreqLupulo),
+                arrivalFreqLupulo);
+        engine.scheduleArrival("LEVADURA", "SILO_LEVADURA", 0, (int) (simulationTime / arrivalFreqLevadura),
+                arrivalFreqLevadura);
+        engine.scheduleArrival("CAJA_VACIA", "ALMACEN_CAJAS", 0, (int) (simulationTime / arrivalFreqCajas),
+                arrivalFreqCajas);
     }
 
     // Clase interna para reglas
@@ -1262,6 +1298,207 @@ public class BrewerySimulationGUI extends Application implements SimulationListe
         javafx.beans.property.SimpleStringProperty avgNonValueTime = new javafx.beans.property.SimpleStringProperty();
         javafx.beans.property.SimpleStringProperty avgWaitTime = new javafx.beans.property.SimpleStringProperty();
         javafx.beans.property.SimpleStringProperty avgValueTime = new javafx.beans.property.SimpleStringProperty();
+    }
+
+    private void openConfigurationDialog() {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("⚙ Configuración Completa de Simulación");
+        dialog.setHeaderText("Modificar todos los parámetros del modelo");
+
+        ButtonType okButton = new ButtonType("✓ Aplicar Cambios", ButtonBar.ButtonData.OK_DONE);
+        ButtonType cancelButton = new ButtonType("✗ Cancelar", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(okButton, cancelButton);
+
+        TabPane tabPane = new TabPane();
+        tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        tabPane.setPrefSize(650, 520);
+        tabPane.setStyle("-fx-background-color: #16213e;");
+
+        // Helper para crear labels estilizados
+        java.util.function.Function<String, Label> mkLabel = text -> {
+            Label lbl = new Label(text);
+            lbl.setTextFill(Color.web("#ECF0F1"));
+            lbl.setFont(Font.font("Arial", FontWeight.BOLD, 12));
+            return lbl;
+        };
+
+        // TAB 1: Arribos
+        Tab arrTab = new Tab("🚚 Arribos");
+        GridPane arrGrid = new GridPane();
+        arrGrid.setHgap(15);
+        arrGrid.setVgap(12);
+        arrGrid.setPadding(new Insets(20));
+        arrGrid.setStyle("-fx-background-color: #16213e;");
+
+        TextField aC = new TextField(String.valueOf((int) arrivalFreqCebada));
+        TextField aL = new TextField(String.valueOf((int) arrivalFreqLupulo));
+        TextField aLe = new TextField(String.valueOf((int) arrivalFreqLevadura));
+        TextField aCa = new TextField(String.valueOf((int) arrivalFreqCajas));
+        aC.setPrefWidth(100);
+        aL.setPrefWidth(100);
+        aLe.setPrefWidth(100);
+        aCa.setPrefWidth(100);
+
+        arrGrid.add(mkLabel.apply("Granos de Cebada (cada X min):"), 0, 0);
+        arrGrid.add(aC, 1, 0);
+        arrGrid.add(mkLabel.apply("Lúpulo (cada X min):"), 0, 1);
+        arrGrid.add(aL, 1, 1);
+        arrGrid.add(mkLabel.apply("Levadura (cada X min):"), 0, 2);
+        arrGrid.add(aLe, 1, 2);
+        arrGrid.add(mkLabel.apply("Cajas Vacías (cada X min):"), 0, 3);
+        arrGrid.add(aCa, 1, 3);
+
+        Label arrInfo = new Label("⏱️ Frecuencia: cada cuántos minutos llega una entidad");
+        arrInfo.setTextFill(Color.web("#F39C12"));
+        arrInfo.setFont(Font.font("Arial", 11));
+        arrGrid.add(arrInfo, 0, 4, 2, 1);
+
+        arrTab.setContent(arrGrid);
+
+        // TAB 2: Tiempos de Procesamiento
+        Tab timeTab = new Tab("⏳ Procesos");
+        ScrollPane timeScroll = new ScrollPane();
+        timeScroll.setStyle("-fx-background: #16213e; -fx-border-color: transparent;");
+        GridPane timeGrid = new GridPane();
+        timeGrid.setHgap(15);
+        timeGrid.setVgap(10);
+        timeGrid.setPadding(new Insets(20));
+        timeGrid.setStyle("-fx-background-color: #16213e;");
+
+        TextField tMal = new TextField(String.valueOf((int) timeMalteado));
+        TextField tSec = new TextField(String.valueOf((int) timeSecado));
+        TextField tMol = new TextField(String.valueOf((int) timeMolienda));
+        TextField tMac = new TextField(String.valueOf((int) timeMacerado));
+        TextField tFil = new TextField(String.valueOf((int) timeFiltrado));
+        TextField tCoc = new TextField(String.valueOf((int) timeCoccion));
+        TextField tEnf = new TextField(String.valueOf((int) timeEnfriamiento));
+        TextField tFer = new TextField(String.valueOf((int) timeFermentacion));
+        TextField tMad = new TextField(String.valueOf((int) timeMaduracion));
+        TextField tIns = new TextField(String.valueOf((int) timeInspeccion));
+        TextField tEmb = new TextField(String.valueOf((int) timeEmbotellado));
+        TextField tEti = new TextField(String.valueOf((int) timeEtiquetado));
+        TextField tEmp = new TextField(String.valueOf((int) timeEmpacado));
+        TextField tAlm = new TextField(String.valueOf((int) timeAlmacenaje));
+
+        int r = 0;
+        timeGrid.add(mkLabel.apply("Malteado (min):"), 0, r);
+        timeGrid.add(tMal, 1, r++);
+        timeGrid.add(mkLabel.apply("Secado (min):"), 0, r);
+        timeGrid.add(tSec, 1, r++);
+        timeGrid.add(mkLabel.apply("Molienda (min):"), 0, r);
+        timeGrid.add(tMol, 1, r++);
+        timeGrid.add(mkLabel.apply("Macerado (min):"), 0, r);
+        timeGrid.add(tMac, 1, r++);
+        timeGrid.add(mkLabel.apply("Filtrado (min):"), 0, r);
+        timeGrid.add(tFil, 1, r++);
+        timeGrid.add(mkLabel.apply("Cocción (min):"), 0, r);
+        timeGrid.add(tCoc, 1, r++);
+        timeGrid.add(mkLabel.apply("Enfriamiento (min):"), 0, r);
+        timeGrid.add(tEnf, 1, r++);
+        timeGrid.add(mkLabel.apply("Fermentación (min):"), 0, r);
+        timeGrid.add(tFer, 1, r++);
+        timeGrid.add(mkLabel.apply("Maduración (min):"), 0, r);
+        timeGrid.add(tMad, 1, r++);
+        timeGrid.add(mkLabel.apply("Inspección (min):"), 0, r);
+        timeGrid.add(tIns, 1, r++);
+        timeGrid.add(mkLabel.apply("Embotellado (min):"), 0, r);
+        timeGrid.add(tEmb, 1, r++);
+        timeGrid.add(mkLabel.apply("Etiquetado (min):"), 0, r);
+        timeGrid.add(tEti, 1, r++);
+        timeGrid.add(mkLabel.apply("Empacado (min):"), 0, r);
+        timeGrid.add(tEmp, 1, r++);
+        timeGrid.add(mkLabel.apply("Almacenaje (min):"), 0, r);
+        timeGrid.add(tAlm, 1, r++);
+
+        timeScroll.setContent(timeGrid);
+        timeScroll.setFitToWidth(true);
+        timeTab.setContent(timeScroll);
+
+        // TAB 3: Velocidades
+        Tab speedTab = new Tab("🚀 Velocidades");
+        GridPane spdGrid = new GridPane();
+        spdGrid.setHgap(15);
+        spdGrid.setVgap(12);
+        spdGrid.setPadding(new Insets(20));
+        spdGrid.setStyle("-fx-background-color: #16213e;");
+
+        TextField sOR = new TextField(String.valueOf((int) speedOperadorRecepcion));
+        TextField sOL = new TextField(String.valueOf((int) speedOperadorLupulo));
+        TextField sOLe = new TextField(String.valueOf((int) speedOperadorLevadura));
+        TextField sOE = new TextField(String.valueOf((int) speedOperadorEmpacado));
+        TextField sC = new TextField(String.valueOf((int) speedCamion));
+        sOR.setPrefWidth(100);
+        sOL.setPrefWidth(100);
+        sOLe.setPrefWidth(100);
+        sOE.setPrefWidth(100);
+        sC.setPrefWidth(100);
+
+        spdGrid.add(mkLabel.apply("Op. Recepción (m/min):"), 0, 0);
+        spdGrid.add(sOR, 1, 0);
+        spdGrid.add(mkLabel.apply("Op. Lúpulo (m/min):"), 0, 1);
+        spdGrid.add(sOL, 1, 1);
+        spdGrid.add(mkLabel.apply("Op. Levadura (m/min):"), 0, 2);
+        spdGrid.add(sOLe, 1, 2);
+        spdGrid.add(mkLabel.apply("Op. Empacado (m/min):"), 0, 3);
+        spdGrid.add(sOE, 1, 3);
+        spdGrid.add(mkLabel.apply("Camión (m/min):"), 0, 4);
+        spdGrid.add(sC, 1, 4);
+
+        Label spdInfo = new Label("🏃 Velocidad de movimiento de los recursos en metros/minuto");
+        spdInfo.setTextFill(Color.web("#F39C12"));
+        spdInfo.setFont(Font.font("Arial", 11));
+        spdGrid.add(spdInfo, 0, 5, 2, 1);
+
+        speedTab.setContent(spdGrid);
+
+        tabPane.getTabs().addAll(arrTab, timeTab, speedTab);
+        dialog.getDialogPane().setContent(tabPane);
+        dialog.getDialogPane()
+                .setStyle("-fx-background-color: #1a1a2e; -fx-border-color: #9B59B6; -fx-border-width: 3px;");
+
+        dialog.showAndWait().ifPresent(resp -> {
+            if (resp == okButton) {
+                try {
+                    // Guardar arribos
+                    arrivalFreqCebada = Double.parseDouble(aC.getText());
+                    arrivalFreqLupulo = Double.parseDouble(aL.getText());
+                    arrivalFreqLevadura = Double.parseDouble(aLe.getText());
+                    arrivalFreqCajas = Double.parseDouble(aCa.getText());
+
+                    // Guardar tiempos
+                    timeMalteado = Double.parseDouble(tMal.getText());
+                    timeSecado = Double.parseDouble(tSec.getText());
+                    timeMolienda = Double.parseDouble(tMol.getText());
+                    timeMacerado = Double.parseDouble(tMac.getText());
+                    timeFiltrado = Double.parseDouble(tFil.getText());
+                    timeCoccion = Double.parseDouble(tCoc.getText());
+                    timeEnfriamiento = Double.parseDouble(tEnf.getText());
+                    timeFermentacion = Double.parseDouble(tFer.getText());
+                    timeMaduracion = Double.parseDouble(tMad.getText());
+                    timeInspeccion = Double.parseDouble(tIns.getText());
+                    timeEmbotellado = Double.parseDouble(tEmb.getText());
+                    timeEtiquetado = Double.parseDouble(tEti.getText());
+                    timeEmpacado = Double.parseDouble(tEmp.getText());
+                    timeAlmacenaje = Double.parseDouble(tAlm.getText());
+
+                    // Guardar velocidades
+                    speedOperadorRecepcion = Double.parseDouble(sOR.getText());
+                    speedOperadorLupulo = Double.parseDouble(sOL.getText());
+                    speedOperadorLevadura = Double.parseDouble(sOLe.getText());
+                    speedOperadorEmpacado = Double.parseDouble(sOE.getText());
+                    speedCamion = Double.parseDouble(sC.getText());
+
+                    // Reiniciar simulación automáticamente con nuevos parámetros
+                    resetSimulation();
+                    statusLabel.setText("✓ Configuración guardada y aplicada");
+                    statusLabel.setTextFill(Color.web("#2ECC71"));
+
+                } catch (Exception e) {
+                    statusLabel.setText("✗ Error: Valores inválidos");
+                    statusLabel.setTextFill(Color.web("#E74C3C"));
+                }
+            }
+        });
     }
 
     public static void main(String[] args) {
