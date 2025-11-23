@@ -57,8 +57,9 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
     /**
      * Maneja la lógica ACCUM - acumula entidades hasta alcanzar cantidad requerida
      */
-    private void handleAccumulate(Entity entity, String fromLocation, String destination, // Maneja acumulación de entidades
-                                  int quantity, String resourceName) {
+    private void handleAccumulate(Entity entity, String fromLocation, String destination, // Maneja acumulación de
+                                                                                          // entidades
+            int quantity, String resourceName) {
         String accumKey = fromLocation + "_ACCUM"; // Crea clave para la cola de acumulación
         Queue<Entity> accumQueue = joinQueues.get(accumKey); // Obtiene la cola de acumulación
 
@@ -99,12 +100,15 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
         engine.notifyEntityArrival(entity, location); // Notifica llegada a observadores
 
         // Solo contar entrada a locación si NO es entidad secundaria de JOIN
-        // Entidades secundarias: LUPULO (a COCCION), LEVADURA (a FERMENTACION), BOTELLA (a EMPACADO)
+        // Entidades secundarias: LUPULO (a COCCION), LEVADURA (a FERMENTACION), BOTELLA
+        // (a EMPACADO)
         String entityType = entity.getType().getName(); // Obtiene tipo de entidad
-        boolean isSecondaryJoinEntity =  // Determina si es entidad secundaria en JOIN
-            (locationName.equals("COCCION") && entityType.equals("LUPULO")) || // Lúpulo es secundario
-            (locationName.equals("FERMENTACION") && entityType.equals("LEVADURA")) || // Levadura es secundaria
-            (locationName.equals("EMPACADO") && entityType.equals("BOTELLA_CON_CERVEZA")); // Botella es secundaria
+        boolean isSecondaryJoinEntity = // Determina si es entidad secundaria en JOIN
+                (locationName.equals("COCCION") && entityType.equals("LUPULO")) || // Lúpulo es secundario
+                        (locationName.equals("FERMENTACION") && entityType.equals("LEVADURA")) || // Levadura es
+                                                                                                  // secundaria
+                        (locationName.equals("EMPACADO") && entityType.equals("BOTELLA_CON_CERVEZA")); // Botella es
+                                                                                                       // secundaria
 
         if (!isSecondaryJoinEntity) { // Si NO es secundaria
             engine.getStatistics().recordLocationEntry(locationName); // Registra entrada a ubicación
@@ -125,7 +129,7 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
             double currentTime = engine.getClock().getCurrentTime(); // Obtiene tiempo actual
 
             Event processingEvent = new Event(currentTime + processingTime, 0, // Crea evento de procesamiento
-                "Process " + entity.getType().getName() + " at " + locationName) {
+                    "Process " + entity.getType().getName() + " at " + locationName) {
                 @Override // Sobrescribe execute
                 public void execute() { // Método que se ejecuta cuando ocurre el evento
                     completeProcessing(entity, locationName); // Completa el procesamiento
@@ -136,7 +140,8 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
 
             if (processingTime > 0) { // Si hay tiempo de procesamiento
                 entity.addValueAddedTime(processingTime); // Agrega tiempo con valor
-                engine.getStatistics().recordLocationProcessingTime(locationName, processingTime); // Registra tiempo en estadísticas
+                engine.getStatistics().recordLocationProcessingTime(locationName, processingTime); // Registra tiempo en
+                                                                                                   // estadísticas
             }
         }
     }
@@ -172,14 +177,16 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
         if (locationName.equals("EMPACADO") && entityType.equals("CAJA_VACIA")) { // Caja en EMPACADO
             return true; // Es JOIN
         }
-        // LUPULO, LEVADURA y BOTELLA simplemente se encolan (manejado en handleJoinLogic)
+        // LUPULO, LEVADURA y BOTELLA simplemente se encolan (manejado en
+        // handleJoinLogic)
         if (locationName.equals("COCCION") && entityType.equals("LUPULO")) { // Lúpulo en COCCION
             return true; // Es JOIN
         }
         if (locationName.equals("FERMENTACION") && entityType.equals("LEVADURA")) { // Levadura en FERMENTACION
             return true; // Es JOIN
         }
-        return locationName.equals("EMPACADO") && entityType.equals("BOTELLA_CON_CERVEZA"); // Botella en EMPACADO es JOIN
+        return locationName.equals("EMPACADO") && entityType.equals("BOTELLA_CON_CERVEZA"); // Botella en EMPACADO es
+                                                                                            // JOIN
     }
 
     private void handleJoinLogic(Entity entity, String locationName) { // Maneja la lógica de operaciones JOIN
@@ -315,10 +322,11 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
             final Entity finalCajaLlena = cajaLlena; // Referencia final para closure
 
             Event packingEvent = new Event(currentTimeAfterJoin + 10, 0, // Crea evento 10 minutos después
-                "Pack caja at EMPACADO") {
+                    "Pack caja at EMPACADO") {
                 @Override // Sobrescribe execute
                 public void execute() { // Método que se ejecuta
-                    moveWithResource(finalCajaLlena, "ALMACENAJE", "OPERADOR_EMPACADO"); // Mueve a ALMACENAJE con operador
+                    moveWithResource(finalCajaLlena, "ALMACENAJE", "OPERADOR_EMPACADO"); // Mueve a ALMACENAJE con
+                                                                                         // operador
                 }
             };
             engine.getScheduler().scheduleEvent(packingEvent); // Programa el evento
@@ -337,7 +345,14 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
                 handleExit(entity); // Maneja salida
             } else if ("JOIN".equals(moveLogic)) { // Si lógica es JOIN
                 // La entidad va a una locación para participar en un JOIN
-                handleArrival(entity, destination); // Envía a ubicación JOIN
+                if (route.resourceName() != null && !route.resourceName().isEmpty()) {
+                    moveWithResource(entity, destination, route.resourceName());
+                } else {
+                    Location from = engine.getLocation(fromLocation);
+                    Location to = engine.getLocation(destination);
+                    engine.notifyEntityMove(entity, from, to);
+                    handleArrival(entity, destination);
+                }
             } else { // Otros casos
                 double probability = route.probability(); // Obtiene probabilidad
                 if (random.nextDouble() <= probability) { // Si se cumple probabilidad
@@ -345,7 +360,8 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
 
                     if ("ACCUM".equals(route.moveLogic()) && quantity > 1) { // Si es ACCUM
                         // ACCUM: acumular entidades antes de mover en batch
-                        handleAccumulate(entity, fromLocation, destination, quantity, route.resourceName()); // Acumula entidades
+                        handleAccumulate(entity, fromLocation, destination, quantity, route.resourceName()); // Acumula
+                                                                                                             // entidades
                     } else if (quantity > 1) { // Si genera múltiples entidades
                         // FIRST 6: NO registrar exit (es transformación interna), SÍ registrar entries
                         double currentTime = engine.getClock().getCurrentTime(); // Obtiene tiempo actual
@@ -354,12 +370,17 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
 
                         // Crear 6 entidades nuevas transformadas
                         for (int i = 0; i < quantity; i++) { // Itera por cantidad
-                            Entity newEntity = createTransformedEntity(entity, destination); // Crea entidad transformada
+                            Entity newEntity = createTransformedEntity(entity, destination); // Crea entidad
+                                                                                             // transformada
                             engine.getStatistics().recordEntityEntry(newEntity); // Registra entrada
 
-                            if (route.resourceName() != null && !route.resourceName().isEmpty()) { // Si requiere recurso
+                            if (route.resourceName() != null && !route.resourceName().isEmpty()) { // Si requiere
+                                                                                                   // recurso
                                 moveWithResource(newEntity, destination, route.resourceName()); // Mueve con recurso
                             } else { // Si no requiere recurso
+                                Location from = engine.getLocation(fromLocation);
+                                Location to = engine.getLocation(destination);
+                                engine.notifyEntityMove(newEntity, from, to);
                                 handleArrival(newEntity, destination); // Maneja llegada
                             }
                         }
@@ -367,6 +388,9 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
                         if (route.resourceName() != null && !route.resourceName().isEmpty()) { // Si requiere recurso
                             moveWithResource(entity, destination, route.resourceName()); // Mueve con recurso
                         } else { // Si no requiere recurso
+                            Location from = engine.getLocation(fromLocation);
+                            Location to = engine.getLocation(destination);
+                            engine.notifyEntityMove(entity, from, to);
                             handleArrival(entity, destination); // Maneja llegada
                         }
                     }
@@ -398,7 +422,8 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
         return original; // Retorna original si no hay transformación
     }
 
-    private void moveWithResource(Entity entity, String destination, String resourceName) { // Mueve entidad usando recurso
+    private void moveWithResource(Entity entity, String destination, String resourceName) { // Mueve entidad usando
+                                                                                            // recurso
         Resource resource = engine.getResource(resourceName); // Obtiene el recurso
         double currentTime = engine.getClock().getCurrentTime(); // Obtiene tiempo actual
 
@@ -413,23 +438,22 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
             // Animar movimiento si hay GUI disponible
             if (animationController != null) { // Si hay GUI
                 String currentLocation = entity.getCurrentLocation() != null ? // Obtiene ubicación actual
-                    entity.getCurrentLocation().getType().name() : "UNKNOWN";
+                        entity.getCurrentLocation().getType().name() : "UNKNOWN";
 
                 animationController.animateEntityMovement( // Inicia animación
-                    entity,
-                    currentLocation,
-                    destination,
-                    resourceName,
-                    () -> { // Callback cuando termina animación
-                        // Callback cuando termina la animación
-                        resource.release(engine.getClock().getCurrentTime()); // Libera recurso
-                        handleArrival(entity, destination); // Maneja llegada
-                    }
-                );
+                        entity,
+                        currentLocation,
+                        destination,
+                        resourceName,
+                        () -> { // Callback cuando termina animación
+                            // Callback cuando termina la animación
+                            resource.release(engine.getClock().getCurrentTime()); // Libera recurso
+                            handleArrival(entity, destination); // Maneja llegada
+                        });
             }
 
             Event moveEvent = new Event(currentTime + moveTime, 0, // Crea evento de movimiento
-                "Move " + entity.getType().getName() + " to " + destination) {
+                    "Move " + entity.getType().getName() + " to " + destination) {
                 @Override // Sobrescribe execute
                 public void execute() { // Método que se ejecuta
                     // Notificar liberación de recurso
@@ -482,7 +506,8 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
         return createRoutingRuleForLocation(locationName, entityType); // Delega a método de creación
     }
 
-    private RoutingRule createRoutingRuleForLocation(String locationName, String entityType) { // Define reglas de enrutamiento
+    private RoutingRule createRoutingRuleForLocation(String locationName, String entityType) { // Define reglas de
+                                                                                               // enrutamiento
         switch (locationName) { // Evalúa ubicación origen
             case "SILO_GRANDE": // Desde SILO_GRANDE
                 return new RoutingRule("MALTEADO", 1.0, 1, "FIRST", null); // Va a MALTEADO
@@ -497,11 +522,12 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
             case "FILTRADO": // Desde FILTRADO
                 return new RoutingRule("COCCION", 1.0, 1, "FIRST", null); // Va a COCCION
             case "SILO_LUPULO": // Desde SILO_LUPULO
-                return new RoutingRule("COCCION", 1.0, 1, "JOIN", "OPERADOR_LUPADURA"); // Va a COCCION para JOIN
+                return new RoutingRule("COCCION", 1.0, 1, "JOIN", "OPERADOR_LUPULO"); // Va a COCCION para JOIN
             case "ENFRIAMIENTO": // Desde ENFRIAMIENTO
                 return new RoutingRule("FERMENTACION", 1.0, 1, "FIRST", null); // Va a FERMENTACION
             case "SILO_LEVADURA": // Desde SILO_LEVADURA
-                return new RoutingRule("FERMENTACION", 1.0, 1, "JOIN", "OPERADOR_LEVADURA"); // Va a FERMENTACION para JOIN
+                return new RoutingRule("FERMENTACION", 1.0, 1, "JOIN", "OPERADOR_LEVADURA"); // Va a FERMENTACION para
+                                                                                             // JOIN
             case "MADURACION": // Desde MADURACION
                 return new RoutingRule("INSPECCION", 1.0, 1, "FIRST", null); // Va a INSPECCION
             case "INSPECCION": // Desde INSPECCION
@@ -531,8 +557,10 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
 
                 // Actualizar el nodo visual de la locación
                 if (animationController.getLocationNodes().containsKey(locationName)) { // Si existe nodo visual
-                    animationController.getLocationNodes().get(locationName).setOccupancy(occupancy); // Actualiza ocupación
-                    animationController.getLocationNodes().get(locationName).setCapacity(capacity); // Actualiza capacidad
+                    animationController.getLocationNodes().get(locationName).setOccupancy(occupancy); // Actualiza
+                                                                                                      // ocupación
+                    animationController.getLocationNodes().get(locationName).setCapacity(capacity); // Actualiza
+                                                                                                    // capacidad
                 }
             }
         }
