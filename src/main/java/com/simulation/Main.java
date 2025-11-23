@@ -1,59 +1,59 @@
-package com.simulation;
+package com.simulation; // Paquete principal
 
-import com.simulation.core.SimulationEngine;
-import com.simulation.entities.Entity;
-import com.simulation.output.ReportGenerator;
-import com.simulation.processing.ProcessingRule;
+import com.simulation.core.SimulationEngine; // Importa la clase SimulationEngine
+import com.simulation.entities.Entity; // Importa la clase Entity
+import com.simulation.output.ReportGenerator; // Importa la clase para generar reportes
+import com.simulation.processing.ProcessingRule; // Importa la clase ProcessingRule
 
-public class Main {
-    public static void main(String[] args) {
-        System.out.println("Iniciando simulación del modelo de producción de cerveza...\n");
+public class Main { // Clase principal
+    public static void main(String[] args) { // Método principal
+        System.out.println("Iniciando simulación del modelo de producción de cerveza...\n"); // Mensaje inicial
 
         // Crear motor de simulación
-        SimulationEngine engine = new SimulationEngine();
+        SimulationEngine engine = new SimulationEngine(); // Instancia del motor de simulación
 
         // Configurar tipos de entidades
-        setupEntityTypes(engine);
+        setupEntityTypes(engine); // Configura tipos de entidad
 
         // Configurar locaciones
-        setupLocations(engine);
+        setupLocations(engine); // Configura locaciones
 
         // Configurar recursos
-        setupResources(engine);
+        setupResources(engine); // Configura recursos
 
         // Configurar reglas de procesamiento
-        setupProcessingRules(engine);
+        setupProcessingRules(engine); // Configura reglas de procesamiento
 
         // Configurar arribos
-        setupArrivals(engine);
+        setupArrivals(engine); // Configura las llegadas de entidades
 
-        // Ejecutar simulación: 70 horas = 4,200 minutos
-        double simulationTime = 70.0 * 60.0; // 4,200 minutos
+        // Ejecutar simulación: 70 horas = 4200 minutos
+        double simulationTime = 70.0 * 60.0; // Tiempo total de simulación en minutos
 
-        System.out.println("Ejecutando simulación por " + simulationTime + " minutos (70 horas)...\n");
-        engine.run(simulationTime);
+        System.out.println("Ejecutando simulación por " + simulationTime + " minutos (70 horas)...\n"); // Mensaje de inicio de ejecución
+        engine.run(simulationTime); // Ejecuta la simulación
 
         // Generar reportes
-        ReportGenerator reportGenerator = new ReportGenerator(engine.getStatistics());
-        reportGenerator.generateConsoleReport();
-        reportGenerator.generateFileReport("reporte_simulacion.txt");
-        reportGenerator.generateCSVReport("entidades_reporte.csv", "locaciones_reporte.csv");
+        ReportGenerator reportGenerator = new ReportGenerator(engine.getStatistics()); // Instancia de generador
+        reportGenerator.generateConsoleReport(); // Reporte en consola
+        reportGenerator.generateFileReport("reporte_simulacion.txt"); // Archivo de texto
+        reportGenerator.generateCSVReport("entidades_reporte.csv", "locaciones_reporte.csv"); // Reportes CSV
 
-        System.out.println("\n¡Simulación completada exitosamente!");
+        System.out.println("\n¡Simulación completada exitosamente!"); // Fin
     }
 
-    private static void setupEntityTypes(SimulationEngine engine) {
-        engine.addEntityType("GRANOS_DE_CEBADA", 150.0);
-        engine.addEntityType("LUPULO", 150.0);
-        engine.addEntityType("LEVADURA", 150.0);
-        engine.addEntityType("MOSTO", 150.0);
-        engine.addEntityType("CERVEZA", 150.0);
-        engine.addEntityType("BOTELLA_CON_CERVEZA", 150.0);
-        engine.addEntityType("CAJA_VACIA", 150.0);
-        engine.addEntityType("CAJA_CON_CERVEZAS", 150.0);
+    private static void setupEntityTypes(SimulationEngine engine) { // Configuración tipos de entidades
+        engine.addEntityType("GRANOS_DE_CEBADA", 150.0); // Tipo granos de cebada
+        engine.addEntityType("LUPULO", 150.0); // Tipo lúpulo
+        engine.addEntityType("LEVADURA", 150.0); // Tipo levadura
+        engine.addEntityType("MOSTO", 150.0); // Tipo mosto
+        engine.addEntityType("CERVEZA", 150.0); // Tipo cerveza
+        engine.addEntityType("BOTELLA_CON_CERVEZA", 150.0); // Tipo botella con cerveza
+        engine.addEntityType("CAJA_VACIA", 150.0); // Tipo caja vacía
+        engine.addEntityType("CAJA_CON_CERVEZAS", 150.0); // Tipo caja con cervezas
     }
 
-    private static void setupLocations(SimulationEngine engine) {
+    private static void setupLocations(SimulationEngine engine) { // Configuración locaciones
         engine.addLocation("SILO_GRANDE", 3, 1);
         engine.addLocation("MALTEADO", 3, 1);
         engine.addLocation("SECADO", 3, 1);
@@ -75,7 +75,7 @@ public class Main {
         engine.addLocation("MERCADO", Integer.MAX_VALUE, 1);
     }
 
-    private static void setupResources(SimulationEngine engine) {
+    private static void setupResources(SimulationEngine engine) { // Configuración recursos
         engine.addResource("OPERADOR_RECEPCION", 1, 90.0);
         engine.addResource("OPERADOR_LUPULO", 1, 100.0);
         engine.addResource("OPERADOR_LEVADURA", 1, 100.0);
@@ -83,7 +83,7 @@ public class Main {
         engine.addResource("CAMION", 1, 100.0);
     }
 
-    private static void setupProcessingRules(SimulationEngine engine) {
+    private static void setupProcessingRules(SimulationEngine engine) { // Reglas de proceso
         // GRANOS_DE_CEBADA
         engine.addProcessingRule(new SimpleProcessingRule("SILO_GRANDE", "GRANOS_DE_CEBADA", 0));
         engine.addProcessingRule(new SimpleProcessingRule("MALTEADO", "GRANOS_DE_CEBADA", 60));
@@ -91,31 +91,24 @@ public class Main {
         engine.addProcessingRule(new SimpleProcessingRule("MOLIENDA", "GRANOS_DE_CEBADA", 60));
         engine.addProcessingRule(new SimpleProcessingRule("MACERADO", "GRANOS_DE_CEBADA", 90));
         engine.addProcessingRule(new SimpleProcessingRule("FILTRADO", "GRANOS_DE_CEBADA", 30));
-
         // LUPULO
         engine.addProcessingRule(new SimpleProcessingRule("SILO_LUPULO", "LUPULO", 0));
         engine.addProcessingRule(new SimpleProcessingRule("COCCION", "LUPULO", 0)); // JOIN
-
         // COCCION (transformación a MOSTO)
         engine.addProcessingRule(new SimpleProcessingRule("COCCION", "GRANOS_DE_CEBADA", 60));
-
         // LEVADURA
         engine.addProcessingRule(new SimpleProcessingRule("SILO_LEVADURA", "LEVADURA", 0));
         engine.addProcessingRule(new SimpleProcessingRule("FERMENTACION", "LEVADURA", 0)); // JOIN
-
         // MOSTO
         engine.addProcessingRule(new SimpleProcessingRule("ENFRIAMIENTO", "MOSTO", 60));
         engine.addProcessingRule(new SimpleProcessingRule("FERMENTACION", "MOSTO", 120));
-
         // CERVEZA
         engine.addProcessingRule(new SimpleProcessingRule("MADURACION", "CERVEZA", 90));
         engine.addProcessingRule(new SimpleProcessingRule("INSPECCION", "CERVEZA", 30));
         engine.addProcessingRule(new SimpleProcessingRule("EMBOTELLADO", "CERVEZA", 3));
-
         // BOTELLAS
         engine.addProcessingRule(new SimpleProcessingRule("ETIQUETADO", "BOTELLA_CON_CERVEZA", 1));
         engine.addProcessingRule(new SimpleProcessingRule("EMPACADO", "BOTELLA_CON_CERVEZA", 0)); // JOIN 6
-
         // CAJAS
         engine.addProcessingRule(new SimpleProcessingRule("ALMACEN_CAJAS", "CAJA_VACIA", 0));
         engine.addProcessingRule(new SimpleProcessingRule("EMPACADO", "CAJA_VACIA", 0)); // WAIT 10 está después del JOIN
@@ -123,36 +116,24 @@ public class Main {
         engine.addProcessingRule(new SimpleProcessingRule("MERCADO", "CAJA_CON_CERVEZAS", 0));
     }
 
-    private static void setupArrivals(SimulationEngine engine) {
+    private static void setupArrivals(SimulationEngine engine) { // Configuración de arribos
         // 70 horas = 4200 minutos
-        // Ajustado para coincidir con ProModel (arrivals target basado en entradas a locaciones)
-        
-        // GRANOS_DE_CEBADA: target ~124 arrivals (ProModel: SILO_GRANDE 124 entradas)
-        // Frecuencia: 4200/124 = 33.87 min
+        // Target aproximado basado en entradas de ProModel
         engine.scheduleArrival("GRANOS_DE_CEBADA", "SILO_GRANDE", 0, 124, 33.87);
-
-        // LUPULO: target ~400 arrivals (ProModel: SILO_LUPULO 400 entradas)
-        // Frecuencia: 4200/400 = 10.5 min
         engine.scheduleArrival("LUPULO", "SILO_LUPULO", 0, 400, 10.5);
-
-        // LEVADURA: target ~190 arrivals (ProModel: SILO_LEVADURA 190 entradas)
-        // Frecuencia: 4200/190 = 22.11 min
         engine.scheduleArrival("LEVADURA", "SILO_LEVADURA", 0, 190, 22.11);
-
-        // CAJA_VACIA: target ~114 arrivals (ProModel: ALMACEN_CAJAS 114 entradas)
-        // Frecuencia: 4200/114 = 36.84 min
         engine.scheduleArrival("CAJA_VACIA", "ALMACEN_CAJAS", 0, 114, 36.84);
     }
 
-    // Clase interna para reglas de procesamiento simples
-    private static class SimpleProcessingRule extends ProcessingRule {
-        public SimpleProcessingRule(String locationName, String entityTypeName, double processingTime) {
-            super(locationName, entityTypeName, processingTime);
+    // Clase interna para reglas sencillas
+    private static class SimpleProcessingRule extends ProcessingRule { // Extiende ProcessingRule
+        public SimpleProcessingRule(String locationName, String entityTypeName, double processingTime) { // Constructor
+            super(locationName, entityTypeName, processingTime); // Llama al constructor padre
         }
 
         @Override
         public void process(Entity entity, SimulationEngine engine) {
-            // Implementación básica
+            // Implementación sencilla, se puede personalizar
         }
     }
 }
