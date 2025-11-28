@@ -71,7 +71,7 @@ public class Location { // Clase que representa una ubicación o estación en la
         return queue.poll(); // Remueve y retorna la primera entidad de la cola (o null si está vacía)
     }
 
-    private void updateOccupancyTime(double currentTime) { // Método privado para actualizar estadísticas de ocupación
+    public void updateOccupancyTime(double currentTime) { // Método público para actualizar estadísticas de ocupación
         double timeDelta = currentTime - lastUpdateTime; // Calcula el tiempo transcurrido desde la última actualización
         totalOccupancyTime += currentOccupancy * timeDelta; // Acumula tiempo ponderado por ocupación para cálculo de
                                                             // promedio

@@ -59,6 +59,7 @@ public class StatisticsCollector { // Clase que recolecta y administra estadíst
         for (Map.Entry<String, Location> entry : locations.entrySet()) {
             String name = entry.getKey();
             Location location = entry.getValue();
+            location.updateOccupancyTime(totalSimulationTime);
 
             LocationStatistics stats = new LocationStatistics(name);
             int entries = locationEntries.getOrDefault(name, 0);

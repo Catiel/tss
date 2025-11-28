@@ -9,6 +9,7 @@ import com.simulation.statistics.StatisticsCollector;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class Main {
     public static void main(String[] args) {
@@ -56,23 +57,23 @@ public class Main {
     }
 
     private static void setupLocations(SimulationEngine engine) {
-        engine.addLocation("ALMACEN_MP", Integer.MAX_VALUE, 1);
+        engine.addLocation("ALMACEN_MP", 999999, 1);
         engine.addLocation("HORNO", 10, 1);
-        engine.addLocation("BANDA_1", Integer.MAX_VALUE, 1);
-        engine.addLocation("CARGA", Integer.MAX_VALUE, 1);
+        engine.addLocation("BANDA_1", 999999, 1);
+        engine.addLocation("CARGA", 999999, 1);
         engine.addLocation("TORNEADO", 1, 1);
         engine.addLocation("FRESADO", 1, 1);
         engine.addLocation("TALADRO", 1, 1);
         engine.addLocation("RECTIFICADO", 1, 1);
-        engine.addLocation("DESCARGA", Integer.MAX_VALUE, 1);
-        engine.addLocation("BANDA_2", Integer.MAX_VALUE, 1);
+        engine.addLocation("DESCARGA", 999999, 1);
+        engine.addLocation("BANDA_2", 999999, 1);
         engine.addLocation("INSPECCION", 1, 1);
-        engine.addLocation("SALIDA", Integer.MAX_VALUE, 1);
+        engine.addLocation("SALIDA", 999999, 1);
     }
 
     private static void setupResources(SimulationEngine engine) {
-        engine.addResource("GRUA_VIAJERA", 1, 150.0);
-        engine.addResource("ROBOT", 1, 150.0);
+        engine.addResource("GRUA_VIAJERA", 1, 25.0);
+        engine.addResource("ROBOT", 1, 45.0);
     }
 
     private static void setupProcessingRules(SimulationEngine engine) {
@@ -86,8 +87,8 @@ public class Main {
         // 2. HORNO: 118.0 min, Batch 10
         engine.addProcessingRule(new BatchProcessingRule("HORNO", "PIEZA_AUTOMOTRIZ", 118.0, 10));
 
-        // 3. BANDA_1: 1.0 min
-        engine.addProcessingRule(new ProcessingRule("BANDA_1", "PIEZA_AUTOMOTRIZ", 1.0) {
+        // 3. BANDA_1: 0.94 min
+        engine.addProcessingRule(new ProcessingRule("BANDA_1", "PIEZA_AUTOMOTRIZ", 0.94) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
@@ -100,29 +101,29 @@ public class Main {
             }
         });
 
-        // 5. TORNEADO: 5.0 min
-        engine.addProcessingRule(new ProcessingRule("TORNEADO", "PIEZA_AUTOMOTRIZ", 5.0) {
+        // 5. TORNEADO: 9.37 min
+        engine.addProcessingRule(new ProcessingRule("TORNEADO", "PIEZA_AUTOMOTRIZ", 9.37) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 6. FRESADO: 9.17 min
-        engine.addProcessingRule(new ProcessingRule("FRESADO", "PIEZA_AUTOMOTRIZ", 9.17) {
+        // 6. FRESADO: 10.18 min
+        engine.addProcessingRule(new ProcessingRule("FRESADO", "PIEZA_AUTOMOTRIZ", 10.18) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 7. TALADRO: 1.6 min
-        engine.addProcessingRule(new ProcessingRule("TALADRO", "PIEZA_AUTOMOTRIZ", 1.6) {
+        // 7. TALADRO: 2.66 min
+        engine.addProcessingRule(new ProcessingRule("TALADRO", "PIEZA_AUTOMOTRIZ", 2.66) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 8. RECTIFICADO: 3.1 min
-        engine.addProcessingRule(new ProcessingRule("RECTIFICADO", "PIEZA_AUTOMOTRIZ", 3.1) {
+        // 8. RECTIFICADO: 3.02 min
+        engine.addProcessingRule(new ProcessingRule("RECTIFICADO", "PIEZA_AUTOMOTRIZ", 3.02) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
@@ -135,15 +136,15 @@ public class Main {
             }
         });
 
-        // 10. BANDA_2: 1.0 min
-        engine.addProcessingRule(new ProcessingRule("BANDA_2", "PIEZA_AUTOMOTRIZ", 1.0) {
+        // 10. BANDA_2: 1.02 min
+        engine.addProcessingRule(new ProcessingRule("BANDA_2", "PIEZA_AUTOMOTRIZ", 1.02) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 11. INSPECCION: 3.0 min
-        engine.addProcessingRule(new ProcessingRule("INSPECCION", "PIEZA_AUTOMOTRIZ", 3.0) {
+        // 11. INSPECCION: 2.99 min
+        engine.addProcessingRule(new ProcessingRule("INSPECCION", "PIEZA_AUTOMOTRIZ", 2.99) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
