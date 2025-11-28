@@ -123,7 +123,7 @@
                             <shadedClassifierName>shaded</shadedClassifierName>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.simulation.gui.SteelGearsSimulationGUI</mainClass>
+                                    <mainClass>com.simulation.Main</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>

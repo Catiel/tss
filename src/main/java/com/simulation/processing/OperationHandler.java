@@ -148,7 +148,8 @@ public class OperationHandler {
                         }
                     }
 
-                    double processingTime = 100.0;
+                    ProcessingRule rule = engine.getProcessingRule(locationName);
+                    double processingTime = rule.getProcessingTime();
                     double currentTime = engine.getClock().getCurrentTime();
 
                     for (Entity batchEntity : batchEntities) {
@@ -191,10 +192,12 @@ public class OperationHandler {
 
             Event processingEvent = new Event(currentTime + processingTime, 0,
                     "Process " + entity.getType().getName() + " at " + locationName) {
+
                 @Override
                 public void execute() {
                     completeProcessing(entity, locationName);
                 }
+
             };
 
             engine.getScheduler().scheduleEvent(processingEvent);
@@ -294,8 +297,7 @@ public class OperationHandler {
 
                                 engine.notifyEntityMove(entity, from, to);
 
-                                if (("BANDA_1".equals(fromLocation) && "CARGA".equals(destination)) ||
-                                        ("DESCARGA".equals(fromLocation) && "BANDA_2".equals(destination))) {
+                                if ("DESCARGA".equals(fromLocation) && "BANDA_2".equals(destination)) {
 
                                     double currentTime = engine.getClock().getCurrentTime();
                                     Event moveEvent = new Event(currentTime + 1.0, 0,
@@ -329,12 +331,82 @@ public class OperationHandler {
     }
 
     private void checkResourceQueue(Resource resource) {
-        if (resource.isAvailable() && resource.getQueueSize() > 0) {
-            Entity nextEntity = resource.removeFromQueue();
-            if (nextEntity != null) {
-                String destination = nextEntity.getPendingDestination();
-                moveWithResource(nextEntity, destination, resource.getName());
+        // Check if resource is available OR if it's returning home (interruptible)
+        if ((resource.isAvailable() || resource.isReturningHome()) && resource.getQueueSize() > 0) {
+
+            // If returning home, we interrupt it.
+            // The resource is technically "available" (units > 0) but was moving.
+            // We claim it now.
+            if (resource.isReturningHome()) {
+                resource.setReturningHome(false);
+                // Note: We assume it's still at the start location of the return trip
+                // because we haven't processed the arrival event yet.
+                // This is the desired behavior: claim it before it goes far.
             }
+
+            // Implement "Closest" rule (Más Cercano)
+            // Find the entity in the queue that is closest to the resource's current
+            // location
+            Entity bestEntity = null;
+            double minDistance = Double.MAX_VALUE;
+            String resourceLoc = resource.getCurrentLocation();
+
+            for (Entity entity : resource.getQueue()) {
+                String entityLoc = entity.getCurrentLocation() != null ? entity.getCurrentLocation().getName()
+                        : "UNKNOWN";
+                double dist = calculateDistance(resourceLoc, entityLoc);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    bestEntity = entity;
+                }
+            }
+
+            if (bestEntity != null) {
+                resource.removeEntity(bestEntity);
+                String destination = bestEntity.getPendingDestination();
+                moveWithResource(bestEntity, destination, resource.getName());
+            }
+        } else if (resource.isAvailable() && resource.getQueueSize() == 0) {
+            returnToHome(resource);
+        }
+    }
+
+    private void returnToHome(Resource resource) {
+        String homeLocation = null;
+        if ("GRUA_VIAJERA".equals(resource.getName())) {
+            homeLocation = "ALMACEN_MP";
+        } else if ("ROBOT".equals(resource.getName())) {
+            homeLocation = "CARGA";
+        }
+
+        if (homeLocation != null && !homeLocation.equals(resource.getCurrentLocation())) {
+            // Mark as returning home
+            resource.setReturningHome(true);
+            // Increment ID to invalidate previous return events
+            final long currentId = resource.incrementReturnHomeId();
+
+            double moveTime = calculateMoveTime(resource.getCurrentLocation(), homeLocation, resource.getName());
+            // Add a delay before actually returning. This keeps the resource at the last
+            // location
+            // for a while, allowing nearby locations (like Rectificado) to claim it
+            // quickly.
+            // This matches ProModel behavior where resources don't return immediately.
+            double delay = 10.0;
+            double currentTime = engine.getClock().getCurrentTime();
+            String finalHome = homeLocation;
+
+            Event returnEvent = new Event(currentTime + moveTime + delay, 0,
+                    "Return " + resource.getName() + " to Home") {
+                @Override
+                public void execute() {
+                    // Only update if this specific return event is still valid
+                    if (resource.isReturningHome() && resource.getReturnHomeId() == currentId) {
+                        resource.setCurrentLocation(finalHome);
+                        resource.setReturningHome(false);
+                    }
+                }
+            };
+            engine.getScheduler().scheduleEvent(returnEvent);
         }
     }
 
@@ -343,6 +415,14 @@ public class OperationHandler {
         double currentTime = engine.getClock().getCurrentTime();
 
         if (resource != null && resource.isAvailable()) {
+            // Invalidate any pending return events by incrementing the ID
+            resource.incrementReturnHomeId();
+
+            // If the resource was returning home, cancel that status
+            if (resource.isReturningHome()) {
+                resource.setReturningHome(false);
+            }
+
             resource.acquire(currentTime);
             engine.notifyResourceAcquired(resource, entity);
 
@@ -350,6 +430,10 @@ public class OperationHandler {
             String resourceLoc = resource.getCurrentLocation();
             String entityLoc = entity.getCurrentLocation() != null ? entity.getCurrentLocation().getName() : "UNKNOWN";
             double emptyTravelTime = calculateMoveTime(resourceLoc, entityLoc, resourceName);
+
+            if ("ROBOT".equals(resourceName) && "RECTIFICADO".equals(entityLoc)) {
+                // Debug print removed
+            }
 
             // 2. Schedule Pickup Event
             Event pickupEvent = new Event(currentTime + emptyTravelTime, 0, "Pickup " + entity.getType().getName()) {
@@ -403,6 +487,10 @@ public class OperationHandler {
             @Override
             public void execute() {
                 engine.notifyResourceReleased(resource, entity);
+
+                // Record resource trip statistics
+                engine.getStatistics().recordResourceTrip(resourceName, moveTime);
+
                 Location from = entity.getCurrentLocation();
                 Location to = engine.getLocation(destination);
                 if (from != null && to != null) {
@@ -433,7 +521,7 @@ public class OperationHandler {
 
     private void handleExit(Entity entity) {
         double currentTime = engine.getClock().getCurrentTime();
-        entity.addSystemTime(currentTime - entity.getEntryTime());
+        entity.addSystemTime(currentTime - entity.getCreationTime());
         Location from = entity.getCurrentLocation();
         if (from != null) {
             from.exit(currentTime);
@@ -495,13 +583,9 @@ public class OperationHandler {
 
     private double calculateMoveTime(String from, String to, String resourceName) {
         double distance = calculateDistance(from, to);
-        double speed = 0.0;
-
-        if ("GRUA_VIAJERA".equals(resourceName)) {
-            speed = 25.0;
-        } else if ("ROBOT".equals(resourceName)) {
-            speed = 45.0;
-        }
+        Resource resource = engine.getResource(resourceName);
+        double speed = resource != null ? resource.getType().speedMetersPerMinute() : 150.0; // Default to entity speed
+                                                                                             // if null
 
         if (speed > 0)
             return distance / speed;
@@ -512,25 +596,58 @@ public class OperationHandler {
         if (from.equals(to))
             return 0.0;
 
-        // Red_Grua
-        if (isPath(from, to, "ALMACEN_MP", "HORNO"))
-            return 10.0;
-        if (isPath(from, to, "HORNO", "BANDA_1"))
-            return 15.0;
+        // Map locations to node indices for Red_Robot (Linear:
+        // Carga-Torneado-Fresado-Taladro-Rectificado-Descarga)
+        List<String> robotPath = Arrays.asList("CARGA", "TORNEADO", "FRESADO", "TALADRO", "RECTIFICADO", "DESCARGA");
+        int idxFrom = robotPath.indexOf(from);
+        int idxTo = robotPath.indexOf(to);
 
-        // Red_Robot
-        if (isPath(from, to, "CARGA", "TORNEADO"))
-            return 20.0;
-        if (isPath(from, to, "TORNEADO", "FRESADO"))
-            return 15.0;
-        if (isPath(from, to, "FRESADO", "TALADRO"))
-            return 15.0;
-        if (isPath(from, to, "TALADRO", "RECTIFICADO"))
-            return 15.0;
-        if (isPath(from, to, "RECTIFICADO", "DESCARGA"))
-            return 20.0;
+        if (idxFrom != -1 && idxTo != -1) {
+            // Calculate distance along the path
+            double totalDist = 0;
+            int start = Math.min(idxFrom, idxTo);
+            int end = Math.max(idxFrom, idxTo);
 
-        // Default fallback (should not happen if paths are correct)
+            // Distances between segments:
+            // Carga-Torneado: 20
+            // Torneado-Fresado: 15
+            // Fresado-Taladro: 15
+            // Taladro-Rectificado: 15
+            // Rectificado-Descarga: 20
+            double[] segmentDists = { 20.0, 15.0, 15.0, 15.0, 20.0 };
+
+            for (int i = start; i < end; i++) {
+                totalDist += segmentDists[i];
+            }
+            return totalDist;
+        }
+
+        // Map locations to node indices for Red_Grua (Linear: Almacen-Horno-Banda_1)
+        List<String> gruaPath = Arrays.asList("ALMACEN_MP", "HORNO", "BANDA_1");
+        idxFrom = gruaPath.indexOf(from);
+        idxTo = gruaPath.indexOf(to);
+
+        if (idxFrom != -1 && idxTo != -1) {
+            double totalDist = 0;
+            int start = Math.min(idxFrom, idxTo);
+            int end = Math.max(idxFrom, idxTo);
+
+            // Almacen-Horno: 10
+            // Horno-Banda_1: 15
+            double[] segmentDists = { 10.0, 15.0 };
+
+            for (int i = start; i < end; i++) {
+                totalDist += segmentDists[i];
+            }
+            return totalDist;
+        }
+
+        // Conveyors (Bandas)
+        if (from.equals("BANDA_1") || to.equals("BANDA_1"))
+            return 30.0;
+        if (from.equals("BANDA_2") || to.equals("BANDA_2"))
+            return 30.0;
+
         return 0.0;
     }
 

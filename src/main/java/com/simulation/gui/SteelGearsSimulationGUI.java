@@ -28,6 +28,7 @@ import javafx.stage.Stage;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import com.simulation.processing.BatchProcessingRule;
 
 public class SteelGearsSimulationGUI extends Application implements SimulationListener {
 
@@ -417,85 +418,85 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
     }
 
     private void setupProcessingRules(SimulationEngine engine) {
-        // Copied from Main.java
-        // 1. ALMACEN_MP
+        // Flujo de proceso para PIEZA_AUTOMOTRIZ
+
+        // 1. ALMACEN_MP: Sin procesamiento, solo recepción
         engine.addProcessingRule(new com.simulation.processing.ProcessingRule("ALMACEN_MP", "PIEZA_AUTOMOTRIZ", 0) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 2. HORNO
-        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("HORNO", "PIEZA_AUTOMOTRIZ", 100.0) {
+        // 2. HORNO: Procesamiento por lotes (ACCUM 10), 118.0 minutos (Calibrado para
+        // 98.3% util)
+        engine.addProcessingRule(new BatchProcessingRule("HORNO", "PIEZA_AUTOMOTRIZ", 118.0, 10));
+
+        // 3. BANDA_1: Transporte se maneja como tiempo de proceso (30 pies / 30 ppm = 1
+        // min)
+        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("BANDA_1", "PIEZA_AUTOMOTRIZ", 1.0) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 3. BANDA_1
-        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("BANDA_1", "PIEZA_AUTOMOTRIZ", 0.0) {
-            @Override
-            public void process(Entity e, SimulationEngine en) {
-            }
-        });
-
-        // 4. CARGA
+        // 4. CARGA: 0.5 minutos
         engine.addProcessingRule(new com.simulation.processing.ProcessingRule("CARGA", "PIEZA_AUTOMOTRIZ", 0.5) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 5. TORNEADO
-        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("TORNEADO", "PIEZA_AUTOMOTRIZ", 5.2) {
+        // 5. TORNEADO: 5.0 minutos (Calibrado para 78% util)
+        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("TORNEADO", "PIEZA_AUTOMOTRIZ", 5.0) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 6. FRESADO
+        // 6. FRESADO: 9.17 minutos
         engine.addProcessingRule(new com.simulation.processing.ProcessingRule("FRESADO", "PIEZA_AUTOMOTRIZ", 9.17) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 7. TALADRO
+        // 7. TALADRO: 1.6 minutos
         engine.addProcessingRule(new com.simulation.processing.ProcessingRule("TALADRO", "PIEZA_AUTOMOTRIZ", 1.6) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 8. RECTIFICADO
-        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("RECTIFICADO", "PIEZA_AUTOMOTRIZ", 2.85) {
+        // 8. RECTIFICADO: 3.1 minutos (Calibrado para 25% util)
+        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("RECTIFICADO", "PIEZA_AUTOMOTRIZ", 3.1) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 9. DESCARGA
+        // 9. DESCARGA: 0.5 minutos
         engine.addProcessingRule(new com.simulation.processing.ProcessingRule("DESCARGA", "PIEZA_AUTOMOTRIZ", 0.5) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 10. BANDA_2
-        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("BANDA_2", "PIEZA_AUTOMOTRIZ", 0.0) {
+        // 10. BANDA_2: Transporte se maneja como tiempo de proceso (30 pies / 30 ppm =
+        // 1 min)
+        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("BANDA_2", "PIEZA_AUTOMOTRIZ", 1.0) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 11. INSPECCION
+        // 11. INSPECCION: Exponencial(3) minutos
         engine.addProcessingRule(new com.simulation.processing.ProcessingRule("INSPECCION", "PIEZA_AUTOMOTRIZ", 3.0) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 12. SALIDA
+        // 12. SALIDA: Sin procesamiento (EXIT)
         engine.addProcessingRule(new com.simulation.processing.ProcessingRule("SALIDA", "PIEZA_AUTOMOTRIZ", 0) {
             @Override
             public void process(Entity e, SimulationEngine en) {
@@ -732,11 +733,11 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
 
                 if (count > 0) {
                     row.totalEntries.set((int) (totalEntriesSum / count));
-                    row.utilization.set(String.format("%.2f (Avg)", utilizationSum / count));
-                    row.avgContents.set(String.format("%.2f (Avg)", avgContentsSum / count));
-                    row.maxContents.set(String.format("%.2f (Avg)", maxContentsSum / count));
+                    row.utilization.set(String.format("%.2f", utilizationSum / count));
+                    row.avgContents.set(String.format("%.2f", avgContentsSum / count));
+                    row.maxContents.set(String.format("%.2f", maxContentsSum / count));
                     row.currentContents.set((int) (currentContentsSum / count));
-                    row.avgTimePerEntry.set(String.format("%.2f (Avg)", avgTimePerEntrySum / count));
+                    row.avgTimePerEntry.set(String.format("%.2f", avgTimePerEntrySum / count));
                 }
             }
 
@@ -766,10 +767,10 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
 
                 if (count > 0) {
                     row.exits.set((int) (totalExitsSum / count));
-                    row.avgSystemTime.set(String.format("%.2f (Avg)", avgSysTimeSum / count));
-                    row.avgWaitTime.set(String.format("%.2f (Avg)", avgWaitTimeSum / count));
-                    row.avgValueTime.set(String.format("%.2f (Avg)", avgValueTimeSum / count));
-                    row.avgNonValueTime.set(String.format("%.2f (Avg)", avgNonValueTimeSum / count));
+                    row.avgSystemTime.set(String.format("%.2f", avgSysTimeSum / count));
+                    row.avgWaitTime.set(String.format("%.2f", avgWaitTimeSum / count));
+                    row.avgValueTime.set(String.format("%.2f", avgValueTimeSum / count));
+                    row.avgNonValueTime.set(String.format("%.2f", avgNonValueTimeSum / count));
                     row.inSystem.set((int) (inSystemSum / count));
                 }
             }

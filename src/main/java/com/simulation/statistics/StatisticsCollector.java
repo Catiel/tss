@@ -5,77 +5,112 @@ import com.simulation.entities.EntityStatistics;
 import com.simulation.locations.Location;
 import com.simulation.locations.LocationStatistics;
 
+import com.simulation.resources.ResourceStatistics;
+
 import java.util.HashMap;
 import java.util.Map;
 
 public class StatisticsCollector { // Clase que recolecta y administra estadísticas de la simulación
-    private final Map<String, EntityStatistics> entityStats; // Mapa de estadísticas por tipo de entidad
-    private final Map<String, LocationStatistics> locationStats; // Mapa de estadísticas por locación
-    private final Map<String, Integer> locationEntries; // Conteo de entradas por locación
-    private final Map<String, Double> locationTotalTime; // Tiempo total de procesamiento por locación
+    private final Map<String, EntityStatistics> entityStats;
+    private final Map<String, LocationStatistics> locationStats;
+    private final Map<String, Integer> locationEntries;
+    private final Map<String, Double> locationTotalTime;
+    private final Map<String, ResourceStatistics> resourceStats;
+    private final Map<String, Integer> resourceTrips;
+    private final Map<String, Double> resourceTotalTripTime;
 
-    public StatisticsCollector() { // Constructor que inicializa las colecciones
-        this.entityStats = new HashMap<>(); // Inicializa mapa de estadísticas de entidades
-        this.locationStats = new HashMap<>(); // Inicializa estadísticas de locaciones
-        this.locationEntries = new HashMap<>(); // Inicializa conteo de entradas
-        this.locationTotalTime = new HashMap<>(); // Inicializa tiempos de procesamiento
+    public StatisticsCollector() {
+        this.entityStats = new HashMap<>();
+        this.locationStats = new HashMap<>();
+        this.locationEntries = new HashMap<>();
+        this.locationTotalTime = new HashMap<>();
+        this.resourceStats = new HashMap<>();
+        this.resourceTrips = new HashMap<>();
+        this.resourceTotalTripTime = new HashMap<>();
     }
 
-    public void recordEntityEntry(Entity entity) { // Registra la entrada de una entidad
-        String entityName = entity.getType().getName(); // Obtiene el tipo de entidad
-        entityStats.putIfAbsent(entityName, new EntityStatistics(entityName)); // Crea estadísticas si no existen
-        entityStats.get(entityName).recordEntry(); // Incrementa contador de entradas
+    public void recordEntityEntry(Entity entity) {
+        String entityName = entity.getType().getName();
+        entityStats.putIfAbsent(entityName, new EntityStatistics(entityName));
+        entityStats.get(entityName).recordEntry();
     }
 
-    public void recordEntityExit(Entity entity) { // Registra la salida de una entidad
-        String entityName = entity.getType().getName(); // Obtiene tipo de entidad
-        entityStats.putIfAbsent(entityName, new EntityStatistics(entityName)); // Crea estadística si no existe
-        entity.setInSystem(false); // Marca entidad como fuera del sistema
-        entityStats.get(entityName).recordExit(entity); // Actualiza estadísticas con salida
+    public void recordEntityExit(Entity entity) {
+        String entityName = entity.getType().getName();
+        entityStats.putIfAbsent(entityName, new EntityStatistics(entityName));
+        entity.setInSystem(false);
+        entityStats.get(entityName).recordExit(entity);
     }
 
-    public void recordLocationEntry(String locationName) { // Registra entrada a una locación
-        locationEntries.put(locationName, locationEntries.getOrDefault(locationName, 0) + 1); // Incrementa contador entrada
+    public void recordLocationEntry(String locationName) {
+        locationEntries.put(locationName, locationEntries.getOrDefault(locationName, 0) + 1);
     }
 
-    public void recordLocationProcessingTime(String locationName, double time) { // Registra tiempo de procesamiento para locación
-        locationTotalTime.put(locationName, locationTotalTime.getOrDefault(locationName, 0.0) + time); // Acumula tiempo procesado
+    public void recordLocationProcessingTime(String locationName, double time) {
+        locationTotalTime.put(locationName, locationTotalTime.getOrDefault(locationName, 0.0) + time);
     }
 
-    public void calculateLocationStatistics(Map<String, Location> locations, double totalSimulationTime) { // Calcula estadísticas totales para locaciones
-        for (Map.Entry<String, Location> entry : locations.entrySet()) { // Para cada ubicación en el mapa
-            String name = entry.getKey(); // Obtiene nombre de la locación
-            Location location = entry.getValue(); // Obtiene objeto Location
+    public void recordResourceTrip(String resourceName, double time) {
+        resourceTrips.put(resourceName, resourceTrips.getOrDefault(resourceName, 0) + 1);
+        resourceTotalTripTime.put(resourceName, resourceTotalTripTime.getOrDefault(resourceName, 0.0) + time);
+    }
 
-            LocationStatistics stats = new LocationStatistics(name); // Crea objeto de estadísticas
-            int entries = locationEntries.getOrDefault(name, 0); // Obtiene total entradas o 0
-            double totalTime = locationTotalTime.getOrDefault(name, 0.0); // Obtiene tiempo total o 0
+    public void calculateLocationStatistics(Map<String, Location> locations, double totalSimulationTime) {
+        for (Map.Entry<String, Location> entry : locations.entrySet()) {
+            String name = entry.getKey();
+            Location location = entry.getValue();
 
-            stats.calculate(location, totalSimulationTime, entries, totalTime); // Calcula estadísticas con datos actuales
-            locationStats.put(name, stats); // Almacena en mapa de estadísticas por locación
+            LocationStatistics stats = new LocationStatistics(name);
+            int entries = locationEntries.getOrDefault(name, 0);
+            double totalTime = locationTotalTime.getOrDefault(name, 0.0);
+
+            stats.calculate(location, totalSimulationTime, entries, totalTime);
+            locationStats.put(name, stats);
         }
     }
 
-    public EntityReport generateEntityReport(double simulationTime) { // Genera reporte de entidades
-        return new EntityReport(entityStats, simulationTime); // Retorna nuevo reporte de entidades
+    public void calculateResourceStatistics(Map<String, com.simulation.resources.Resource> resources,
+            double totalSimulationTime) {
+        for (Map.Entry<String, com.simulation.resources.Resource> entry : resources.entrySet()) {
+            String name = entry.getKey();
+            com.simulation.resources.Resource resource = entry.getValue();
+
+            com.simulation.resources.ResourceStatistics stats = new com.simulation.resources.ResourceStatistics(name);
+            int trips = resourceTrips.getOrDefault(name, 0);
+            double totalTripTime = resourceTotalTripTime.getOrDefault(name, 0.0);
+
+            stats.calculate(resource, totalSimulationTime, trips, totalTripTime);
+            resourceStats.put(name, stats);
+        }
     }
 
-    public LocationReport generateLocationReport(double simulationTime) { // Genera reporte de locaciones
-        return new LocationReport(locationStats, simulationTime); // Retorna nuevo reporte de locaciones
+    public EntityReport generateEntityReport(double simulationTime) {
+        return new EntityReport(entityStats, simulationTime);
     }
 
-    public Map<String, EntityStatistics> getEntityStats() { // Devuelve mapa de estadísticas de entidades
+    public LocationReport generateLocationReport(double simulationTime) {
+        return new LocationReport(locationStats, simulationTime);
+    }
+
+    public Map<String, EntityStatistics> getEntityStats() {
         return entityStats;
     }
 
-    public Map<String, LocationStatistics> getLocationStats() { // Devuelve mapa de estadísticas de locaciones
+    public Map<String, LocationStatistics> getLocationStats() {
         return locationStats;
     }
 
-    public void reset() { // Limpia todas las estadísticas y conteos
+    public Map<String, com.simulation.resources.ResourceStatistics> getResourceStats() {
+        return resourceStats;
+    }
+
+    public void reset() {
         entityStats.clear();
         locationStats.clear();
         locationEntries.clear();
         locationTotalTime.clear();
+        resourceStats.clear();
+        resourceTrips.clear();
+        resourceTotalTripTime.clear();
     }
 }

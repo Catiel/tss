@@ -16,12 +16,18 @@ public class Entity {
     private boolean inSystem;
     private boolean isTransformed; // NUEVO: indica si es resultado de transformación
 
+    private final double creationTime; // Time when entity was created
+
     public Entity(EntityType type) {
-        this(type, false);
+        this(type, false, 0.0);
     }
 
     // Constructor con parámetro para indicar si es transformada
     public Entity(EntityType type, boolean isTransformed) {
+        this(type, isTransformed, 0.0);
+    }
+
+    public Entity(EntityType type, boolean isTransformed, double creationTime) {
         this.id = nextId++;
         this.type = type;
         this.totalSystemTime = 0;
@@ -30,6 +36,7 @@ public class Entity {
         this.totalWaitTime = 0;
         this.inSystem = true;
         this.isTransformed = isTransformed;
+        this.creationTime = creationTime;
     }
 
     public int getId() {
@@ -46,6 +53,10 @@ public class Entity {
 
     public void setCurrentLocation(Location location) {
         this.currentLocation = location;
+    }
+
+    public double getCreationTime() {
+        return creationTime;
     }
 
     public double getEntryTime() {

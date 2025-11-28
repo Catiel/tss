@@ -16,47 +16,32 @@ public class LocationStatistics { // Clase que recopila y calcula estadísticas 
         this.locationName = locationName; // Asigna el nombre de la ubicación
     }
 
-    public void calculate(Location location, double totalSimulationTime, int entries, double totalProcessingTime) { // Método
-                                                                                                                    // que
-                                                                                                                    // calcula
-                                                                                                                    // todas
-                                                                                                                    // las
-                                                                                                                    // estadísticas
-                                                                                                                    // de
-                                                                                                                    // la
-                                                                                                                    // ubicación
-        this.scheduledTime = totalSimulationTime; // Asigna el tiempo total de la simulación
-        this.capacity = location.getType().capacity(); // Obtiene la capacidad de la ubicación desde su tipo
-        this.totalEntries = entries; // Asigna el número total de entradas registradas
+    public void calculate(Location location, double totalSimulationTime, int entries, double totalProcessingTime) {
+        this.scheduledTime = totalSimulationTime;
+        this.capacity = location.getType().capacity();
+        this.totalEntries = entries;
 
-        if (entries > 0) { // Verifica que haya habido al menos una entrada
-            this.averageTimePerEntry = totalProcessingTime / entries; // Calcula el tiempo promedio dividiendo el tiempo
-                                                                      // total entre el número de entradas
+        if (entries > 0) {
+            this.averageTimePerEntry = location.getTotalOccupancyTime() / entries;
+        } else {
+            this.averageTimePerEntry = 0.0;
         }
 
-        this.averageContents = location.getTotalOccupancyTime() / totalSimulationTime; // Calcula el contenido promedio
-                                                                                       // dividiendo el tiempo de
-                                                                                       // ocupación acumulado entre el
-                                                                                       // tiempo total
-        this.maxContents = capacity; // El contenido máximo es igual a la capacidad
-        this.currentContents = location.getCurrentOccupancy(); // Obtiene el número actual de entidades en la ubicación
-        if (capacity > 0) { // Verifica que la capacidad sea mayor que cero para evitar división por cero
-            this.utilizationPercent = (averageContents / capacity) * 100.0; // Calcula el porcentaje de utilización
-                                                                            // basado en contenido promedio (estilo
-                                                                            // ProModel)
-        } else { // Si la capacidad es cero
-            this.utilizationPercent = 0.0; // Establece la utilización en cero
+        this.averageContents = location.getTotalOccupancyTime() / totalSimulationTime;
+        this.maxContents = capacity;
+        this.currentContents = location.getCurrentOccupancy();
+
+        if (capacity > 0) {
+            this.utilizationPercent = (averageContents / capacity) * 100.0;
+        } else {
+            this.utilizationPercent = 0.0;
         }
 
-        if (totalSimulationTime > 0) { // Verifica que el tiempo de simulación sea mayor que cero
-            busyUtilizationPercent = (location.getBusyTime() / totalSimulationTime) * 100.0; // Calcula el porcentaje de
-                                                                                             // utilización basado en
-                                                                                             // tiempo ocupado
-                                                                                             // (alternativa)
-        } else { // Si el tiempo de simulación es cero
-            busyUtilizationPercent = 0.0; // Establece la utilización ocupada en cero
+        if (totalSimulationTime > 0) {
+            busyUtilizationPercent = (location.getBusyTime() / totalSimulationTime) * 100.0;
+        } else {
+            busyUtilizationPercent = 0.0;
         }
-
     }
 
     public String getLocationName() {

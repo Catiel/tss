@@ -1,26 +1,27 @@
-package com.simulation.resources; // Declaración del paquete
+package com.simulation.resources;
 
 import com.simulation.entities.Entity;
 
 import java.util.LinkedList;
 import java.util.Queue;
 
-public class Resource { // Clase que representa un recurso compartido en la simulación
-    private final ResourceType type; // Tipo del recurso (definición de propiedades del recurso)
-    private final Queue<Entity> waitingQueue; // Cola de entidades esperando para adquirir el recurso
-    private int availableUnits; // Unidades disponibles actualmente del recurso
-    private double totalBusyTime; // Tiempo total acumulado en el que el recurso estuvo ocupado
-    private double lastUpdateTime; // Último tiempo en que se registró el estado del recurso
-    private String currentLocation; // Ubicación actual del recurso
+public class Resource {
+    private final ResourceType type;
+    private final Queue<Entity> waitingQueue;
+    private int availableUnits;
+    private double totalBusyTime;
+    private double lastUpdateTime;
+    private String currentLocation;
+    private boolean isReturningHome = false;
 
-    public Resource(ResourceType type) { // Constructor del recurso
-        this.type = type; // Asigna el tipo recibido
-        this.availableUnits = type.units(); // Inicializa unidades disponibles según el tipo
-        this.waitingQueue = new LinkedList<>(); // Inicializa la cola de espera
-        this.totalBusyTime = 0; // Inicializa tiempo ocupado en cero
-        this.lastUpdateTime = 0; // Inicializa el tiempo de última actualización en cero
+    public Resource(ResourceType type) {
+        this.type = type;
+        this.availableUnits = type.units();
+        this.waitingQueue = new LinkedList<>();
+        this.totalBusyTime = 0;
+        this.lastUpdateTime = 0;
 
-        // Inicializar ubicación por defecto según el recurso
+        // Initialize default location
         if (type.name().equals("GRUA_VIAJERA")) {
             this.currentLocation = "ALMACEN_MP";
         } else if (type.name().equals("ROBOT")) {
@@ -30,66 +31,75 @@ public class Resource { // Clase que representa un recurso compartido en la simu
         }
     }
 
-    public boolean isAvailable() { // Indica si hay unidades disponibles para ser adquiridas
-        return availableUnits > 0; // Retorna verdadero si hay unidades libres
+    public boolean isAvailable() {
+        return availableUnits > 0;
     }
 
-    public void acquire(double currentTime) { // Intentar adquirir una unidad del recurso
-        if (availableUnits > 0) { // Si hay unidades disponibles
-            updateBusyTime(currentTime); // Actualiza estadísticas de ocupación
-            availableUnits--; // Disminuye una unidad disponible
+    public void acquire(double currentTime) {
+        if (availableUnits > 0) {
+            updateBusyTime(currentTime);
+            availableUnits--;
         }
     }
 
-    public void release(double currentTime) { // Libera una unidad del recurso
-        updateBusyTime(currentTime); // Actualiza estadísticas de ocupación
-        availableUnits++; // Incrementa unidades disponibles
+    public void release(double currentTime) {
+        updateBusyTime(currentTime);
+        availableUnits++;
     }
 
-    public void addToQueue(Entity entity) { // Agrega una entidad a la cola de espera del recurso
-        waitingQueue.add(entity); // Añade al final de la cola
+    public void addToQueue(Entity entity) {
+        waitingQueue.add(entity);
     }
 
-    public Entity removeFromQueue() { // Remueve la siguiente entidad de la cola de espera
-        return waitingQueue.poll(); // Quita y devuelve la siguiente entidad, o null si no hay
+    public Entity removeFromQueue() {
+        return waitingQueue.poll();
     }
 
-    private void updateBusyTime(double currentTime) { // Actualiza el tiempo ocupado por el recurso
-        double timeDelta = currentTime - lastUpdateTime; // Calcula tiempo transcurrido desde la última actualización
-        int busyUnits = type.units() - availableUnits; // Calcula cuántas unidades estuvieron ocupadas en el intervalo
-        totalBusyTime += busyUnits * timeDelta; // Suma ese tiempo al acumulador
-        lastUpdateTime = currentTime; // Actualiza el tiempo de referencia
+    private void updateBusyTime(double currentTime) {
+        double timeDelta = currentTime - lastUpdateTime;
+        int busyUnits = type.units() - availableUnits;
+        totalBusyTime += busyUnits * timeDelta;
+        lastUpdateTime = currentTime;
     }
 
-    public ResourceType getType() { // Devuelve el tipo de recurso
-        return type; // Retorna el objeto tipo
+    public ResourceType getType() {
+        return type;
     }
 
-    public int getAvailableUnits() { // Devuelve cuántas unidades hay actualmente disponibles
-        return availableUnits; // Retorna unidades disponibles
+    public int getAvailableUnits() {
+        return availableUnits;
     }
 
-    public int getQueueSize() { // Devuelve cuántas entidades esperan el recurso
-        return waitingQueue.size(); // Retorna tamaño de la cola de espera
+    public Queue<Entity> getQueue() {
+        return waitingQueue;
     }
 
-    public double getTotalBusyTime() { // Devuelve el tiempo total ocupado
-        return totalBusyTime; // Retorna acumulador de tiempo ocupado
+    public void removeEntity(Entity entity) {
+        waitingQueue.remove(entity);
     }
 
-    public double getUtilization(double totalTime) { // Calcula el porcentaje de utilización del recurso
-        return (totalBusyTime / (totalTime * type.units())) * 100.0; // Utilización en porcentaje
+    public int getQueueSize() {
+        return waitingQueue.size();
     }
 
-    public String getName() { // Devuelve el nombre del recurso
-        return type.name(); // Retorna el nombre desde el tipo de recurso
+    public double getTotalBusyTime() {
+        return totalBusyTime;
     }
 
-    public ResourceStatistics getStatistics() { // Devuelve estadísticas básicas del recurso
-        ResourceStatistics stats = new ResourceStatistics(getName()); // Crea un objeto de estadísticas
-        stats.calculate(this, lastUpdateTime, type.units() - availableUnits, totalBusyTime); // Calcula estadísticas
-                                                                                             // actuales
-        return stats; // Retorna el objeto de estadísticas
+    public double getUtilization(double totalTime) {
+        if (totalTime == 0)
+            return 0.0;
+        return (totalBusyTime / (totalTime * type.units())) * 100.0;
+    }
+
+    public String getName() {
+        return type.name();
+    }
+
+    public ResourceStatistics getStatistics() {
+        ResourceStatistics stats = new ResourceStatistics(getName());
+        stats.calculate(this, lastUpdateTime, type.units() - availableUnits, totalBusyTime);
+        return stats;
     }
 
     public String getCurrentLocation() {
@@ -98,5 +108,23 @@ public class Resource { // Clase que representa un recurso compartido en la simu
 
     public void setCurrentLocation(String currentLocation) {
         this.currentLocation = currentLocation;
+    }
+
+    public boolean isReturningHome() {
+        return isReturningHome;
+    }
+
+    public void setReturningHome(boolean returningHome) {
+        isReturningHome = returningHome;
+    }
+
+    private long returnHomeId = 0;
+
+    public long getReturnHomeId() {
+        return returnHomeId;
+    }
+
+    public long incrementReturnHomeId() {
+        return ++returnHomeId;
     }
 }

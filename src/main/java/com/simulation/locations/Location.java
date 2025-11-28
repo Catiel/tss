@@ -37,6 +37,7 @@ public class Location { // Clase que representa una ubicación o estación en la
             contentQueue.add(entity); // Agrega la entidad a la cola de procesamiento
             currentOccupancy++; // Incrementa el contador de ocupación
             entity.setCurrentLocation(this); // Establece esta ubicación como la actual para la entidad
+            entity.setEntryTime(currentTime); // Set entry time for statistics
             return true;
         } else { // Si no hay espacio disponible
             queue.add(entity); // Agrega la entidad a la cola de espera
@@ -50,6 +51,14 @@ public class Location { // Clase que representa una ubicación o estación en la
         if (entity != null) { // Si se obtuvo una entidad (la cola no estaba vacía)
             currentOccupancy--; // Decrementa el contador de ocupación
             // Auto-promotion removed to allow external control
+
+            if ("RECTIFICADO".equals(type.name())) {
+                Double entryTime = entity.getEntryTime();
+                if (entryTime != 0) {
+                    System.out.println(
+                            "DEBUG: Exit RECTIFICADO at " + currentTime + ". Duration: " + (currentTime - entryTime));
+                }
+            }
         }
         return entity; // Retorna la entidad que salió (o null si no había ninguna)
     }
