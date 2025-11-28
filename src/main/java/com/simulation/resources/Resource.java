@@ -11,6 +11,7 @@ public class Resource { // Clase que representa un recurso compartido en la simu
     private int availableUnits; // Unidades disponibles actualmente del recurso
     private double totalBusyTime; // Tiempo total acumulado en el que el recurso estuvo ocupado
     private double lastUpdateTime; // Último tiempo en que se registró el estado del recurso
+    private String currentLocation; // Ubicación actual del recurso
 
     public Resource(ResourceType type) { // Constructor del recurso
         this.type = type; // Asigna el tipo recibido
@@ -18,6 +19,15 @@ public class Resource { // Clase que representa un recurso compartido en la simu
         this.waitingQueue = new LinkedList<>(); // Inicializa la cola de espera
         this.totalBusyTime = 0; // Inicializa tiempo ocupado en cero
         this.lastUpdateTime = 0; // Inicializa el tiempo de última actualización en cero
+
+        // Inicializar ubicación por defecto según el recurso
+        if (type.name().equals("GRUA_VIAJERA")) {
+            this.currentLocation = "ALMACEN_MP";
+        } else if (type.name().equals("ROBOT")) {
+            this.currentLocation = "CARGA";
+        } else {
+            this.currentLocation = "UNKNOWN";
+        }
     }
 
     public boolean isAvailable() { // Indica si hay unidades disponibles para ser adquiridas
@@ -77,7 +87,16 @@ public class Resource { // Clase que representa un recurso compartido en la simu
 
     public ResourceStatistics getStatistics() { // Devuelve estadísticas básicas del recurso
         ResourceStatistics stats = new ResourceStatistics(getName()); // Crea un objeto de estadísticas
-        stats.calculate(this, lastUpdateTime, type.units() - availableUnits, totalBusyTime); // Calcula estadísticas actuales
+        stats.calculate(this, lastUpdateTime, type.units() - availableUnits, totalBusyTime); // Calcula estadísticas
+                                                                                             // actuales
         return stats; // Retorna el objeto de estadísticas
+    }
+
+    public String getCurrentLocation() {
+        return currentLocation;
+    }
+
+    public void setCurrentLocation(String currentLocation) {
+        this.currentLocation = currentLocation;
     }
 }

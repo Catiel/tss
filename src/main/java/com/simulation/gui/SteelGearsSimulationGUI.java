@@ -151,10 +151,10 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
         speedLabel.setTextFill(Color.web("#ECF0F1"));
         speedLabel.setFont(Font.font("Arial", FontWeight.BOLD, 12));
 
-        speedSlider = new Slider(0.1, 5.0, 1.0);
+        speedSlider = new Slider(0.1, 100.0, 1.0); // Increased max speed to 100.0
         speedSlider.setShowTickLabels(true);
         speedSlider.setShowTickMarks(true);
-        speedSlider.setMajorTickUnit(1.0);
+        speedSlider.setMajorTickUnit(25.0);
         speedSlider.setPrefWidth(200);
         speedSlider.valueProperty().addListener((obs, old, newVal) -> simulationSpeed = newVal.doubleValue());
 
@@ -597,6 +597,8 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
         }
     }
 
+    private List<com.simulation.statistics.StatisticsCollector> replicaStats = new ArrayList<>();
+
     private void startSimulation() {
         if (running.get())
             return;
@@ -606,47 +608,71 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
         startButton.setDisable(true);
         pauseButton.setDisable(false);
         stopButton.setDisable(false);
-        statusLabel.setText("Ejecutando...");
+        statusLabel.setText("Iniciando...");
         statusLabel.setTextFill(Color.web("#2ECC71"));
+        replicaStats.clear();
 
         // Iniciar hilo de simulación
         simulationThread = new Thread(() -> {
             try {
-                while (running.get() && currentTime < endTime) {
-                    // Esperar si está pausado
-                    while (paused.get() && running.get()) {
-                        Thread.sleep(100);
+                for (int replica = 1; replica <= 3; replica++) {
+                    final int currentReplica = replica;
+                    Platform.runLater(() -> {
+                        statusLabel.setText("Ejecutando Réplica " + currentReplica + " / 3");
+                        // Reset visual managers for new replica
+                        entityManager.clear();
+                    });
+
+                    // Reiniciar motor para cada réplica
+                    setupSimulationEngine();
+                    currentTime = 0;
+
+                    while (running.get() && currentTime < endTime) {
+                        // Esperar si está pausado
+                        while (paused.get() && running.get()) {
+                            Thread.sleep(100);
+                        }
+
+                        if (!running.get())
+                            break;
+
+                        // Ejecutar paso de simulación
+                        double speedMultiplier = simulationSpeed;
+                        boolean hasMoreEvents = engine.step(speedMultiplier);
+
+                        if (!hasMoreEvents) {
+                            break;
+                        }
+
+                        // Actualizar tiempo actual
+                        currentTime = engine.getClock().getCurrentTime();
+
+                        // Actualizar UI
+                        updateUI();
+
+                        // Controlar velocidad de simulación
+                        // Si la velocidad es muy alta (>50), no dormir para ir lo más rápido posible
+                        if (speedMultiplier < 50) {
+                            int sleepTime = (int) (50 / speedMultiplier);
+                            Thread.sleep(Math.max(1, sleepTime));
+                        }
                     }
 
                     if (!running.get())
                         break;
 
-                    // Ejecutar paso de simulación
-                    double speedMultiplier = simulationSpeed;
-                    boolean hasMoreEvents = engine.step(speedMultiplier);
-
-                    if (!hasMoreEvents) {
-                        break;
-                    }
-
-                    // Actualizar tiempo actual
-                    currentTime = engine.getClock().getCurrentTime();
-
-                    // Actualizar UI
-                    updateUI();
-
-                    // Controlar velocidad de simulación
-                    int sleepTime = (int) (50 / speedMultiplier);
-                    Thread.sleep(Math.max(10, sleepTime));
+                    // Guardar estadísticas de esta réplica
+                    replicaStats.add(engine.getStatistics());
                 }
 
-                // Simulación completada
+                // Simulación completada (todas las réplicas)
                 Platform.runLater(() -> {
-                    statusLabel.setText("Completado");
+                    statusLabel.setText("Completado (Promedio de 3 Réplicas)");
                     statusLabel.setTextFill(Color.web("#3498DB"));
                     startButton.setDisable(false);
                     pauseButton.setDisable(true);
                     stopButton.setDisable(true);
+                    displayAveragedStatistics();
                 });
 
             } catch (InterruptedException e) {
@@ -662,6 +688,82 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
 
         simulationThread.setDaemon(true);
         simulationThread.start();
+    }
+
+    private void displayAveragedStatistics() {
+        if (replicaStats.isEmpty())
+            return;
+
+        Platform.runLater(() -> {
+            // Actualizar tabla de locaciones con promedios
+            for (LocationStatsRow row : locationStatsTable.getItems()) {
+                String locName = row.name.get();
+                // Calcular promedio para esta locación
+                double totalEntriesSum = 0;
+                double utilizationSum = 0;
+                double avgContentsSum = 0;
+                double maxContentsSum = 0;
+                double currentContentsSum = 0;
+                double avgTimePerEntrySum = 0;
+
+                int count = 0;
+                for (com.simulation.statistics.StatisticsCollector stats : replicaStats) {
+                    com.simulation.locations.LocationStatistics ls = stats.getLocationStats().get(locName);
+                    if (ls != null) {
+                        totalEntriesSum += ls.getTotalEntries();
+                        utilizationSum += ls.getUtilizationPercent();
+                        avgContentsSum += ls.getAverageContents();
+                        maxContentsSum += ls.getMaxContents();
+                        currentContentsSum += ls.getCurrentContents();
+                        avgTimePerEntrySum += ls.getAverageTimePerEntry();
+                        count++;
+                    }
+                }
+
+                if (count > 0) {
+                    row.totalEntries.set((int) (totalEntriesSum / count));
+                    row.utilization.set(String.format("%.2f (Avg)", utilizationSum / count));
+                    row.avgContents.set(String.format("%.2f (Avg)", avgContentsSum / count));
+                    row.maxContents.set(String.format("%.2f (Avg)", maxContentsSum / count));
+                    row.currentContents.set((int) (currentContentsSum / count));
+                    row.avgTimePerEntry.set(String.format("%.2f (Avg)", avgTimePerEntrySum / count));
+                }
+            }
+
+            // Actualizar tabla de entidades con promedios
+            for (EntityStatsRow row : entityStatsTable.getItems()) {
+                String entName = row.name.get();
+                double totalExitsSum = 0;
+                double avgSysTimeSum = 0;
+                double avgWaitTimeSum = 0;
+                double avgValueTimeSum = 0;
+                double avgNonValueTimeSum = 0;
+                double inSystemSum = 0;
+
+                int count = 0;
+                for (com.simulation.statistics.StatisticsCollector stats : replicaStats) {
+                    com.simulation.entities.EntityStatistics es = stats.getEntityStats().get(entName);
+                    if (es != null) {
+                        totalExitsSum += es.getTotalExits();
+                        avgSysTimeSum += es.getAverageSystemTime();
+                        avgWaitTimeSum += es.getAverageWaitTime();
+                        avgValueTimeSum += es.getAverageValueAddedTime();
+                        avgNonValueTimeSum += es.getAverageNonValueAddedTime();
+                        inSystemSum += es.getCurrentInSystem();
+                        count++;
+                    }
+                }
+
+                if (count > 0) {
+                    row.exits.set((int) (totalExitsSum / count));
+                    row.avgSystemTime.set(String.format("%.2f (Avg)", avgSysTimeSum / count));
+                    row.avgWaitTime.set(String.format("%.2f (Avg)", avgWaitTimeSum / count));
+                    row.avgValueTime.set(String.format("%.2f (Avg)", avgValueTimeSum / count));
+                    row.avgNonValueTime.set(String.format("%.2f (Avg)", avgNonValueTimeSum / count));
+                    row.inSystem.set((int) (inSystemSum / count));
+                }
+            }
+        });
     }
 
     private void pauseSimulation() {

@@ -346,47 +346,28 @@ public class OperationHandler {
             resource.acquire(currentTime);
             engine.notifyResourceAcquired(resource, entity);
 
-            // Entity leaves the location now that resource is acquired
-            Location from = entity.getCurrentLocation();
-            if (from != null) {
-                from.exit(currentTime);
-                checkAndPromoteFromQueue(from);
-                notifyLocationAvailable(from.getName()); // Notify that space is free
-            }
+            // 1. Calculate Empty Travel Time
+            String resourceLoc = resource.getCurrentLocation();
+            String entityLoc = entity.getCurrentLocation() != null ? entity.getCurrentLocation().getName() : "UNKNOWN";
+            double emptyTravelTime = calculateMoveTime(resourceLoc, entityLoc, resourceName);
 
-            String currentLocation = entity.getCurrentLocation() != null ? entity.getCurrentLocation().getName()
-                    : "UNKNOWN";
-            double moveTime = calculateMoveTime(currentLocation, destination, resourceName);
-
-            if (animationController != null) {
-                animationController.animateEntityMovement(entity, currentLocation, destination, resourceName, () -> {
-                    resource.release(engine.getClock().getCurrentTime());
-                    checkResourceQueue(resource);
-                    handleArrival(entity, destination);
-                });
-            }
-
-            Event moveEvent = new Event(currentTime + moveTime, 0,
-                    "Move " + entity.getType().getName() + " to " + destination) {
+            // 2. Schedule Pickup Event
+            Event pickupEvent = new Event(currentTime + emptyTravelTime, 0, "Pickup " + entity.getType().getName()) {
                 @Override
                 public void execute() {
-                    engine.notifyResourceReleased(resource, entity);
-                    Location from = entity.getCurrentLocation();
-                    Location to = engine.getLocation(destination);
-                    if (from != null && to != null) {
-                        engine.notifyEntityMove(entity, from, to);
-                    }
+                    // Resource arrives at entity location
+                    resource.setCurrentLocation(entityLoc);
 
-                    if (animationController == null) {
-                        resource.release(engine.getClock().getCurrentTime());
-                        checkResourceQueue(resource);
-                        handleArrival(entity, destination);
-                    }
+                    // 3. Execute Loaded Move
+                    performLoadedMove(entity, destination, resourceName, resource);
                 }
             };
+            engine.getScheduler().scheduleEvent(pickupEvent);
 
-            engine.getScheduler().scheduleEvent(moveEvent);
-            entity.addNonValueAddedTime(moveTime);
+            // Add empty travel time to entity's non-value added time (waiting for
+            // transport)
+            entity.addNonValueAddedTime(emptyTravelTime);
+
         } else {
             if (resource != null) {
                 entity.setPendingDestination(destination);
@@ -394,6 +375,60 @@ public class OperationHandler {
                 entity.addWaitTime(1.0);
             }
         }
+    }
+
+    private void performLoadedMove(Entity entity, String destination, String resourceName, Resource resource) {
+        double currentTime = engine.getClock().getCurrentTime();
+
+        // Entity leaves the location now that resource has arrived and picked it up
+        Location from = entity.getCurrentLocation();
+        if (from != null) {
+            from.exit(currentTime);
+            checkAndPromoteFromQueue(from);
+            notifyLocationAvailable(from.getName()); // Notify that space is free
+        }
+
+        String currentLocation = entity.getCurrentLocation() != null ? entity.getCurrentLocation().getName()
+                : "UNKNOWN";
+        double moveTime = calculateMoveTime(currentLocation, destination, resourceName);
+
+        if (animationController != null) {
+            animationController.animateEntityMovement(entity, currentLocation, destination, resourceName, () -> {
+                // Animation callback (optional, logic handled in event)
+            });
+        }
+
+        Event moveEvent = new Event(currentTime + moveTime, 0,
+                "Move " + entity.getType().getName() + " to " + destination) {
+            @Override
+            public void execute() {
+                engine.notifyResourceReleased(resource, entity);
+                Location from = entity.getCurrentLocation();
+                Location to = engine.getLocation(destination);
+                if (from != null && to != null) {
+                    engine.notifyEntityMove(entity, from, to);
+                }
+
+                // Update resource location to destination
+                resource.setCurrentLocation(destination);
+
+                if (animationController == null) {
+                    resource.release(engine.getClock().getCurrentTime());
+                    checkResourceQueue(resource);
+                    handleArrival(entity, destination);
+                } else {
+                    // If animation is present, we still need to release logic here
+                    // or ensure animation callback handles it.
+                    // For safety/consistency with previous logic:
+                    resource.release(engine.getClock().getCurrentTime());
+                    checkResourceQueue(resource);
+                    handleArrival(entity, destination);
+                }
+            }
+        };
+
+        engine.getScheduler().scheduleEvent(moveEvent);
+        entity.addNonValueAddedTime(moveTime);
     }
 
     private void handleExit(Entity entity) {
@@ -459,35 +494,47 @@ public class OperationHandler {
     }
 
     private double calculateMoveTime(String from, String to, String resourceName) {
-        double distance = 0.0;
+        double distance = calculateDistance(from, to);
         double speed = 0.0;
 
         if ("GRUA_VIAJERA".equals(resourceName)) {
             speed = 25.0;
-            if (("ALMACEN_MP".equals(from) && "HORNO".equals(to)) || ("HORNO".equals(from) && "ALMACEN_MP".equals(to)))
-                distance = 10.0;
-            else if (("HORNO".equals(from) && "BANDA_1".equals(to)) || ("BANDA_1".equals(from) && "HORNO".equals(to)))
-                distance = 15.0;
         } else if ("ROBOT".equals(resourceName)) {
             speed = 45.0;
-            if (("CARGA".equals(from) && "TORNEADO".equals(to)) || ("TORNEADO".equals(from) && "CARGA".equals(to)))
-                distance = 20.0;
-            else if (("TORNEADO".equals(from) && "FRESADO".equals(to))
-                    || ("FRESADO".equals(from) && "TORNEADO".equals(to)))
-                distance = 15.0;
-            else if (("FRESADO".equals(from) && "TALADRO".equals(to))
-                    || ("TALADRO".equals(from) && "FRESADO".equals(to)))
-                distance = 15.0;
-            else if (("TALADRO".equals(from) && "RECTIFICADO".equals(to))
-                    || ("RECTIFICADO".equals(from) && "TALADRO".equals(to)))
-                distance = 15.0;
-            else if (("RECTIFICADO".equals(from) && "DESCARGA".equals(to))
-                    || ("DESCARGA".equals(from) && "RECTIFICADO".equals(to)))
-                distance = 20.0;
         }
 
         if (speed > 0)
             return distance / speed;
         return 1.0;
+    }
+
+    private double calculateDistance(String from, String to) {
+        if (from.equals(to))
+            return 0.0;
+
+        // Red_Grua
+        if (isPath(from, to, "ALMACEN_MP", "HORNO"))
+            return 10.0;
+        if (isPath(from, to, "HORNO", "BANDA_1"))
+            return 15.0;
+
+        // Red_Robot
+        if (isPath(from, to, "CARGA", "TORNEADO"))
+            return 20.0;
+        if (isPath(from, to, "TORNEADO", "FRESADO"))
+            return 15.0;
+        if (isPath(from, to, "FRESADO", "TALADRO"))
+            return 15.0;
+        if (isPath(from, to, "TALADRO", "RECTIFICADO"))
+            return 15.0;
+        if (isPath(from, to, "RECTIFICADO", "DESCARGA"))
+            return 20.0;
+
+        // Default fallback (should not happen if paths are correct)
+        return 0.0;
+    }
+
+    private boolean isPath(String from, String to, String loc1, String loc2) {
+        return (from.equals(loc1) && to.equals(loc2)) || (from.equals(loc2) && to.equals(loc1));
     }
 }
