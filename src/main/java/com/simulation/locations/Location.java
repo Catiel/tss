@@ -1,9 +1,9 @@
 package com.simulation.locations; // Declaración del paquete donde se encuentra esta clase
 
-import com.simulation.entities.Entity; // Importa la clase Entity para manejar entidades
+import com.simulation.entities.Entity;
 
-import java.util.LinkedList; // Importa LinkedList para implementar colas
-import java.util.Queue; // Importa la interfaz Queue
+import java.util.LinkedList;
+import java.util.Queue;
 
 public class Location { // Clase que representa una ubicación o estación en la simulación
     private final LocationType type; // Tipo de ubicación con sus características definidas

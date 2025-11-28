@@ -22,10 +22,27 @@ public class ResourceStatistics { // Clase que encapsula estadísticas de uso de
     }
 
     // Getters
-    public String getResourceName() { return resourceName; } // Devuelve el nombre del recurso
-    public int getUnits() { return units; } // Devuelve el número de unidades
-    public double getUtilizationPercent() { return utilizationPercent; } // Devuelve el porcentaje de utilización
-    public double getAverageMinutesPerTrip() { return averageMinutesPerTrip; } // Devuelve el tiempo promedio por viaje
-    public int getTotalTrips() { return totalTrips; } // Devuelve el total de viajes
-    public int getTotalUsages() { return totalTrips; } // Devuelve total de usos (igual a totalTrips)
+    public String getResourceName() {
+        return resourceName;
+    } // Devuelve el nombre del recurso
+
+    public int getUnits() {
+        return units;
+    } // Devuelve el número de unidades
+
+    public double getUtilizationPercent() {
+        return utilizationPercent;
+    } // Devuelve el porcentaje de utilización
+
+    public double getAverageMinutesPerTrip() {
+        return averageMinutesPerTrip;
+    } // Devuelve el tiempo promedio por viaje
+
+    public int getTotalTrips() {
+        return totalTrips;
+    } // Devuelve el total de viajes
+
+    public int getTotalUsages() {
+        return totalTrips;
+    } // Devuelve total de usos (igual a totalTrips)
 }

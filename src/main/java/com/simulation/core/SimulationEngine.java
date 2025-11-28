@@ -1,19 +1,19 @@
 package com.simulation.core; // Declaración del paquete donde se encuentra esta clase
 
-import com.simulation.arrivals.ArrivalGenerator; // Importa el generador de llegadas de entidades
-import com.simulation.entities.Entity; // Importa la clase que representa entidades individuales
-import com.simulation.entities.EntityType; // Importa la clase que define tipos de entidades
-import com.simulation.locations.Location; // Importa la clase que representa ubicaciones en la simulación
-import com.simulation.locations.LocationType; // Importa la clase que define tipos de ubicaciones
-import com.simulation.processing.ProcessingRule; // Importa las reglas de procesamiento para ubicaciones
-import com.simulation.resources.Resource; // Importa la clase que representa recursos compartidos
-import com.simulation.resources.ResourceType; // Importa la clase que define tipos de recursos
-import com.simulation.statistics.StatisticsCollector; // Importa el recolector de estadísticas de la simulación
+import com.simulation.arrivals.ArrivalGenerator;
+import com.simulation.entities.Entity;
+import com.simulation.entities.EntityType;
+import com.simulation.locations.Location;
+import com.simulation.locations.LocationType;
+import com.simulation.processing.ProcessingRule;
+import com.simulation.resources.Resource;
+import com.simulation.resources.ResourceType;
+import com.simulation.statistics.StatisticsCollector;
 
-import java.util.ArrayList; // Importa la clase ArrayList para listas dinámicas
-import java.util.HashMap; // Importa la clase HashMap para mapas clave-valor
-import java.util.List; // Importa la interfaz List
-import java.util.Map; // Importa la interfaz Map
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class SimulationEngine { // Clase principal que coordina todos los componentes de la simulación
     private final SimulationClock clock; // Reloj que mantiene el tiempo actual de la simulación
@@ -24,8 +24,8 @@ public class SimulationEngine { // Clase principal que coordina todos los compon
     private final Map<String, Resource> resources; // Mapa que almacena todos los recursos compartidos
     private final Map<String, ProcessingRule> processingRules; // Mapa que almacena las reglas de procesamiento por ubicación
     private final ArrivalGenerator arrivalGenerator; // Generador que programa llegadas de entidades
-    private double simulationEndTime; // Tiempo en el que debe finalizar la simulación
     private final List<SimulationListener> listeners = new ArrayList<>(); // Lista de observadores que escuchan eventos de la simulación
+    private double simulationEndTime; // Tiempo en el que debe finalizar la simulación
 
     public SimulationEngine() { // Constructor que inicializa todos los componentes del motor de simulación
         this.clock = new SimulationClock(); // Crea un nuevo reloj de simulación inicializado en tiempo cero
@@ -55,9 +55,9 @@ public class SimulationEngine { // Clase principal que coordina todos los compon
     }
 
     public void scheduleArrival(String entityTypeName, String locationName, // Método para programar llegadas de entidades
-                               double firstTime, int occurrences, double frequency) {
+                                double firstTime, int occurrences, double frequency) {
         arrivalGenerator.scheduleArrivals(entityTypeName, locationName, // Delega al generador de llegadas la programación de eventos de arribo
-                                         firstTime, occurrences, frequency);
+                firstTime, occurrences, frequency);
     }
 
     public void run(double endTime) { // Método principal para ejecutar la simulación completa hasta un tiempo final
@@ -134,14 +134,43 @@ public class SimulationEngine { // Clase principal que coordina todos los compon
         }
     }
 
-    public SimulationClock getClock() { return clock; } // Retorna la referencia al reloj de simulación
-    public EventScheduler getScheduler() { return scheduler; } // Retorna la referencia al planificador de eventos
-    public StatisticsCollector getStatistics() { return statistics; } // Retorna la referencia al recolector de estadísticas
-    public EntityType getEntityType(String name) { return entityTypes.get(name); } // Busca y retorna un tipo de entidad por su nombre
-    public Location getLocation(String name) { return locations.get(name); } // Busca y retorna una ubicación por su nombre
-    public Resource getResource(String name) { return resources.get(name); } // Busca y retorna un recurso por su nombre
-    public ProcessingRule getProcessingRule(String location) { return processingRules.get(location); } // Busca y retorna la regla de procesamiento de una ubicación
-    public Map<String, Location> getAllLocations() { return locations; } // Retorna el mapa completo de todas las ubicaciones
-    public Map<String, EntityType> getAllEntityTypes() { return entityTypes; } // Retorna el mapa completo de todos los tipos de entidades
-    public Map<String, Resource> getAllResources() { return resources; } // Retorna el mapa completo de todos los recursos
+    public SimulationClock getClock() {
+        return clock;
+    } // Retorna la referencia al reloj de simulación
+
+    public EventScheduler getScheduler() {
+        return scheduler;
+    } // Retorna la referencia al planificador de eventos
+
+    public StatisticsCollector getStatistics() {
+        return statistics;
+    } // Retorna la referencia al recolector de estadísticas
+
+    public EntityType getEntityType(String name) {
+        return entityTypes.get(name);
+    } // Busca y retorna un tipo de entidad por su nombre
+
+    public Location getLocation(String name) {
+        return locations.get(name);
+    } // Busca y retorna una ubicación por su nombre
+
+    public Resource getResource(String name) {
+        return resources.get(name);
+    } // Busca y retorna un recurso por su nombre
+
+    public ProcessingRule getProcessingRule(String location) {
+        return processingRules.get(location);
+    } // Busca y retorna la regla de procesamiento de una ubicación
+
+    public Map<String, Location> getAllLocations() {
+        return locations;
+    } // Retorna el mapa completo de todas las ubicaciones
+
+    public Map<String, EntityType> getAllEntityTypes() {
+        return entityTypes;
+    } // Retorna el mapa completo de todos los tipos de entidades
+
+    public Map<String, Resource> getAllResources() {
+        return resources;
+    } // Retorna el mapa completo de todos los recursos
 }

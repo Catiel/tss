@@ -1,12 +1,13 @@
 package com.simulation.statistics; // Declaración del paquete
 
-import com.simulation.entities.EntityStatistics; // Importa EntityStatistics
+import com.simulation.entities.EntityStatistics;
 
-import java.util.ArrayList; // Importa ArrayList para manejo de listas
-import java.util.List; // Importa interfaz List
-import java.util.Map; // Importa interfaz Map
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
-public record EntityReport(Map<String, EntityStatistics> entityStats, double simulationTime) { // Record que contiene estadísticas y tiempo total para generar reportes
+public record EntityReport(Map<String, EntityStatistics> entityStats,
+                           double simulationTime) { // Record que contiene estadísticas y tiempo total para generar reportes
 
     public List<EntityReportRow> generateRows() { // Genera filas de reporte basadas en las estadísticas de entidades
         List<EntityReportRow> rows = new ArrayList<>(); // Lista para filas de reporte
@@ -44,29 +45,12 @@ public record EntityReport(Map<String, EntityStatistics> entityStats, double sim
         }
 
         // Encabezados de las columnas
-        sb.append(String.format("%-25s | %12s | %15s | %20s | %25s | %20s | %25s | %20s\n",
-                "Nombre",
-                "Total Salida",
-                "Cant. Actual",
-                "T. Sistema (Min)",
-                "T. Movimiento (Min)",
-                "T. Espera (Min)",
-                "T. Operación (Min)",
-                "T. Bloqueo (Min)"));
+        sb.append(String.format("%-25s | %12s | %15s | %20s | %25s | %20s | %25s | %20s\n", "Nombre", "Total Salida", "Cant. Actual", "T. Sistema (Min)", "T. Movimiento (Min)", "T. Espera (Min)", "T. Operación (Min)", "T. Bloqueo (Min)"));
         sb.append("-".repeat(200)).append("\n"); // Línea divisoria
 
         // Datos fila por fila
         for (EntityReportRow row : rows) {
-            sb.append(String.format("%-25s | %12d | %15d | %20.2f | %25.2f | %20.2f | %25.2f | %20.2f\n",
-                    row.entityName,
-                    row.totalExits,
-                    row.currentInSystem,
-                    row.avgSystemTime,
-                    row.avgMoveTime,
-                    row.avgWaitTime,
-                    row.avgOperationTime,
-                    row.avgBlockTime
-            ));
+            sb.append(String.format("%-25s | %12d | %15d | %20.2f | %25.2f | %20.2f | %25.2f | %20.2f\n", row.entityName, row.totalExits, row.currentInSystem, row.avgSystemTime, row.avgMoveTime, row.avgWaitTime, row.avgOperationTime, row.avgBlockTime));
         }
 
         return sb.toString(); // Retorna el reporte completo como texto
@@ -74,6 +58,7 @@ public record EntityReport(Map<String, EntityStatistics> entityStats, double sim
 
     public record EntityReportRow(String entityName, int totalExits, int currentInSystem, double avgSystemTime,
                                   double avgMoveTime, double avgWaitTime, double avgOperationTime, double avgBlockTime,
-                                  double minSystemTime, double maxSystemTime) { // Record que representa una fila detallada del reporte
+                                  double minSystemTime,
+                                  double maxSystemTime) { // Record que representa una fila detallada del reporte
     }
 }

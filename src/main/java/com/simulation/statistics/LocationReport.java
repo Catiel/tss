@@ -1,12 +1,13 @@
 package com.simulation.statistics; // Declaración del paquete
 
-import com.simulation.locations.LocationStatistics; // Importa LocationStatistics
+import com.simulation.locations.LocationStatistics;
 
-import java.util.ArrayList; // Importa ArrayList
-import java.util.List; // Importa List
-import java.util.Map; // Importa Map
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
-public record LocationReport(Map<String, LocationStatistics> locationStats, double simulationTime) { // Record que contiene estadísticas y tiempo para reporte
+public record LocationReport(Map<String, LocationStatistics> locationStats,
+                             double simulationTime) { // Record que contiene estadísticas y tiempo para reporte
 
     public List<LocationReportRow> generateRows() { // Genera una lista de filas de reporte a partir de estadísticas
         List<LocationReportRow> rows = new ArrayList<>(); // Lista para filas
@@ -75,6 +76,7 @@ public record LocationReport(Map<String, LocationStatistics> locationStats, doub
 
     public record LocationReportRow(String locationName, double scheduledTimeHours, int capacity, int totalEntries,
                                     double avgTimePerEntry, double avgContents, double maxContents,
-                                    double currentContents, double utilizationPercent) { // Record que representa una fila del reporte de locaciones
+                                    double currentContents,
+                                    double utilizationPercent) { // Record que representa una fila del reporte de locaciones
     }
 }

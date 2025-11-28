@@ -1,6 +1,6 @@
 package com.simulation.routing; // Declaración del paquete
 
-import java.util.*; // Importa utilidades de Java
+import java.util.*;
 
 public class PathNetwork { // Clase que representa una red de caminos/conexiones entre nodos
     private final String networkName; // Nombre de la red
@@ -84,8 +84,8 @@ public class PathNetwork { // Clase que representa una red de caminos/conexiones
 
             for (PathSegment segment : getSegmentsFromNode(currentNode)) { // Segmentar todos los adyacentes
                 PathNode neighbor = segment.getFromNode().equals(currentNode)
-                    ? segment.getToNode() // Si soy el origen, el otro es destino
-                    : segment.getFromNode(); // Si soy destino, el otro es origen
+                        ? segment.getToNode() // Si soy el origen, el otro es destino
+                        : segment.getFromNode(); // Si soy destino, el otro es origen
 
                 double newDistance = distances.get(currentNode) + segment.getDistance(); // Nueva distancia potencial
 
@@ -122,15 +122,36 @@ public class PathNetwork { // Clase que representa una red de caminos/conexiones
         return totalDistance; // Devuelve la distancia total
     }
 
-    public String getNetworkName() { return networkName; } // Devuelve el nombre de la red
+    public String getNetworkName() {
+        return networkName;
+    } // Devuelve el nombre de la red
 
-    public String getNetworkType() { return networkType; } // Devuelve el tipo de la red
+    public String getNetworkType() {
+        return networkType;
+    } // Devuelve el tipo de la red
 
-    public PathNode getHomeNode() { return homeNode; } // Devuelve el nodo base
+    public PathNode getHomeNode() {
+        return homeNode;
+    } // Devuelve el nodo base
 
-    public Map<String, PathNode> getNodes() { return nodes; } // Devuelve el mapa de nodos
+    public Map<String, PathNode> getNodes() {
+        return nodes;
+    } // Devuelve el mapa de nodos
 
-    public List<PathSegment> getSegments() { return segments; } // Devuelve la lista de segmentos
+    public List<PathSegment> getSegments() {
+        return segments;
+    } // Devuelve la lista de segmentos
+
+    @Override
+    public String toString() { // Formatea información de la red como string
+        return "PathNetwork{" +
+                "name='" + networkName + '\'' +
+                ", type='" + networkType + '\'' +
+                ", nodes=" + nodes.size() +
+                ", segments=" + segments.size() +
+                ", home=" + (homeNode != null ? homeNode.getNodeId() : "null") +
+                '}'; // Devuelve texto descriptivo
+    }
 
     // Clase auxiliar para el algoritmo de Dijkstra
     private static class NodeDistancePair implements Comparable<NodeDistancePair> { // Par nodo-distancia, para la cola de prioridad
@@ -146,16 +167,5 @@ public class PathNetwork { // Clase que representa una red de caminos/conexiones
         public int compareTo(NodeDistancePair other) { // Comparación por distancia (para ordenar la cola)
             return Double.compare(this.distance, other.distance); // Compara distancias
         }
-    }
-
-    @Override
-    public String toString() { // Formatea información de la red como string
-        return "PathNetwork{" +
-                "name='" + networkName + '\'' +
-                ", type='" + networkType + '\'' +
-                ", nodes=" + nodes.size() +
-                ", segments=" + segments.size() +
-                ", home=" + (homeNode != null ? homeNode.getNodeId() : "null") +
-                '}'; // Devuelve texto descriptivo
     }
 }

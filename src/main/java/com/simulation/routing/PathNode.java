@@ -1,6 +1,6 @@
 package com.simulation.routing; // Declaración del paquete
 
-import com.simulation.locations.Location; // Importa la clase Location
+import com.simulation.locations.Location;
 
 public class PathNode { // Clase que representa un nodo en la red de caminos
     private final String nodeId; // Identificador único del nodo

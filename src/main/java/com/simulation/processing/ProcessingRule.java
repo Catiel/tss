@@ -1,7 +1,7 @@
 package com.simulation.processing; // Declaración del paquete donde se encuentra esta clase
 
-import com.simulation.core.SimulationEngine; // Importa el motor de simulación
-import com.simulation.entities.Entity; // Importa la clase Entity
+import com.simulation.core.SimulationEngine;
+import com.simulation.entities.Entity;
 
 public abstract class ProcessingRule { // Clase abstracta que define la regla base para procesamiento de entidades
     protected final String locationName; // Nombre de la ubicación donde aplica esta regla (inmutable, accesible a subclases)

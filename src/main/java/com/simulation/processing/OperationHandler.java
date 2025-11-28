@@ -1,23 +1,22 @@
 package com.simulation.processing; // Declaración del paquete
 
-import com.simulation.core.Event; // Importa Event
-import com.simulation.core.SimulationEngine; // Importa SimulationEngine
-import com.simulation.entities.Entity; // Importa Entity
-import com.simulation.entities.EntityType; // Importa EntityType
-import com.simulation.gui.AnimationController; // Importa AnimationController
-import com.simulation.locations.Location; // Importa Location
-import com.simulation.resources.Resource; // Importa Resource
+import com.simulation.core.Event;
+import com.simulation.core.SimulationEngine;
+import com.simulation.entities.Entity;
+import com.simulation.entities.EntityType;
+import com.simulation.gui.AnimationController;
+import com.simulation.locations.Location;
+import com.simulation.resources.Resource;
 
-import java.util.*; // Importa utilidades de Java
+import java.util.*;
 
 public class OperationHandler { // Clase que maneja operaciones de la simulación
     private final SimulationEngine engine; // Motor de simulación
     private final Random random; // Generador de números aleatorios
-    private AnimationController animationController; // Controlador de animación
-
     // Colas para JOIN operations
     private final Map<String, Queue<Entity>> joinQueues; // Mapa de colas para operaciones JOIN
     private final Map<String, Integer> joinRequirements; // Mapa de requisitos numéricos para JOIN
+    private AnimationController animationController; // Controlador de animación
 
     public OperationHandler(SimulationEngine engine) { // Constructor del manejador de operaciones
         this.engine = engine; // Asigna el motor
@@ -58,8 +57,8 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
      * Maneja la lógica ACCUM - acumula entidades hasta alcanzar cantidad requerida
      */
     private void handleAccumulate(Entity entity, String fromLocation, String destination, // Maneja acumulación de
-                                                                                          // entidades
-            int quantity, String resourceName) {
+                                  // entidades
+                                  int quantity, String resourceName) {
         String accumKey = fromLocation + "_ACCUM"; // Crea clave para la cola de acumulación
         Queue<Entity> accumQueue = joinQueues.get(accumKey); // Obtiene la cola de acumulación
 
@@ -106,9 +105,9 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
         boolean isSecondaryJoinEntity = // Determina si es entidad secundaria en JOIN
                 (locationName.equals("COCCION") && entityType.equals("LUPULO")) || // Lúpulo es secundario
                         (locationName.equals("FERMENTACION") && entityType.equals("LEVADURA")) || // Levadura es
-                                                                                                  // secundaria
+                        // secundaria
                         (locationName.equals("EMPACADO") && entityType.equals("BOTELLA_CON_CERVEZA")); // Botella es
-                                                                                                       // secundaria
+        // secundaria
 
         if (!isSecondaryJoinEntity) { // Si NO es secundaria
             engine.getStatistics().recordLocationEntry(locationName); // Registra entrada a ubicación
@@ -141,7 +140,7 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
             if (processingTime > 0) { // Si hay tiempo de procesamiento
                 entity.addValueAddedTime(processingTime); // Agrega tiempo con valor
                 engine.getStatistics().recordLocationProcessingTime(locationName, processingTime); // Registra tiempo en
-                                                                                                   // estadísticas
+                // estadísticas
             }
         }
     }
@@ -186,7 +185,7 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
             return true; // Es JOIN
         }
         return locationName.equals("EMPACADO") && entityType.equals("BOTELLA_CON_CERVEZA"); // Botella en EMPACADO es
-                                                                                            // JOIN
+        // JOIN
     }
 
     private void handleJoinLogic(Entity entity, String locationName) { // Maneja la lógica de operaciones JOIN
@@ -326,7 +325,7 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
                 @Override // Sobrescribe execute
                 public void execute() { // Método que se ejecuta
                     moveWithResource(finalCajaLlena, "ALMACENAJE", "OPERADOR_EMPACADO"); // Mueve a ALMACENAJE con
-                                                                                         // operador
+                    // operador
                 }
             };
             engine.getScheduler().scheduleEvent(packingEvent); // Programa el evento
@@ -361,7 +360,7 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
                     if ("ACCUM".equals(route.moveLogic()) && quantity > 1) { // Si es ACCUM
                         // ACCUM: acumular entidades antes de mover en batch
                         handleAccumulate(entity, fromLocation, destination, quantity, route.resourceName()); // Acumula
-                                                                                                             // entidades
+                        // entidades
                     } else if (quantity > 1) { // Si genera múltiples entidades
                         // FIRST 6: NO registrar exit (es transformación interna), SÍ registrar entries
                         double currentTime = engine.getClock().getCurrentTime(); // Obtiene tiempo actual
@@ -371,11 +370,11 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
                         // Crear 6 entidades nuevas transformadas
                         for (int i = 0; i < quantity; i++) { // Itera por cantidad
                             Entity newEntity = createTransformedEntity(entity, destination); // Crea entidad
-                                                                                             // transformada
+                            // transformada
                             engine.getStatistics().recordEntityEntry(newEntity); // Registra entrada
 
                             if (route.resourceName() != null && !route.resourceName().isEmpty()) { // Si requiere
-                                                                                                   // recurso
+                                // recurso
                                 moveWithResource(newEntity, destination, route.resourceName()); // Mueve con recurso
                             } else { // Si no requiere recurso
                                 Location from = engine.getLocation(fromLocation);
@@ -423,7 +422,7 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
     }
 
     private void moveWithResource(Entity entity, String destination, String resourceName) { // Mueve entidad usando
-                                                                                            // recurso
+        // recurso
         Resource resource = engine.getResource(resourceName); // Obtiene el recurso
         double currentTime = engine.getClock().getCurrentTime(); // Obtiene tiempo actual
 
@@ -507,7 +506,7 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
     }
 
     private RoutingRule createRoutingRuleForLocation(String locationName, String entityType) { // Define reglas de
-                                                                                               // enrutamiento
+        // enrutamiento
         switch (locationName) { // Evalúa ubicación origen
             case "SILO_GRANDE": // Desde SILO_GRANDE
                 return new RoutingRule("MALTEADO", 1.0, 1, "FIRST", null); // Va a MALTEADO
@@ -527,7 +526,7 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
                 return new RoutingRule("FERMENTACION", 1.0, 1, "FIRST", null); // Va a FERMENTACION
             case "SILO_LEVADURA": // Desde SILO_LEVADURA
                 return new RoutingRule("FERMENTACION", 1.0, 1, "JOIN", "OPERADOR_LEVADURA"); // Va a FERMENTACION para
-                                                                                             // JOIN
+            // JOIN
             case "MADURACION": // Desde MADURACION
                 return new RoutingRule("INSPECCION", 1.0, 1, "FIRST", null); // Va a INSPECCION
             case "INSPECCION": // Desde INSPECCION
@@ -558,9 +557,9 @@ public class OperationHandler { // Clase que maneja operaciones de la simulació
                 // Actualizar el nodo visual de la locación
                 if (animationController.getLocationNodes().containsKey(locationName)) { // Si existe nodo visual
                     animationController.getLocationNodes().get(locationName).setOccupancy(occupancy); // Actualiza
-                                                                                                      // ocupación
+                    // ocupación
                     animationController.getLocationNodes().get(locationName).setCapacity(capacity); // Actualiza
-                                                                                                    // capacidad
+                    // capacidad
                 }
             }
         }

@@ -8,7 +8,7 @@ public class PathSegment { // Clase que representa un segmento o arco de la red 
     private final double speedFactor; // Factor multiplicativo para la velocidad en este segmento
 
     public PathSegment(PathNode fromNode, PathNode toNode, double distance,
-                      boolean bidirectional, double speedFactor) { // Constructor completo
+                       boolean bidirectional, double speedFactor) { // Constructor completo
         this.fromNode = fromNode; // Asigna nodo de inicio
         this.toNode = toNode; // Asigna nodo de fin
         this.distance = distance; // Asigna distancia

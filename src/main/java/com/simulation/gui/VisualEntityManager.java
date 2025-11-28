@@ -1,5 +1,6 @@
 package com.simulation.gui;
 
+import javafx.geometry.Point2D;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
@@ -8,12 +9,7 @@ import javafx.scene.paint.Stop;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
-import javafx.geometry.Point2D;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.LinkedList;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -22,11 +18,12 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class VisualEntityManager {
 
-    private final ConcurrentLinkedQueue<AnimatedEntity> entities = new ConcurrentLinkedQueue<>();
-    private final Map<Integer, ResourceTransport> transportsInProgress = new ConcurrentHashMap<>();
-
     private static final double ENTITY_SIZE = 16; // Más grande para mejor visibilidad
     private static final double ANIMATION_SPEED = 4.0; // Más rápido para mejor fluidez
+    private final ConcurrentLinkedQueue<AnimatedEntity> entities = new ConcurrentLinkedQueue<>();
+    private final Map<Integer, ResourceTransport> transportsInProgress = new ConcurrentHashMap<>();
+    // Cache de imágenes
+    private final Map<String, javafx.scene.image.Image> imageCache = new ConcurrentHashMap<>();
 
     public void addEntity(String type, double startX, double startY, double endX, double endY) {
         entities.add(new AnimatedEntity(type, startX, startY, endX, endY));
@@ -36,7 +33,7 @@ public class VisualEntityManager {
      * Iniciar transporte de entidad CON recurso usando una ruta compleja
      */
     public void startResourceTransport(int entityId, String entityType, String resourceName,
-            List<Point2D> path) {
+                                       List<Point2D> path) {
         ResourceTransport transport = new ResourceTransport(
                 entityId, entityType, resourceName, path);
         transportsInProgress.put(entityId, transport);
@@ -109,9 +106,6 @@ public class VisualEntityManager {
         }
     }
 
-    // Cache de imágenes
-    private final Map<String, javafx.scene.image.Image> imageCache = new ConcurrentHashMap<>();
-
     private void renderEntity(GraphicsContext gc, String type, double x, double y, double dx, double dy) {
         // Intentar cargar imagen
         javafx.scene.image.Image img = getImageForType(type);
@@ -162,7 +156,7 @@ public class VisualEntityManager {
     }
 
     private void renderShape(GraphicsContext gc, String type, double x, double y, double dx, double dy,
-            boolean isMoving) {
+                             boolean isMoving) {
         // Obtener color e icono según tipo de entidad
         Color color = getEntityColor(type);
         String icon = getEntityIcon(type);

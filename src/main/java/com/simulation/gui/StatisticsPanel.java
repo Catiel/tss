@@ -47,8 +47,8 @@ public class StatisticsPanel {
         entitiesPane.setExpanded(true);
 
         String[] entities = {
-            "GRANOS_DE_CEBADA", "LUPULO", "LEVADURA", "MOSTO",
-            "CERVEZA", "BOTELLA_CON_CERVEZA", "CAJA_VACIA", "CAJA_CON_CERVEZAS"
+                "GRANOS_DE_CEBADA", "LUPULO", "LEVADURA", "MOSTO",
+                "CERVEZA", "BOTELLA_CON_CERVEZA", "CAJA_VACIA", "CAJA_CON_CERVEZAS"
         };
 
         for (String entity : entities) {
@@ -63,11 +63,11 @@ public class StatisticsPanel {
         locationsBox.setPadding(new Insets(5));
 
         String[] locations = {
-            "SILO_GRANDE", "MALTEADO", "SECADO", "MOLIENDA", "MACERADO",
-            "FILTRADO", "COCCION", "SILO_LUPULO", "SILO_LEVADURA",
-            "ENFRIAMIENTO", "FERMENTACION", "MADURACION", "INSPECCION",
-            "EMBOTELLADO", "ETIQUETADO", "EMPACADO", "ALMACEN_CAJAS",
-            "ALMACENAJE", "MERCADO"
+                "SILO_GRANDE", "MALTEADO", "SECADO", "MOLIENDA", "MACERADO",
+                "FILTRADO", "COCCION", "SILO_LUPULO", "SILO_LEVADURA",
+                "ENFRIAMIENTO", "FERMENTACION", "MADURACION", "INSPECCION",
+                "EMBOTELLADO", "ETIQUETADO", "EMPACADO", "ALMACEN_CAJAS",
+                "ALMACENAJE", "MERCADO"
         };
 
         for (String location : locations) {

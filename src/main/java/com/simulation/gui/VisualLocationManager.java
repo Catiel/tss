@@ -16,8 +16,9 @@ import java.util.Map;
  */
 public class VisualLocationManager {
 
-    private final Map<String, javafx.geometry.Point2D> positions;
     private static final double LOCATION_SIZE = 80;
+    private final Map<String, javafx.geometry.Point2D> positions;
+    private final Map<String, Integer> totalEntries = new java.util.concurrent.ConcurrentHashMap<>();
 
     public VisualLocationManager(Map<String, javafx.geometry.Point2D> positions) {
         this.positions = positions;
@@ -34,8 +35,6 @@ public class VisualLocationManager {
             }
         }
     }
-
-    private final Map<String, Integer> totalEntries = new java.util.concurrent.ConcurrentHashMap<>();
 
     public void setTotalEntries(String locationName, int count) {
         totalEntries.put(locationName, count);
@@ -277,7 +276,7 @@ public class VisualLocationManager {
      * Renderizar círculos individuales para pocas entidades (1-10)
      */
     private void renderAccumulatedEntitiesCircles(GraphicsContext gc, javafx.geometry.Point2D pos,
-            int occupancy, double utilization) {
+                                                  int occupancy, double utilization) {
         double dotSize = 10;
         double spacing = 4;
         int maxPerRow = 3;
@@ -331,7 +330,7 @@ public class VisualLocationManager {
      * Renderizar número grande para muchas entidades (>10)
      */
     private void renderAccumulatedEntitiesCount(GraphicsContext gc, javafx.geometry.Point2D pos,
-            int occupancy) {
+                                                int occupancy) {
         double centerX = pos.getX() + LOCATION_SIZE / 2;
         double centerY = pos.getY() + LOCATION_SIZE / 2;
 

@@ -100,8 +100,8 @@ public class ControlPanel {
 
         // Información
         Label infoLabel = new Label("Controles: Iniciar para comenzar la simulación | " +
-                                   "Pausar/Reanudar para controlar | " +
-                                   "Velocidad para ajustar rapidez");
+                "Pausar/Reanudar para controlar | " +
+                "Velocidad para ajustar rapidez");
         infoLabel.setWrapText(true);
         infoLabel.setStyle("-fx-font-size: 10; -fx-text-fill: #666;");
 

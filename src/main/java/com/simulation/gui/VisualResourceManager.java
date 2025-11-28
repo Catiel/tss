@@ -17,10 +17,10 @@ import java.util.Map;
  */
 public class VisualResourceManager {
 
+    private static final double RESOURCE_SIZE = 30;
     private final SimulationEngine engine;
     private final Map<String, ResourcePosition> resourcePositions = new HashMap<>();
     private final PathNetworkManager pathManager;
-    private static final double RESOURCE_SIZE = 30;
 
     public VisualResourceManager(SimulationEngine engine) {
         this.engine = engine;

@@ -45,14 +45,43 @@ public class LocationStatistics { // Clase que recopila y calcula estadísticas 
         }
     }
 
-    public String getLocationName() { return locationName; } // Retorna el nombre de la ubicación
-    public double getScheduledTime() { return scheduledTime; } // Retorna el tiempo programado total de la simulación
-    public int getCapacity() { return capacity; } // Retorna la capacidad de la ubicación
-    public int getTotalEntries() { return totalEntries; } // Retorna el número total de entradas
-    public double getAverageTimePerEntry() { return averageTimePerEntry; } // Retorna el tiempo promedio por entrada
-    public double getAverageContents() { return averageContents; } // Retorna el contenido promedio de entidades
-    public double getMaxContents() { return maxContents; } // Retorna el contenido máximo (capacidad)
-    public double getCurrentContents() { return currentContents; } // Retorna el contenido actual de entidades
-    public double getUtilizationPercent() { return utilizationPercent; } // Retorna el porcentaje de utilización principal
-    public double getBusyUtilizationPercent() { return busyUtilizationPercent; } // Retorna el porcentaje de utilización basado en tiempo ocupado
+    public String getLocationName() {
+        return locationName;
+    } // Retorna el nombre de la ubicación
+
+    public double getScheduledTime() {
+        return scheduledTime;
+    } // Retorna el tiempo programado total de la simulación
+
+    public int getCapacity() {
+        return capacity;
+    } // Retorna la capacidad de la ubicación
+
+    public int getTotalEntries() {
+        return totalEntries;
+    } // Retorna el número total de entradas
+
+    public double getAverageTimePerEntry() {
+        return averageTimePerEntry;
+    } // Retorna el tiempo promedio por entrada
+
+    public double getAverageContents() {
+        return averageContents;
+    } // Retorna el contenido promedio de entidades
+
+    public double getMaxContents() {
+        return maxContents;
+    } // Retorna el contenido máximo (capacidad)
+
+    public double getCurrentContents() {
+        return currentContents;
+    } // Retorna el contenido actual de entidades
+
+    public double getUtilizationPercent() {
+        return utilizationPercent;
+    } // Retorna el porcentaje de utilización principal
+
+    public double getBusyUtilizationPercent() {
+        return busyUtilizationPercent;
+    } // Retorna el porcentaje de utilización basado en tiempo ocupado
 }

@@ -7,9 +7,9 @@ import javafx.scene.paint.Color;
 public class EntitySprite {
 
     private final Entity entity;
-    private double x, y;
     private final double size = 8;
     private final Color color;
+    private double x, y;
 
     public EntitySprite(Entity entity, double x, double y) {
         this.entity = entity;
@@ -20,15 +20,24 @@ public class EntitySprite {
 
     private Color getColorForEntityType(String type) {
         switch (type) {
-            case "GRANOS_DE_CEBADA": return Color.WHEAT;
-            case "LUPULO": return Color.DARKGREEN;
-            case "LEVADURA": return Color.YELLOW;
-            case "MOSTO": return Color.BROWN;
-            case "CERVEZA": return Color.GOLDENROD;
-            case "BOTELLA_CON_CERVEZA": return Color.DARKGOLDENROD;
-            case "CAJA_VACIA": return Color.BURLYWOOD;
-            case "CAJA_CON_CERVEZAS": return Color.DARKORANGE;
-            default: return Color.GRAY;
+            case "GRANOS_DE_CEBADA":
+                return Color.WHEAT;
+            case "LUPULO":
+                return Color.DARKGREEN;
+            case "LEVADURA":
+                return Color.YELLOW;
+            case "MOSTO":
+                return Color.BROWN;
+            case "CERVEZA":
+                return Color.GOLDENROD;
+            case "BOTELLA_CON_CERVEZA":
+                return Color.DARKGOLDENROD;
+            case "CAJA_VACIA":
+                return Color.BURLYWOOD;
+            case "CAJA_CON_CERVEZAS":
+                return Color.DARKORANGE;
+            default:
+                return Color.GRAY;
         }
     }
 
@@ -47,8 +56,16 @@ public class EntitySprite {
         this.y = y;
     }
 
-    public double getX() { return x; }
-    public double getY() { return y; }
-    public Entity getEntity() { return entity; }
+    public double getX() {
+        return x;
+    }
+
+    public double getY() {
+        return y;
+    }
+
+    public Entity getEntity() {
+        return entity;
+    }
 }
 

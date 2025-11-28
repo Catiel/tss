@@ -1,7 +1,11 @@
 package com.simulation.gui;
 
 import javafx.geometry.Point2D;
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Gestor de Redes de Ruta (Path Networks) basado en el modelo ProModel.
@@ -129,7 +133,7 @@ public class PathNetworkManager {
         // no debería pasar si todo está bien configurado)
         // Ojo: Para movimientos sin recurso, esto se llamará con resourceName=null
         return path; // Retorna vacío, el caller deberá manejarlo (usando coordenadas directas de
-                     // locaciones)
+        // locaciones)
     }
 
     /**

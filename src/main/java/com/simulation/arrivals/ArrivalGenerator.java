@@ -1,10 +1,10 @@
 package com.simulation.arrivals; // Declaración del paquete donde se encuentra esta clase
 
-import com.simulation.core.Event; // Importación de la clase Event del núcleo de la simulación
-import com.simulation.core.SimulationEngine; // Importación del motor principal de simulación
-import com.simulation.entities.Entity; // Importación de la clase Entity que representa entidades en la simulación
-import com.simulation.entities.EntityType; // Importación de la clase EntityType que define tipos de entidades
-import com.simulation.processing.OperationHandler; // Importación del manejador de operaciones para procesar llegadas
+import com.simulation.core.Event;
+import com.simulation.core.SimulationEngine;
+import com.simulation.entities.Entity;
+import com.simulation.entities.EntityType;
+import com.simulation.processing.OperationHandler;
 
 public class ArrivalGenerator { // Clase encargada de generar llegadas de entidades en la simulación
     private final SimulationEngine engine; // Referencia al motor de simulación
@@ -16,7 +16,7 @@ public class ArrivalGenerator { // Clase encargada de generar llegadas de entida
     }
 
     public void scheduleArrivals(String entityTypeName, String locationName, // Método que programa múltiples llegadas de entidades
-                                double firstTime, int occurrences, double frequency) {
+                                 double firstTime, int occurrences, double frequency) {
         EntityType entityType = engine.getEntityType(entityTypeName); // Obtiene el tipo de entidad desde el motor usando su nombre
 
         if (entityType == null) { // Verifica si el tipo de entidad existe
@@ -28,7 +28,7 @@ public class ArrivalGenerator { // Clase encargada de generar llegadas de entida
             double arrivalTime = firstTime + (i * frequency); // Calcula el tiempo de llegada: tiempo inicial más frecuencia multiplicada por índice
 
             Event arrivalEvent = new Event(arrivalTime, 0, // Crea un nuevo evento de llegada con tiempo, prioridad y descripción
-                "Arrival of " + entityTypeName + " at " + locationName) {
+                    "Arrival of " + entityTypeName + " at " + locationName) {
                 @Override // Define el método que se ejecutará cuando ocurra este evento
                 public void execute() {
                     Entity entity = new Entity(entityType); // Crea una nueva instancia de la entidad del tipo especificado

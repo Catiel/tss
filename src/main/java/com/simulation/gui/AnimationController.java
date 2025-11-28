@@ -15,14 +15,12 @@ public class AnimationController {
 
     private final Canvas canvas;
     private final GraphicsContext gc;
-    private SimulationEngine engine;
-    private AnimationTimer timer;
-
     private final Map<String, LocationNode> locationNodes;
     private final Map<Integer, EntitySprite> entitySprites;
     private final Map<String, ResourceSprite> resourceSprites;
     private final List<PathAnimator> activeAnimations;
-
+    private SimulationEngine engine;
+    private AnimationTimer timer;
     private double simulationSpeed = 1.0;
     private boolean isRunning = false;
     private boolean isPaused = false;
@@ -185,22 +183,22 @@ public class AnimationController {
 
         if (fromNode != null && toNode != null) {
             gc.strokeLine(
-                fromNode.getCenterX(), fromNode.getCenterY(),
-                toNode.getCenterX(), toNode.getCenterY()
+                    fromNode.getCenterX(), fromNode.getCenterY(),
+                    toNode.getCenterX(), toNode.getCenterY()
             );
         }
     }
 
     public void animateEntityMovement(Entity entity, String fromLocation, String toLocation,
-                                     String resourceName, Runnable onComplete) {
+                                      String resourceName, Runnable onComplete) {
         LocationNode from = locationNodes.get(fromLocation);
         LocationNode to = locationNodes.get(toLocation);
 
         if (from == null || to == null) return;
 
         EntitySprite sprite = entitySprites.computeIfAbsent(
-            entity.getId(),
-            id -> new EntitySprite(entity, from.getCenterX(), from.getCenterY())
+                entity.getId(),
+                id -> new EntitySprite(entity, from.getCenterX(), from.getCenterY())
         );
 
         PathAnimator animator;

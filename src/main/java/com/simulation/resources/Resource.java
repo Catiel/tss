@@ -1,14 +1,14 @@
 package com.simulation.resources; // Declaración del paquete
 
-import com.simulation.entities.Entity; // Importa la clase Entity
+import com.simulation.entities.Entity;
 
-import java.util.LinkedList; // Importa LinkedList para la cola de espera
-import java.util.Queue; // Importa la interfaz Queue
+import java.util.LinkedList;
+import java.util.Queue;
 
 public class Resource { // Clase que representa un recurso compartido en la simulación
     private final ResourceType type; // Tipo del recurso (definición de propiedades del recurso)
-    private int availableUnits; // Unidades disponibles actualmente del recurso
     private final Queue<Entity> waitingQueue; // Cola de entidades esperando para adquirir el recurso
+    private int availableUnits; // Unidades disponibles actualmente del recurso
     private double totalBusyTime; // Tiempo total acumulado en el que el recurso estuvo ocupado
     private double lastUpdateTime; // Último tiempo en que se registró el estado del recurso
 

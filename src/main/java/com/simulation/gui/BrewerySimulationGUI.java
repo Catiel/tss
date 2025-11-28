@@ -9,8 +9,8 @@ import com.simulation.resources.Resource;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.geometry.Point2D;
 import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
@@ -31,10 +31,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class BrewerySimulationGUI extends Application implements SimulationListener {
 
+    private final AtomicBoolean running = new AtomicBoolean(false);
+    private final AtomicBoolean paused = new AtomicBoolean(false);
+    private final double endTime = 4200.0; // 70 horas
+    // Mapa de posiciones de locaciones
+    private final Map<String, Point2D> locationPositions = new HashMap<>();
     private SimulationEngine engine;
     private Canvas canvas;
     private GraphicsContext gc;
-
     // Controles
     private Button startButton, pauseButton, resetButton, configButton, stopButton;
     private Slider speedSlider;
@@ -44,24 +48,15 @@ public class BrewerySimulationGUI extends Application implements SimulationListe
     private TableView<EntityStatsRow> entityStatsTable;
     private BarChart<String, Number> locationExitsChart;
     private Stage primaryStage;
-
     // Animación
     private AnimationTimer animationTimer;
     private Thread simulationThread;
-    private final AtomicBoolean running = new AtomicBoolean(false);
-    private final AtomicBoolean paused = new AtomicBoolean(false);
     private double simulationSpeed = 1.0;
     private double currentTime = 0;
-    private final double endTime = 4200.0; // 70 horas
-
     // Sistema de visualización
     private VisualLocationManager locationManager;
     private VisualEntityManager entityManager;
     private VisualResourceManager resourceManager;
-
-    // Mapa de posiciones de locaciones
-    private final Map<String, Point2D> locationPositions = new HashMap<>();
-
     // Gestor de rutas
     private PathNetworkManager pathManager;
 
@@ -91,6 +86,10 @@ public class BrewerySimulationGUI extends Application implements SimulationListe
     private double speedOperadorLevadura = 100.0;
     private double speedOperadorEmpacado = 100.0;
     private double speedCamion = 100.0;
+
+    public static void main(String[] args) {
+        launch(args);
+    }
 
     @Override
     public void start(Stage primaryStage) {
@@ -161,7 +160,7 @@ public class BrewerySimulationGUI extends Application implements SimulationListe
 
         stopButton = new Button("⏹ Detener");
         stopButton.setStyle(
-            "-fx-background-color: #E74C3C; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20;");
+                "-fx-background-color: #E74C3C; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20;");
         stopButton.setDisable(true);
         stopButton.setOnAction(e -> stopSimulation());
 
@@ -932,6 +931,9 @@ public class BrewerySimulationGUI extends Application implements SimulationListe
         return table;
     }
 
+    // Implementación de SimulationListener - eventos sincronizados con la
+    // simulación real
+
     private TableView<EntityStatsRow> createEntityStatsTable() {
         TableView<EntityStatsRow> table = new TableView<>();
         table.setStyle("-fx-background-color: #2C3E50;");
@@ -977,9 +979,6 @@ public class BrewerySimulationGUI extends Application implements SimulationListe
                 avgNonValueCol, avgWaitCol, avgValueCol);
         return table;
     }
-
-    // Implementación de SimulationListener - eventos sincronizados con la
-    // simulación real
 
     @Override
     public void onEntityCreated(Entity entity, Location location, double time) {
@@ -1265,41 +1264,6 @@ public class BrewerySimulationGUI extends Application implements SimulationListe
                 arrivalFreqCajas);
     }
 
-    // Clase interna para reglas
-    private static class SimpleProcessingRule extends ProcessingRule {
-        public SimpleProcessingRule(String locationName, String entityTypeName, double processingTime) {
-            super(locationName, entityTypeName, processingTime);
-        }
-
-        @Override
-        public void process(Entity entity, SimulationEngine engine) {
-            entity.addValueAddedTime(processingTime);
-        }
-    }
-
-    // Clases de datos para tablas
-    static class LocationStatsRow {
-        javafx.beans.property.SimpleStringProperty name = new javafx.beans.property.SimpleStringProperty();
-        javafx.beans.property.SimpleStringProperty scheduledTime = new javafx.beans.property.SimpleStringProperty();
-        javafx.beans.property.SimpleIntegerProperty capacity = new javafx.beans.property.SimpleIntegerProperty();
-        javafx.beans.property.SimpleIntegerProperty totalEntries = new javafx.beans.property.SimpleIntegerProperty();
-        javafx.beans.property.SimpleStringProperty avgTimePerEntry = new javafx.beans.property.SimpleStringProperty();
-        javafx.beans.property.SimpleStringProperty avgContents = new javafx.beans.property.SimpleStringProperty();
-        javafx.beans.property.SimpleStringProperty maxContents = new javafx.beans.property.SimpleStringProperty();
-        javafx.beans.property.SimpleIntegerProperty currentContents = new javafx.beans.property.SimpleIntegerProperty();
-        javafx.beans.property.SimpleStringProperty utilization = new javafx.beans.property.SimpleStringProperty();
-    }
-
-    static class EntityStatsRow {
-        javafx.beans.property.SimpleStringProperty name = new javafx.beans.property.SimpleStringProperty();
-        javafx.beans.property.SimpleIntegerProperty exits = new javafx.beans.property.SimpleIntegerProperty();
-        javafx.beans.property.SimpleIntegerProperty inSystem = new javafx.beans.property.SimpleIntegerProperty();
-        javafx.beans.property.SimpleStringProperty avgSystemTime = new javafx.beans.property.SimpleStringProperty();
-        javafx.beans.property.SimpleStringProperty avgNonValueTime = new javafx.beans.property.SimpleStringProperty();
-        javafx.beans.property.SimpleStringProperty avgWaitTime = new javafx.beans.property.SimpleStringProperty();
-        javafx.beans.property.SimpleStringProperty avgValueTime = new javafx.beans.property.SimpleStringProperty();
-    }
-
     private void openConfigurationDialog() {
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("⚙ Configuración Completa de Simulación");
@@ -1501,7 +1465,38 @@ public class BrewerySimulationGUI extends Application implements SimulationListe
         });
     }
 
-    public static void main(String[] args) {
-        launch(args);
+    // Clase interna para reglas
+    private static class SimpleProcessingRule extends ProcessingRule {
+        public SimpleProcessingRule(String locationName, String entityTypeName, double processingTime) {
+            super(locationName, entityTypeName, processingTime);
+        }
+
+        @Override
+        public void process(Entity entity, SimulationEngine engine) {
+            entity.addValueAddedTime(processingTime);
+        }
+    }
+
+    // Clases de datos para tablas
+    static class LocationStatsRow {
+        javafx.beans.property.SimpleStringProperty name = new javafx.beans.property.SimpleStringProperty();
+        javafx.beans.property.SimpleStringProperty scheduledTime = new javafx.beans.property.SimpleStringProperty();
+        javafx.beans.property.SimpleIntegerProperty capacity = new javafx.beans.property.SimpleIntegerProperty();
+        javafx.beans.property.SimpleIntegerProperty totalEntries = new javafx.beans.property.SimpleIntegerProperty();
+        javafx.beans.property.SimpleStringProperty avgTimePerEntry = new javafx.beans.property.SimpleStringProperty();
+        javafx.beans.property.SimpleStringProperty avgContents = new javafx.beans.property.SimpleStringProperty();
+        javafx.beans.property.SimpleStringProperty maxContents = new javafx.beans.property.SimpleStringProperty();
+        javafx.beans.property.SimpleIntegerProperty currentContents = new javafx.beans.property.SimpleIntegerProperty();
+        javafx.beans.property.SimpleStringProperty utilization = new javafx.beans.property.SimpleStringProperty();
+    }
+
+    static class EntityStatsRow {
+        javafx.beans.property.SimpleStringProperty name = new javafx.beans.property.SimpleStringProperty();
+        javafx.beans.property.SimpleIntegerProperty exits = new javafx.beans.property.SimpleIntegerProperty();
+        javafx.beans.property.SimpleIntegerProperty inSystem = new javafx.beans.property.SimpleIntegerProperty();
+        javafx.beans.property.SimpleStringProperty avgSystemTime = new javafx.beans.property.SimpleStringProperty();
+        javafx.beans.property.SimpleStringProperty avgNonValueTime = new javafx.beans.property.SimpleStringProperty();
+        javafx.beans.property.SimpleStringProperty avgWaitTime = new javafx.beans.property.SimpleStringProperty();
+        javafx.beans.property.SimpleStringProperty avgValueTime = new javafx.beans.property.SimpleStringProperty();
     }
 }

@@ -1,6 +1,6 @@
 package com.simulation.core; // Declaración del paquete donde se encuentra esta clase
 
-import java.util.PriorityQueue; // Importa la clase PriorityQueue para mantener eventos ordenados por prioridad
+import java.util.PriorityQueue;
 
 public class EventScheduler { // Clase que administra el calendario de eventos de la simulación
     private final PriorityQueue<Event> eventList; // Cola de prioridad que mantiene los eventos ordenados por tiempo y prioridad

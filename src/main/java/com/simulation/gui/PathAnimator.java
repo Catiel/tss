@@ -8,25 +8,23 @@ public class PathAnimator {
     private final LocationNode to;
     private final double duration;
     private final Runnable onComplete;
-
-    private double elapsed = 0;
-    private boolean finished = false;
     private final boolean withResource;
-
     // Posiciones iniciales y finales
     private final double startX;
     private final double startY;
     private final double endX;
     private final double endY;
+    private double elapsed = 0;
+    private boolean finished = false;
 
     public PathAnimator(EntitySprite entity, LocationNode from, LocationNode to,
-                       double duration, Runnable onComplete) {
+                        double duration, Runnable onComplete) {
         this(entity, null, from, to, duration, onComplete);
     }
 
     public PathAnimator(EntitySprite entity, ResourceSprite resource,
-                       LocationNode from, LocationNode to,
-                       double duration, Runnable onComplete) {
+                        LocationNode from, LocationNode to,
+                        double duration, Runnable onComplete) {
         this.entity = entity;
         this.resource = resource;
         this.from = from;

@@ -7,11 +7,11 @@ import javafx.scene.text.Font;
 public class ResourceSprite {
 
     private final String name;
-    private double x, y;
     private final double homeX;
     private final double homeY;
     private final double size = 15;
     private final Color color;
+    private double x, y;
     private boolean isMoving = false;
 
     public ResourceSprite(String name, double x, double y, Color color) {
@@ -49,10 +49,24 @@ public class ResourceSprite {
         this.isMoving = false;
     }
 
-    public double getX() { return x; }
-    public double getY() { return y; }
-    public String getName() { return name; }
-    public void setMoving(boolean moving) { isMoving = moving; }
-    public boolean isMoving() { return isMoving; }
+    public double getX() {
+        return x;
+    }
+
+    public double getY() {
+        return y;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public boolean isMoving() {
+        return isMoving;
+    }
+
+    public void setMoving(boolean moving) {
+        isMoving = moving;
+    }
 }
 

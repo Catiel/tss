@@ -14,6 +14,10 @@ public class SimulationGUI extends Application {
     private ControlPanel controlPanel;
     private StatisticsPanel statisticsPanel;
 
+    public static void main(String[] args) {
+        launch(args);
+    }
+
     @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Simulación de Producción de Cerveza - ProModel Java");
@@ -44,10 +48,6 @@ public class SimulationGUI extends Application {
             Platform.exit();
             System.exit(0);
         });
-    }
-
-    public static void main(String[] args) {
-        launch(args);
     }
 }
 

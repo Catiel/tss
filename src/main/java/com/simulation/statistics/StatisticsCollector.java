@@ -1,12 +1,12 @@
 package com.simulation.statistics; // Declaración del paquete
 
-import com.simulation.entities.Entity; // Importa la clase Entity
-import com.simulation.entities.EntityStatistics; // Importa estadísticas de entidades
-import com.simulation.locations.Location; // Importa la clase Location
-import com.simulation.locations.LocationStatistics; // Importa estadísticas de locaciones
+import com.simulation.entities.Entity;
+import com.simulation.entities.EntityStatistics;
+import com.simulation.locations.Location;
+import com.simulation.locations.LocationStatistics;
 
-import java.util.HashMap; // Importa HashMap para mapas
-import java.util.Map; // Importa Map
+import java.util.HashMap;
+import java.util.Map;
 
 public class StatisticsCollector { // Clase que recolecta y administra estadísticas de la simulación
     private final Map<String, EntityStatistics> entityStats; // Mapa de estadísticas por tipo de entidad

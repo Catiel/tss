@@ -1,9 +1,9 @@
 package com.simulation; // Paquete principal
 
-import com.simulation.core.SimulationEngine; // Importa la clase SimulationEngine
-import com.simulation.entities.Entity; // Importa la clase Entity
-import com.simulation.output.ReportGenerator; // Importa la clase para generar reportes
-import com.simulation.processing.ProcessingRule; // Importa la clase ProcessingRule
+import com.simulation.core.SimulationEngine;
+import com.simulation.entities.Entity;
+import com.simulation.output.ReportGenerator;
+import com.simulation.processing.ProcessingRule;
 
 public class Main { // Clase principal
     public static void main(String[] args) { // Método principal

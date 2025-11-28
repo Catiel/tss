@@ -1,13 +1,13 @@
 package com.simulation.output; // Declaración del paquete donde se encuentra esta clase
 
-import com.simulation.entities.EntityStatistics; // Importa la clase de estadísticas de entidades
-import com.simulation.locations.LocationStatistics; // Importa la clase de estadísticas de ubicaciones
-import com.simulation.statistics.StatisticsCollector; // Importa el recolector de estadísticas
+import com.simulation.entities.EntityStatistics;
+import com.simulation.locations.LocationStatistics;
+import com.simulation.statistics.StatisticsCollector;
 
-import java.io.FileWriter; // Importa FileWriter para escribir archivos de texto
-import java.io.IOException; // Importa la excepción de entrada/salida
-import java.io.PrintWriter; // Importa PrintWriter para escribir texto formateado a archivos
-import java.util.Map; // Importa la interfaz Map para colecciones clave-valor
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Map;
 
 public class ReportGenerator { // Clase que genera reportes de simulación en diferentes formatos
     private final StatisticsCollector statistics; // Recolector de estadísticas que contiene los datos a reportar
@@ -53,18 +53,18 @@ public class ReportGenerator { // Clase que genera reportes de simulación en di
     private void generateEntityCSV(String filename) { // Método privado para generar el CSV de estadísticas de entidades
         try (PrintWriter writer = new PrintWriter(new FileWriter(filename))) { // Crea un PrintWriter con try-with-resources
             writer.println("Nombre,Total Salida,Tiempo En Sistema Promedio (Min)," + // Escribe la línea de encabezado del CSV con los nombres de las columnas
-                         "Tiempo En lógica de movimiento Promedio (Min)," +
-                         "Tiempo Espera Promedio (Min)," +
-                         "Tiempo En Operación Promedio (Min)");
+                    "Tiempo En lógica de movimiento Promedio (Min)," +
+                    "Tiempo Espera Promedio (Min)," +
+                    "Tiempo En Operación Promedio (Min)");
 
             for (EntityStatistics stat : statistics.getEntityStats().values()) { // Itera sobre todas las estadísticas de entidades
                 writer.printf("%s,%d,%.2f,%.2f,%.2f,%.2f\n", // Escribe una línea con los datos de cada entidad en formato CSV
-                    stat.getEntityName(), // Nombre de la entidad
-                    stat.getTotalExits(), // Total de salidas
-                    stat.getAverageSystemTime(), // Tiempo promedio en sistema
-                    stat.getAverageNonValueAddedTime(), // Tiempo promedio sin valor agregado (movimiento)
-                    stat.getAverageWaitTime(), // Tiempo promedio de espera
-                    stat.getAverageValueAddedTime() // Tiempo promedio con valor agregado (operación)
+                        stat.getEntityName(), // Nombre de la entidad
+                        stat.getTotalExits(), // Total de salidas
+                        stat.getAverageSystemTime(), // Tiempo promedio en sistema
+                        stat.getAverageNonValueAddedTime(), // Tiempo promedio sin valor agregado (movimiento)
+                        stat.getAverageWaitTime(), // Tiempo promedio de espera
+                        stat.getAverageValueAddedTime() // Tiempo promedio con valor agregado (operación)
                 );
             }
 
@@ -77,20 +77,20 @@ public class ReportGenerator { // Clase que genera reportes de simulación en di
     private void generateLocationCSV(String filename) { // Método privado para generar el CSV de estadísticas de ubicaciones
         try (PrintWriter writer = new PrintWriter(new FileWriter(filename))) { // Crea un PrintWriter con try-with-resources
             writer.println("Nombre,Tiempo Programado (Hr),Capacidad,Total Entradas," + // Escribe la línea de encabezado del CSV
-                         "Tiempo Por entrada Promedio (Min),Contenido Promedio," +
-                         "Contenido Máximo,Contenido Actual,% Utilización");
+                    "Tiempo Por entrada Promedio (Min),Contenido Promedio," +
+                    "Contenido Máximo,Contenido Actual,% Utilización");
 
             for (LocationStatistics stat : statistics.getLocationStats().values()) { // Itera sobre todas las estadísticas de ubicaciones
                 writer.printf("%s,%.2f,%d,%d,%.2f,%.2f,%.2f,%.2f,%.2f\n", // Escribe una línea con los datos de cada ubicación
-                    stat.getLocationName(), // Nombre de la ubicación
-                    stat.getScheduledTime() / 60.0, // Tiempo programado convertido de minutos a horas
-                    stat.getCapacity(), // Capacidad de la ubicación
-                    stat.getTotalEntries(), // Total de entradas
-                    stat.getAverageTimePerEntry(), // Tiempo promedio por entrada
-                    stat.getAverageContents(), // Contenido promedio
-                    stat.getMaxContents(), // Contenido máximo
-                    stat.getCurrentContents(), // Contenido actual
-                    stat.getUtilizationPercent() // Porcentaje de utilización
+                        stat.getLocationName(), // Nombre de la ubicación
+                        stat.getScheduledTime() / 60.0, // Tiempo programado convertido de minutos a horas
+                        stat.getCapacity(), // Capacidad de la ubicación
+                        stat.getTotalEntries(), // Total de entradas
+                        stat.getAverageTimePerEntry(), // Tiempo promedio por entrada
+                        stat.getAverageContents(), // Contenido promedio
+                        stat.getMaxContents(), // Contenido máximo
+                        stat.getCurrentContents(), // Contenido actual
+                        stat.getUtilizationPercent() // Porcentaje de utilización
                 );
             }
 
