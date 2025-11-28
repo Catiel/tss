@@ -103,4 +103,14 @@ public class Entity {
     public void setTransformed(boolean transformed) {
         isTransformed = transformed;
     }
+
+    private String pendingDestination;
+
+    public String getPendingDestination() {
+        return pendingDestination;
+    }
+
+    public void setPendingDestination(String destination) {
+        this.pendingDestination = destination;
+    }
 }

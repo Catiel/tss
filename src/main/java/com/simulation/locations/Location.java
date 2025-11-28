@@ -8,7 +8,8 @@ import java.util.Queue;
 public class Location { // Clase que representa una ubicación o estación en la simulación
     private final LocationType type; // Tipo de ubicación con sus características definidas
     private final Queue<Entity> queue; // Cola de espera para entidades que no pueden entrar por falta de capacidad
-    private final Queue<Entity> contentQueue; // Cola de entidades que están actualmente siendo procesadas en la ubicación
+    private final Queue<Entity> contentQueue; // Cola de entidades que están actualmente siendo procesadas en la
+                                              // ubicación
     private int currentOccupancy; // Número actual de entidades ocupando la ubicación
     private double totalOccupancyTime; // Tiempo total acumulado ponderado por la ocupación (para promedio)
     private double lastUpdateTime; // Último tiempo en que se actualizaron las estadísticas de ocupación
@@ -30,14 +31,16 @@ public class Location { // Clase que representa una ubicación o estación en la
         return currentOccupancy < type.capacity(); // Retorna verdadero si la ocupación actual es menor que la capacidad
     }
 
-    public void enter(Entity entity, double currentTime) { // Método para que una entidad entre a la ubicación
+    public boolean enter(Entity entity, double currentTime) { // Método para que una entidad entre a la ubicación
         updateOccupancyTime(currentTime); // Actualiza las estadísticas de ocupación antes del cambio
         if (canAccept()) { // Verifica si hay espacio disponible
             contentQueue.add(entity); // Agrega la entidad a la cola de procesamiento
             currentOccupancy++; // Incrementa el contador de ocupación
             entity.setCurrentLocation(this); // Establece esta ubicación como la actual para la entidad
+            return true;
         } else { // Si no hay espacio disponible
             queue.add(entity); // Agrega la entidad a la cola de espera
+            return false;
         }
     }
 
@@ -46,13 +49,7 @@ public class Location { // Clase que representa una ubicación o estación en la
         Entity entity = contentQueue.poll(); // Remueve y obtiene la primera entidad de la cola de procesamiento
         if (entity != null) { // Si se obtuvo una entidad (la cola no estaba vacía)
             currentOccupancy--; // Decrementa el contador de ocupación
-
-            if (!queue.isEmpty() && canAccept()) { // Si hay entidades esperando y ahora hay espacio
-                Entity nextEntity = queue.poll(); // Remueve la primera entidad de la cola de espera
-                contentQueue.add(nextEntity); // La agrega a la cola de procesamiento
-                currentOccupancy++; // Incrementa nuevamente la ocupación
-                nextEntity.setCurrentLocation(this); // Establece esta ubicación como actual para la nueva entidad
-            }
+            // Auto-promotion removed to allow external control
         }
         return entity; // Retorna la entidad que salió (o null si no había ninguna)
     }
@@ -67,7 +64,8 @@ public class Location { // Clase que representa una ubicación o estación en la
 
     private void updateOccupancyTime(double currentTime) { // Método privado para actualizar estadísticas de ocupación
         double timeDelta = currentTime - lastUpdateTime; // Calcula el tiempo transcurrido desde la última actualización
-        totalOccupancyTime += currentOccupancy * timeDelta; // Acumula tiempo ponderado por ocupación para cálculo de promedio
+        totalOccupancyTime += currentOccupancy * timeDelta; // Acumula tiempo ponderado por ocupación para cálculo de
+                                                            // promedio
         if (lastOccupancyForBusy > 0) { // Si había al menos una entidad en el intervalo anterior
             busyTime += timeDelta; // Suma el intervalo al tiempo de utilización
         }

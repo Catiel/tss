@@ -8,16 +8,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Gestor de Redes de Ruta (Path Networks) basado en el modelo ProModel.
+ * Gestor de Redes de Ruta (Path Networks) para Steel Gears.
  * Define los nodos y segmentos de ruta para el movimiento realista de recursos.
  */
 public class PathNetworkManager {
 
     // Redes definidas en el modelo
-    public static final String RED_RECEPCION = "RED_RECEPCION";
-    public static final String RED_LUPULO = "RED_LUPULO";
-    public static final String RED_LEVADURA = "RED_LEVADURA";
-    public static final String RED_EMPACADO = "RED_EMPACADO";
+    public static final String RED_GRUA = "RED_GRUA";
+    public static final String RED_ROBOT = "RED_ROBOT";
 
     // Mapa de redes: NombreRed -> Mapa de Nodos (NombreNodo -> Coordenada)
     private final Map<String, Map<String, Point2D>> networks = new HashMap<>();
@@ -34,81 +32,60 @@ public class PathNetworkManager {
     }
 
     private void initializeNetworks() {
-        // --- RED_RECEPCION ---
-        // N1 (MALTEADO) -> N2 (SECADO) -> N3 (MOLIENDA)
-        Map<String, Point2D> recepNodes = new HashMap<>();
-        recepNodes.put("N1", new Point2D(100, 250)); // MALTEADO
-        recepNodes.put("N2", new Point2D(100, 400)); // SECADO
-        recepNodes.put("N3", new Point2D(300, 400)); // MOLIENDA
-        networks.put(RED_RECEPCION, recepNodes);
+        // --- RED_GRUA ---
+        // N1 (ALMACEN_MP) -> N2 (HORNO) -> N3 (BANDA_1)
+        Map<String, Point2D> gruaNodes = new HashMap<>();
+        gruaNodes.put("N1", new Point2D(50, 300)); // ALMACEN_MP
+        gruaNodes.put("N2", new Point2D(250, 300)); // HORNO
+        gruaNodes.put("N3", new Point2D(450, 300)); // BANDA_1
+        networks.put(RED_GRUA, gruaNodes);
 
-        List<PathSegment> recepSegments = new ArrayList<>();
-        recepSegments.add(new PathSegment("N1", "N2"));
-        recepSegments.add(new PathSegment("N2", "N3"));
-        networkSegments.put(RED_RECEPCION, recepSegments);
+        List<PathSegment> gruaSegments = new ArrayList<>();
+        gruaSegments.add(new PathSegment("N1", "N2"));
+        gruaSegments.add(new PathSegment("N2", "N3"));
+        networkSegments.put(RED_GRUA, gruaSegments);
 
-        // --- RED_LUPULO ---
-        // N1 (SILO_LUPULO) -> N2 (COCCION)
-        Map<String, Point2D> lupuloNodes = new HashMap<>();
-        lupuloNodes.put("N1", new Point2D(900, 100)); // SILO_LUPULO
-        lupuloNodes.put("N2", new Point2D(900, 400)); // COCCION
-        networks.put(RED_LUPULO, lupuloNodes);
+        // --- RED_ROBOT ---
+        // N1 (CARGA) -> N2 (TORNEADO) -> N3 (FRESADO) -> N4 (TALADRO) -> N5
+        // (RECTIFICADO) -> N6 (DESCARGA)
+        Map<String, Point2D> robotNodes = new HashMap<>();
+        robotNodes.put("N1", new Point2D(650, 300)); // CARGA
+        robotNodes.put("N2", new Point2D(850, 150)); // TORNEADO
+        robotNodes.put("N3", new Point2D(1050, 150)); // FRESADO
+        robotNodes.put("N4", new Point2D(1050, 450)); // TALADRO
+        robotNodes.put("N5", new Point2D(850, 450)); // RECTIFICADO
+        robotNodes.put("N6", new Point2D(650, 500)); // DESCARGA
+        networks.put(RED_ROBOT, robotNodes);
 
-        List<PathSegment> lupuloSegments = new ArrayList<>();
-        lupuloSegments.add(new PathSegment("N1", "N2"));
-        networkSegments.put(RED_LUPULO, lupuloSegments);
-
-        // --- RED_LEVADURA ---
-        // N1 (SILO_LEVADURA) -> N2 (FERMENTACION)
-        Map<String, Point2D> levaduraNodes = new HashMap<>();
-        levaduraNodes.put("N1", new Point2D(100, 600)); // SILO_LEVADURA
-        levaduraNodes.put("N2", new Point2D(700, 600)); // FERMENTACION
-        networks.put(RED_LEVADURA, levaduraNodes);
-
-        List<PathSegment> levaduraSegments = new ArrayList<>();
-        levaduraSegments.add(new PathSegment("N1", "N2"));
-        networkSegments.put(RED_LEVADURA, levaduraSegments);
-
-        // --- RED_EMPACADO ---
-        // N1 (EMPACADO) -> N2 (ALMACENAJE) -> N3 (MERCADO)
-        Map<String, Point2D> empacadoNodes = new HashMap<>();
-        empacadoNodes.put("N1", new Point2D(1700, 400)); // EMPACADO
-        empacadoNodes.put("N2", new Point2D(1700, 800)); // ALMACENAJE
-        empacadoNodes.put("N3", new Point2D(1700, 1000)); // MERCADO
-        networks.put(RED_EMPACADO, empacadoNodes);
-
-        List<PathSegment> empacadoSegments = new ArrayList<>();
-        empacadoSegments.add(new PathSegment("N1", "N2"));
-        empacadoSegments.add(new PathSegment("N2", "N3"));
-        networkSegments.put(RED_EMPACADO, empacadoSegments);
+        List<PathSegment> robotSegments = new ArrayList<>();
+        robotSegments.add(new PathSegment("N1", "N2"));
+        robotSegments.add(new PathSegment("N2", "N3"));
+        robotSegments.add(new PathSegment("N3", "N4"));
+        robotSegments.add(new PathSegment("N4", "N5"));
+        robotSegments.add(new PathSegment("N5", "N6"));
+        networkSegments.put(RED_ROBOT, robotSegments);
     }
 
     private void initializeMappings() {
         // Mapear Locaciones a Nodos de Red específicos
 
-        // RED_RECEPCION
-        locationToNodeMap.put("MALTEADO", new NetworkNodeRef(RED_RECEPCION, "N1"));
-        locationToNodeMap.put("SECADO", new NetworkNodeRef(RED_RECEPCION, "N2"));
-        locationToNodeMap.put("MOLIENDA", new NetworkNodeRef(RED_RECEPCION, "N3"));
+        // RED_GRUA
+        locationToNodeMap.put("ALMACEN_MP", new NetworkNodeRef(RED_GRUA, "N1"));
+        locationToNodeMap.put("HORNO", new NetworkNodeRef(RED_GRUA, "N2"));
+        locationToNodeMap.put("BANDA_1", new NetworkNodeRef(RED_GRUA, "N3"));
 
-        // RED_LUPULO
-        locationToNodeMap.put("SILO_LUPULO", new NetworkNodeRef(RED_LUPULO, "N1"));
-        locationToNodeMap.put("COCCION", new NetworkNodeRef(RED_LUPULO, "N2"));
-
-        // RED_LEVADURA
-        locationToNodeMap.put("SILO_LEVADURA", new NetworkNodeRef(RED_LEVADURA, "N1"));
-        locationToNodeMap.put("FERMENTACION", new NetworkNodeRef(RED_LEVADURA, "N2"));
-
-        // RED_EMPACADO
-        locationToNodeMap.put("EMPACADO", new NetworkNodeRef(RED_EMPACADO, "N1"));
-        locationToNodeMap.put("ALMACENAJE", new NetworkNodeRef(RED_EMPACADO, "N2"));
-        locationToNodeMap.put("MERCADO", new NetworkNodeRef(RED_EMPACADO, "N3"));
+        // RED_ROBOT
+        locationToNodeMap.put("CARGA", new NetworkNodeRef(RED_ROBOT, "N1"));
+        locationToNodeMap.put("TORNEADO", new NetworkNodeRef(RED_ROBOT, "N2"));
+        locationToNodeMap.put("FRESADO", new NetworkNodeRef(RED_ROBOT, "N3"));
+        locationToNodeMap.put("TALADRO", new NetworkNodeRef(RED_ROBOT, "N4"));
+        locationToNodeMap.put("RECTIFICADO", new NetworkNodeRef(RED_ROBOT, "N5"));
+        locationToNodeMap.put("DESCARGA", new NetworkNodeRef(RED_ROBOT, "N6"));
     }
 
     /**
      * Obtiene la ruta (lista de puntos) para ir de una locación a otra usando una
      * red específica.
-     * Si no hay red, retorna una ruta directa (línea recta).
      */
     public List<Point2D> getPath(String fromLocation, String toLocation, String resourceName) {
         List<Point2D> path = new ArrayList<>();
@@ -120,7 +97,14 @@ public class PathNetworkManager {
             NetworkNodeRef startNode = locationToNodeMap.get(fromLocation);
             NetworkNodeRef endNode = locationToNodeMap.get(toLocation);
 
-            // Verificar si ambas locaciones están en la red del recurso
+            // Manejo especial para puntos compartidos o si no están en el mapa principal
+            if (startNode == null && fromLocation.equals("CARGA") && networkName.equals(RED_ROBOT)) {
+                startNode = new NetworkNodeRef(RED_ROBOT, "N2");
+            }
+            if (endNode == null && toLocation.equals("CARGA") && networkName.equals(RED_ROBOT)) {
+                endNode = new NetworkNodeRef(RED_ROBOT, "N2");
+            }
+
             if (startNode != null && endNode != null &&
                     startNode.network.equals(networkName) && endNode.network.equals(networkName)) {
 
@@ -129,11 +113,7 @@ public class PathNetworkManager {
             }
         }
 
-        // Fallback: Si no hay red definida o no coincide, usar ruta directa (pero esto
-        // no debería pasar si todo está bien configurado)
-        // Ojo: Para movimientos sin recurso, esto se llamará con resourceName=null
-        return path; // Retorna vacío, el caller deberá manejarlo (usando coordenadas directas de
-        // locaciones)
+        return path;
     }
 
     /**
@@ -142,7 +122,7 @@ public class PathNetworkManager {
     public Point2D getHomePosition(String resourceName) {
         String networkName = getNetworkForResource(resourceName);
         if (networkName != null) {
-            // Por defecto, Home es N1 en todas las redes según el modelo
+            // Home es N1
             return networks.get(networkName).get("N1");
         }
         return null;
@@ -152,16 +132,10 @@ public class PathNetworkManager {
         if (resourceName == null)
             return null;
         switch (resourceName) {
-            case "OPERADOR_RECEPCION":
-                return RED_RECEPCION;
-            case "OPERADOR_LUPULO":
-                return RED_LUPULO;
-            case "OPERADOR_LEVADURA":
-                return RED_LEVADURA;
-            case "OPERADOR_EMPACADO":
-                return RED_EMPACADO;
-            case "CAMION":
-                return RED_EMPACADO;
+            case "GRUA_VIAJERA":
+                return RED_GRUA;
+            case "ROBOT":
+                return RED_ROBOT;
             default:
                 return null;
         }
@@ -171,30 +145,10 @@ public class PathNetworkManager {
         List<Point2D> path = new ArrayList<>();
         Map<String, Point2D> nodes = networks.get(networkName);
 
-        // Lógica simple para redes lineales/árboles pequeños
-        // En este caso, todas las redes son lineales o muy simples.
-        // Implementación específica para las redes conocidas:
-
         path.add(nodes.get(startNode));
 
         if (startNode.equals(endNode))
             return path;
-
-        if (networkName.equals(RED_RECEPCION)) {
-            // N1 <-> N2 <-> N3
-            if (startNode.equals("N1") && endNode.equals("N3")) {
-                path.add(nodes.get("N2"));
-            } else if (startNode.equals("N3") && endNode.equals("N1")) {
-                path.add(nodes.get("N2"));
-            }
-        } else if (networkName.equals(RED_EMPACADO)) {
-            // N1 <-> N2 <-> N3
-            if (startNode.equals("N1") && endNode.equals("N3")) {
-                path.add(nodes.get("N2"));
-            } else if (startNode.equals("N3") && endNode.equals("N1")) {
-                path.add(nodes.get("N2"));
-            }
-        }
 
         path.add(nodes.get(endNode));
         return path;

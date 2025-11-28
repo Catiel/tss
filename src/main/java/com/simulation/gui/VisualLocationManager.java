@@ -234,39 +234,28 @@ public class VisualLocationManager {
 
     private String getLocationIcon(String name) {
         switch (name) {
-            case "SILO_GRANDE":
-            case "SILO_LUPULO":
-            case "SILO_LEVADURA":
-                return "🏭";
-            case "MALTEADO":
-            case "SECADO":
-            case "MOLIENDA":
-                return "⚙️";
-            case "MACERADO":
-            case "FILTRADO":
-                return "🌾";
-            case "COCCION":
+            case "ALMACEN_MP":
+                return "📦";
+            case "HORNO":
                 return "🔥";
-            case "ENFRIAMIENTO":
-                return "❄️";
-            case "FERMENTACION":
-                return "🫧";
-            case "MADURACION":
-                return "⏱️";
+            case "BANDA_1":
+            case "BANDA_2":
+                return "🛤️";
+            case "CARGA":
+            case "DESCARGA":
+                return "🏗️";
+            case "TORNEADO":
+                return "⚙️";
+            case "FRESADO":
+                return "🔩";
+            case "TALADRO":
+                return "🔘";
+            case "RECTIFICADO":
+                return "✨";
             case "INSPECCION":
                 return "🔍";
-            case "EMBOTELLADO":
-                return "🍾";
-            case "ETIQUETADO":
-                return "🏷️";
-            case "EMPACADO":
-                return "📦";
-            case "ALMACEN_CAJAS":
-                return "🗃️";
-            case "ALMACENAJE":
-                return "🏪";
-            case "MERCADO":
-                return "🛒";
+            case "SALIDA":
+                return "🏁";
             default:
                 return "📍";
         }
@@ -276,7 +265,7 @@ public class VisualLocationManager {
      * Renderizar círculos individuales para pocas entidades (1-10)
      */
     private void renderAccumulatedEntitiesCircles(GraphicsContext gc, javafx.geometry.Point2D pos,
-                                                  int occupancy, double utilization) {
+            int occupancy, double utilization) {
         double dotSize = 10;
         double spacing = 4;
         int maxPerRow = 3;
@@ -330,7 +319,7 @@ public class VisualLocationManager {
      * Renderizar número grande para muchas entidades (>10)
      */
     private void renderAccumulatedEntitiesCount(GraphicsContext gc, javafx.geometry.Point2D pos,
-                                                int occupancy) {
+            int occupancy) {
         double centerX = pos.getX() + LOCATION_SIZE / 2;
         double centerY = pos.getY() + LOCATION_SIZE / 2;
 

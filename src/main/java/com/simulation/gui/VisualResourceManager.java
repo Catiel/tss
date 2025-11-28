@@ -164,10 +164,12 @@ public class VisualResourceManager {
     }
 
     private String getResourceIcon(String name) {
-        if (name.contains("CAMION")) {
-            return "🚛";
+        if (name.contains("GRUA")) {
+            return "🏗️";
+        } else if (name.contains("ROBOT")) {
+            return "🤖";
         } else {
-            return "👷";
+            return "🔧";
         }
     }
 
