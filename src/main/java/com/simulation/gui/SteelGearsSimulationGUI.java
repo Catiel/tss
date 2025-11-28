@@ -53,6 +53,7 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
     private Thread simulationThread;
     private double simulationSpeed = 1.0;
     private double currentTime = 0;
+    private long lastUIUpdate = 0; // Control de frecuencia de actualización UI
     // Sistema de visualización
     private VisualLocationManager locationManager;
     private VisualEntityManager entityManager;
@@ -647,14 +648,23 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
                         // Actualizar tiempo actual
                         currentTime = engine.getClock().getCurrentTime();
 
-                        // Actualizar UI
-                        updateUI();
+                        // Actualizar UI (Throttled)
+                        // Solo actualizar si ha pasado suficiente tiempo real o si la velocidad es baja
+                        long now = System.currentTimeMillis();
+                        if (speedMultiplier < 50 || (now - lastUIUpdate) > 33) { // ~30 FPS max updates
+                            updateUI();
+                            lastUIUpdate = now;
+                        }
 
                         // Controlar velocidad de simulación
-                        // Si la velocidad es muy alta (>50), no dormir para ir lo más rápido posible
                         if (speedMultiplier < 50) {
                             int sleepTime = (int) (50 / speedMultiplier);
                             Thread.sleep(Math.max(1, sleepTime));
+                        } else {
+                            // Yield para permitir que otros hilos (como JavaFX) respiren
+                            if ((now - lastUIUpdate) > 100) { // Yield ocasional si vamos muy rápido
+                                Thread.yield();
+                            }
                         }
                     }
 
