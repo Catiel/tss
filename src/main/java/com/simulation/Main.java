@@ -111,17 +111,17 @@ public class Main { // Clase principal
         // 4. CARGA: 0.5 minutos
         engine.addProcessingRule(new SimpleProcessingRule("CARGA", "PIEZA_AUTOMOTRIZ", 0.5));
 
-        // 5. TORNEADO: 5.2 minutos
-        engine.addProcessingRule(new SimpleProcessingRule("TORNEADO", "PIEZA_AUTOMOTRIZ", 5.2));
+        // 5. TORNEADO: 9.37 minutos (Ajustado a ProModel)
+        engine.addProcessingRule(new SimpleProcessingRule("TORNEADO", "PIEZA_AUTOMOTRIZ", 9.37));
 
-        // 6. FRESADO: 9.17 minutos (probable cuello de botella)
-        engine.addProcessingRule(new SimpleProcessingRule("FRESADO", "PIEZA_AUTOMOTRIZ", 9.17));
+        // 6. FRESADO: 10.18 minutos (Ajustado a ProModel)
+        engine.addProcessingRule(new SimpleProcessingRule("FRESADO", "PIEZA_AUTOMOTRIZ", 10.18));
 
-        // 7. TALADRO: 1.6 minutos
-        engine.addProcessingRule(new SimpleProcessingRule("TALADRO", "PIEZA_AUTOMOTRIZ", 1.6));
+        // 7. TALADRO: 2.66 minutos (Ajustado a ProModel)
+        engine.addProcessingRule(new SimpleProcessingRule("TALADRO", "PIEZA_AUTOMOTRIZ", 2.66));
 
-        // 8. RECTIFICADO: 2.85 minutos
-        engine.addProcessingRule(new SimpleProcessingRule("RECTIFICADO", "PIEZA_AUTOMOTRIZ", 2.85));
+        // 8. RECTIFICADO: 3.02 minutos (Ajustado a ProModel)
+        engine.addProcessingRule(new SimpleProcessingRule("RECTIFICADO", "PIEZA_AUTOMOTRIZ", 3.02));
 
         // 9. DESCARGA: 0.5 minutos
         engine.addProcessingRule(new SimpleProcessingRule("DESCARGA", "PIEZA_AUTOMOTRIZ", 0.5));
