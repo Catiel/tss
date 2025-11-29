@@ -380,6 +380,7 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
         setupEntityTypes(engine);
         setupLocations(engine);
         setupResources(engine);
+        setupRoutes(engine);
         setupProcessingRules(engine);
         setupArrivals(engine);
 
@@ -415,6 +416,25 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
     private void setupResources(SimulationEngine engine) {
         engine.addResource("GRUA_VIAJERA", 1, 25.0);
         engine.addResource("ROBOT", 1, 45.0);
+    }
+
+    private void setupRoutes(SimulationEngine engine) {
+        // RUTAS CON GRUA_VIAJERA (25 min por movimiento)
+        engine.addRoute("ALMACEN_MP", "HORNO", "GRUA_VIAJERA", 25.0);
+        engine.addRoute("HORNO", "BANDA_1", "GRUA_VIAJERA", 25.0);
+
+        // RUTAS CON ROBOT (45 min por movimiento)
+        engine.addRoute("CARGA", "TORNEADO", "ROBOT", 45.0);
+        engine.addRoute("TORNEADO", "FRESADO", "ROBOT", 45.0);
+        engine.addRoute("FRESADO", "TALADRO", "ROBOT", 45.0);
+        engine.addRoute("TALADRO", "RECTIFICADO", "ROBOT", 45.0);
+        engine.addRoute("RECTIFICADO", "DESCARGA", "ROBOT", 45.0);
+
+        // RUTAS SIN RECURSO (bandas transportadoras)
+        engine.addRoute("BANDA_1", "CARGA", null, 0.94);
+        engine.addRoute("DESCARGA", "BANDA_2", null, 1.02);
+        engine.addRoute("BANDA_2", "INSPECCION", null, 0.5);
+        engine.addRoute("INSPECCION", "SALIDA", null, 0.5);
     }
 
     private void setupProcessingRules(SimulationEngine engine) {
@@ -963,22 +983,29 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
             Point2D start = locationPositions.get(from.getName());
             Point2D end = locationPositions.get(to.getName());
             if (start != null && end != null) {
-                // Aquí podríamos disparar una animación específica
-                // Por simplicidad, el VisualEntityManager interpolará si se implementa lógica
-                // de movimiento
-                // O el AnimationController manejaría PathAnimators.
+                // Crear ruta simple de 2 puntos para animar
+                List<Point2D> path = Arrays.asList(start, end);
 
-                // Si tuviéramos una referencia a AnimationController aquí, llamaríamos a
-                // animateEntityMovement
-                // Como no la tenemos expuesta fácilmente en esta estructura refactorizada (está
-                // dentro de createAnimationCanvas pero no como campo de clase accesible
-                // globalmente para estos callbacks sin refactorizar más),
-                // asumiremos que el render loop actualiza posiciones instantáneas o
-                // interpoladas.
+                // Determinar si usa recurso (GRUA o ROBOT)
+                String resourceName = "";
+                if (("ALMACEN_MP".equals(from.getName()) && "HORNO".equals(to.getName())) ||
+                        ("HORNO".equals(from.getName()) && "BANDA_1".equals(to.getName()))) {
+                    resourceName = "GRUA_VIAJERA";
+                } else if (("CARGA".equals(from.getName()) && "TORNEADO".equals(to.getName())) ||
+                        ("TORNEADO".equals(from.getName()) && "FRESADO".equals(to.getName())) ||
+                        ("FRESADO".equals(from.getName()) && "TALADRO".equals(to.getName())) ||
+                        ("TALADRO".equals(from.getName()) && "RECTIFICADO".equals(to.getName())) ||
+                        ("RECTIFICADO".equals(from.getName()) && "DESCARGA".equals(to.getName()))) {
+                    resourceName = "ROBOT";
+                }
 
-                // Para mejorar esto, deberíamos promover AnimationController a campo de clase o
-                // usar un bus de eventos.
-                // Dado el tiempo, dejaremos que el updateUI periódico refleje los cambios.
+                // Iniciar animación
+                if (!resourceName.isEmpty()) {
+                    entityManager.startResourceTransport(entity.getId(), entity.getType().getName(), resourceName,
+                            path);
+                } else {
+                    entityManager.startEntityTransport(entity.getId(), entity.getType().getName(), path);
+                }
             }
         }
     }

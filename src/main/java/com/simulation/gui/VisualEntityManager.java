@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class VisualEntityManager {
 
     private static final double ENTITY_SIZE = 16; // Más grande para mejor visibilidad
-    private static final double ANIMATION_SPEED = 4.0; // Más rápido para mejor fluidez
+    private static final double ANIMATION_SPEED = 2.5; // Velocidad suave y visible
     private final ConcurrentLinkedQueue<AnimatedEntity> entities = new ConcurrentLinkedQueue<>();
     private final Map<Integer, ResourceTransport> transportsInProgress = new ConcurrentHashMap<>();
     // Cache de imágenes
@@ -33,7 +33,7 @@ public class VisualEntityManager {
      * Iniciar transporte de entidad CON recurso usando una ruta compleja
      */
     public void startResourceTransport(int entityId, String entityType, String resourceName,
-                                       List<Point2D> path) {
+            List<Point2D> path) {
         ResourceTransport transport = new ResourceTransport(
                 entityId, entityType, resourceName, path);
         transportsInProgress.put(entityId, transport);
@@ -156,7 +156,7 @@ public class VisualEntityManager {
     }
 
     private void renderShape(GraphicsContext gc, String type, double x, double y, double dx, double dy,
-                             boolean isMoving) {
+            boolean isMoving) {
         // Obtener color e icono según tipo de entidad
         Color color = getEntityColor(type);
         String icon = getEntityIcon(type);

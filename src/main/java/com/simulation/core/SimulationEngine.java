@@ -8,6 +8,7 @@ import com.simulation.locations.LocationType;
 import com.simulation.processing.ProcessingRule;
 import com.simulation.resources.Resource;
 import com.simulation.resources.ResourceType;
+import com.simulation.routing.Route;
 import com.simulation.statistics.StatisticsCollector;
 
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ public class SimulationEngine {
     private final Map<String, Location> locations;
     private final Map<String, Resource> resources;
     private final Map<String, ProcessingRule> processingRules;
+    private final Map<String, Route> routes; // fromLocation_toLocation -> Route
     private final ArrivalGenerator arrivalGenerator;
     private final List<SimulationListener> listeners = new ArrayList<>();
     private double simulationEndTime;
@@ -35,6 +37,7 @@ public class SimulationEngine {
         this.locations = new HashMap<>();
         this.resources = new HashMap<>();
         this.processingRules = new HashMap<>();
+        this.routes = new HashMap<>();
         this.arrivalGenerator = new ArrivalGenerator(this);
     }
 
@@ -52,6 +55,16 @@ public class SimulationEngine {
 
     public void addProcessingRule(ProcessingRule rule) {
         processingRules.put(rule.getLocationName(), rule);
+    }
+
+    public void addRoute(String from, String to, String resourceName, double moveTime) {
+        String key = from + "_" + to;
+        routes.put(key, new Route(from, to, resourceName, moveTime));
+    }
+
+    public Route getRoute(String from, String to) {
+        String key = from + "_" + to;
+        return routes.get(key);
     }
 
     public void scheduleArrival(String entityTypeName, String locationName,
