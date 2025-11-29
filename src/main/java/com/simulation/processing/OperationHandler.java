@@ -16,6 +16,7 @@ public class OperationHandler {
     private final Map<String, Queue<Entity>> joinQueues;
     private final Map<String, Integer> joinRequirements;
     private final Map<String, Queue<Entity>> blockedEntities; // Entities waiting for a destination
+    private final Map<Entity, Double> blockStartTime; // Track when entity became blocked
     private AnimationController animationController;
 
     public OperationHandler(SimulationEngine engine) {
@@ -24,6 +25,7 @@ public class OperationHandler {
         this.joinQueues = new HashMap<>();
         this.joinRequirements = new HashMap<>();
         this.blockedEntities = new HashMap<>();
+        this.blockStartTime = new HashMap<>();
         this.animationController = null;
 
         initializeJoinRequirements();
@@ -45,14 +47,14 @@ public class OperationHandler {
                 Location destination = engine.getLocation(locationName);
                 if (destination.canAccept()) {
                     Entity entity = blockedQueue.poll();
-                    // Retry routing for the unblocked entity
-                    // We need to know where it came from to re-trigger the route logic correctly
-                    // For simplicity in this specific model, we can infer or store the source.
-                    // Better approach: Store a wrapper or just retry the move logic.
-                    // Since routeEntity handles the move, we just need to call it again.
-                    // But routeEntity requires 'fromLocation'.
-                    // Let's store a "BlockedEntity" object or just use the entity's current
-                    // location.
+
+                    // Calculate and record blocking time
+                    if (entity != null && blockStartTime.containsKey(entity)) {
+                        double currentTime = engine.getClock().getCurrentTime();
+                        double blockedTime = currentTime - blockStartTime.get(entity);
+                        entity.addBlockingTime(blockedTime);
+                        blockStartTime.remove(entity); // Clean up
+                    }
 
                     if (entity != null && entity.getCurrentLocation() != null) {
                         routeEntity(entity, entity.getCurrentLocation().getName());
@@ -255,6 +257,7 @@ public class OperationHandler {
                     }
                 } else {
                     blockedEntities.computeIfAbsent(destination, k -> new LinkedList<>()).add(entity);
+                    blockStartTime.put(entity, engine.getClock().getCurrentTime());
                 }
             } else {
                 double probability = route.probability();
@@ -282,6 +285,7 @@ public class OperationHandler {
                                 }
                             } else {
                                 blockedEntities.computeIfAbsent(destination, k -> new LinkedList<>()).add(newEntity);
+                                blockStartTime.put(newEntity, engine.getClock().getCurrentTime());
                             }
                         }
                     } else {
@@ -315,6 +319,7 @@ public class OperationHandler {
                             }
                         } else {
                             blockedEntities.computeIfAbsent(destination, k -> new LinkedList<>()).add(entity);
+                            blockStartTime.put(entity, engine.getClock().getCurrentTime());
                         }
                     }
                 } else {
@@ -412,7 +417,17 @@ public class OperationHandler {
 
     private void moveWithResource(Entity entity, String destination, String resourceName) {
         Resource resource = engine.getResource(resourceName);
+        Location destinationLoc = engine.getLocation(destination);
         double currentTime = engine.getClock().getCurrentTime();
+
+        // CRITICAL: Check if destination can accept BEFORE acquiring resource or moving
+        if (destinationLoc != null && !destinationLoc.canAccept()) {
+            // Destination is full - entity is BLOCKED at current location
+            blockedEntities.computeIfAbsent(destination, k -> new LinkedList<>()).add(entity);
+            blockStartTime.put(entity, currentTime); // Record when blocking started
+            // Entity stays at current location - blocking time will accumulate
+            return;
+        }
 
         if (resource != null && resource.isAvailable()) {
             // Invalidate any pending return events by incrementing the ID

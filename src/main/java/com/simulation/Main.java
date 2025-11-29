@@ -17,7 +17,8 @@ public class Main {
         System.out.println("  SIMULACIÓN ENGRANES DE ACERO SA");
         System.out.println("  Celda Flexible de Manufactura de Piezas Automotrices");
         System.out.println("=============================================================\n");
-        System.out.println("DEBUG: Main with calibrated parameters running (Horno 118.0, Rectificado 3.1)");
+        System.out.println(
+                "DEBUG: Main with ProModel parameters (Horno 100.0, Torneado 5.2, Fresado 9.17, Taladro 1.6, Rectificado 2.85)");
 
         // Configurar parámetros de simulación
         int numReplicas = 3;
@@ -84,8 +85,8 @@ public class Main {
             }
         });
 
-        // 2. HORNO: 118.0 min, Batch 10
-        engine.addProcessingRule(new BatchProcessingRule("HORNO", "PIEZA_AUTOMOTRIZ", 118.0, 10));
+        // 2. HORNO: 100.0 min, Batch 10 (ProModel: WAIT 100 min)
+        engine.addProcessingRule(new BatchProcessingRule("HORNO", "PIEZA_AUTOMOTRIZ", 100.0, 10));
 
         // 3. BANDA_1: 0.94 min
         engine.addProcessingRule(new ProcessingRule("BANDA_1", "PIEZA_AUTOMOTRIZ", 0.94) {
@@ -101,29 +102,29 @@ public class Main {
             }
         });
 
-        // 5. TORNEADO: 9.37 min
-        engine.addProcessingRule(new ProcessingRule("TORNEADO", "PIEZA_AUTOMOTRIZ", 9.37) {
+        // 5. TORNEADO: 5.2 min (ProModel: WAIT 5.2 min)
+        engine.addProcessingRule(new ProcessingRule("TORNEADO", "PIEZA_AUTOMOTRIZ", 5.2) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 6. FRESADO: 10.18 min
-        engine.addProcessingRule(new ProcessingRule("FRESADO", "PIEZA_AUTOMOTRIZ", 10.18) {
+        // 6. FRESADO: 9.17 min (ProModel: WAIT 9.17 min)
+        engine.addProcessingRule(new ProcessingRule("FRESADO", "PIEZA_AUTOMOTRIZ", 9.17) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 7. TALADRO: 2.66 min
-        engine.addProcessingRule(new ProcessingRule("TALADRO", "PIEZA_AUTOMOTRIZ", 2.66) {
+        // 7. TALADRO: 1.6 min (ProModel: WAIT 1.6 min)
+        engine.addProcessingRule(new ProcessingRule("TALADRO", "PIEZA_AUTOMOTRIZ", 1.6) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 8. RECTIFICADO: 3.02 min
-        engine.addProcessingRule(new ProcessingRule("RECTIFICADO", "PIEZA_AUTOMOTRIZ", 3.02) {
+        // 8. RECTIFICADO: 2.85 min (ProModel: WAIT 2.85 min)
+        engine.addProcessingRule(new ProcessingRule("RECTIFICADO", "PIEZA_AUTOMOTRIZ", 2.85) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
@@ -143,8 +144,8 @@ public class Main {
             }
         });
 
-        // 11. INSPECCION: 2.99 min
-        engine.addProcessingRule(new ProcessingRule("INSPECCION", "PIEZA_AUTOMOTRIZ", 2.99) {
+        // 11. INSPECCION: 3.0 min (ProModel: WAIT E(3) min - promedio de exponencial)
+        engine.addProcessingRule(new ProcessingRule("INSPECCION", "PIEZA_AUTOMOTRIZ", 3.0) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }

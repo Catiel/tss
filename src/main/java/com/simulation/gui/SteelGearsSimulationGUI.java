@@ -427,13 +427,11 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
             }
         });
 
-        // 2. HORNO: Procesamiento por lotes (ACCUM 10), 118.0 minutos (Calibrado para
-        // 98.3% util)
-        engine.addProcessingRule(new BatchProcessingRule("HORNO", "PIEZA_AUTOMOTRIZ", 118.0, 10));
+        // 2. HORNO: Procesamiento por lotes (ACCUM 10), 100.0 minutos (ProModel)
+        engine.addProcessingRule(new BatchProcessingRule("HORNO", "PIEZA_AUTOMOTRIZ", 100.0, 10));
 
-        // 3. BANDA_1: Transporte se maneja como tiempo de proceso (30 pies / 30 ppm = 1
-        // min)
-        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("BANDA_1", "PIEZA_AUTOMOTRIZ", 1.0) {
+        // 3. BANDA_1: Transporte 0.94 minutos (ProModel)
+        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("BANDA_1", "PIEZA_AUTOMOTRIZ", 0.94) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
@@ -446,8 +444,8 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
             }
         });
 
-        // 5. TORNEADO: 5.0 minutos (Calibrado para 78% util)
-        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("TORNEADO", "PIEZA_AUTOMOTRIZ", 5.0) {
+        // 5. TORNEADO: 5.2 minutos (ProModel)
+        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("TORNEADO", "PIEZA_AUTOMOTRIZ", 5.2) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
@@ -460,15 +458,15 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
             }
         });
 
-        // 7. TALADRO: 1.6 minutos
+        // 7. TALADRO: 1.6 minutos (ProModel)
         engine.addProcessingRule(new com.simulation.processing.ProcessingRule("TALADRO", "PIEZA_AUTOMOTRIZ", 1.6) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 8. RECTIFICADO: 3.1 minutos (Calibrado para 25% util)
-        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("RECTIFICADO", "PIEZA_AUTOMOTRIZ", 3.1) {
+        // 8. RECTIFICADO: 2.85 minutos (ProModel)
+        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("RECTIFICADO", "PIEZA_AUTOMOTRIZ", 2.85) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
@@ -481,9 +479,8 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
             }
         });
 
-        // 10. BANDA_2: Transporte se maneja como tiempo de proceso (30 pies / 30 ppm =
-        // 1 min)
-        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("BANDA_2", "PIEZA_AUTOMOTRIZ", 1.0) {
+        // 10. BANDA_2: 1.02 minutos (ProModel)
+        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("BANDA_2", "PIEZA_AUTOMOTRIZ", 1.02) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }

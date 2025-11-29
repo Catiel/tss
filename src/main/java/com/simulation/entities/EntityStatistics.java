@@ -8,6 +8,7 @@ public class EntityStatistics { // Clase que recopila y calcula estadísticas pa
     private double totalValueAddedTime; // Suma acumulada del tiempo con valor agregado de todas las entidades
     private double totalNonValueAddedTime; // Suma acumulada del tiempo sin valor agregado de todas las entidades
     private double totalWaitTime; // Suma acumulada del tiempo de espera de todas las entidades
+    private double totalBlockingTime; // Suma acumulada del tiempo de bloqueo de todas las entidades
     private double minSystemTime; // Tiempo mínimo que una entidad ha permanecido en el sistema
     private double maxSystemTime; // Tiempo máximo que una entidad ha permanecido en el sistema
 
@@ -19,7 +20,9 @@ public class EntityStatistics { // Clase que recopila y calcula estadísticas pa
         this.totalValueAddedTime = 0; // Inicializa el tiempo con valor acumulado en cero
         this.totalNonValueAddedTime = 0; // Inicializa el tiempo sin valor acumulado en cero
         this.totalWaitTime = 0; // Inicializa el tiempo de espera acumulado en cero
-        this.minSystemTime = Double.MAX_VALUE; // Inicializa el mínimo con el valor máximo posible para que cualquier tiempo sea menor
+        this.totalBlockingTime = 0; // Inicializa el tiempo de bloqueo acumulado en cero
+        this.minSystemTime = Double.MAX_VALUE; // Inicializa el mínimo con el valor máximo posible para que cualquier
+                                               // tiempo sea menor
         this.maxSystemTime = 0; // Inicializa el máximo en cero
     }
 
@@ -36,6 +39,7 @@ public class EntityStatistics { // Clase que recopila y calcula estadísticas pa
             totalValueAddedTime += entity.getTotalValueAddedTime(); // Acumula el tiempo con valor agregado
             totalNonValueAddedTime += entity.getTotalNonValueAddedTime(); // Acumula el tiempo sin valor agregado
             totalWaitTime += entity.getTotalWaitTime(); // Acumula el tiempo de espera
+            totalBlockingTime += entity.getTotalBlockingTime(); // Acumula el tiempo de bloqueo
 
             if (systemTime < minSystemTime) { // Verifica si este tiempo es menor al mínimo actual
                 minSystemTime = systemTime; // Actualiza el tiempo mínimo
@@ -59,23 +63,33 @@ public class EntityStatistics { // Clase que recopila y calcula estadísticas pa
     }
 
     public double getAverageSystemTime() { // Método para calcular el tiempo promedio en el sistema
-        return totalExits > 0 ? totalSystemTime / totalExits : 0; // Divide el tiempo total entre las salidas, o cero si no hay salidas
+        return totalExits > 0 ? totalSystemTime / totalExits : 0; // Divide el tiempo total entre las salidas, o cero si
+                                                                  // no hay salidas
     }
 
     public double getAverageValueAddedTime() { // Método para calcular el tiempo promedio con valor agregado
-        return totalExits > 0 ? totalValueAddedTime / totalExits : 0; // Divide el tiempo con valor entre las salidas, o cero si no hay salidas
+        return totalExits > 0 ? totalValueAddedTime / totalExits : 0; // Divide el tiempo con valor entre las salidas, o
+                                                                      // cero si no hay salidas
     }
 
     public double getAverageNonValueAddedTime() { // Método para calcular el tiempo promedio sin valor agregado
-        return totalExits > 0 ? totalNonValueAddedTime / totalExits : 0; // Divide el tiempo sin valor entre las salidas, o cero si no hay salidas
+        return totalExits > 0 ? totalNonValueAddedTime / totalExits : 0; // Divide el tiempo sin valor entre las
+                                                                         // salidas, o cero si no hay salidas
     }
 
     public double getAverageWaitTime() { // Método para calcular el tiempo promedio de espera
-        return totalExits > 0 ? totalWaitTime / totalExits : 0; // Divide el tiempo de espera entre las salidas, o cero si no hay salidas
+        return totalExits > 0 ? totalWaitTime / totalExits : 0; // Divide el tiempo de espera entre las salidas, o cero
+                                                                // si no hay salidas
+    }
+
+    public double getAverageBlockingTime() { // Método para calcular el tiempo promedio de bloqueo
+        return totalExits > 0 ? totalBlockingTime / totalExits : 0; // Divide el tiempo de bloqueo entre las salidas, o
+                                                                    // cero si no hay salidas
     }
 
     public double getMinSystemTime() { // Método para obtener el tiempo mínimo en el sistema
-        return minSystemTime == Double.MAX_VALUE ? 0 : minSystemTime; // Retorna cero si no se ha registrado ninguna salida, o el mínimo registrado
+        return minSystemTime == Double.MAX_VALUE ? 0 : minSystemTime; // Retorna cero si no se ha registrado ninguna
+                                                                      // salida, o el mínimo registrado
     }
 
     public double getMaxSystemTime() { // Método getter para obtener el tiempo máximo en el sistema

@@ -13,6 +13,7 @@ public class Entity {
     private double totalValueAddedTime;
     private double totalNonValueAddedTime;
     private double totalWaitTime;
+    private double totalBlockingTime;
     private boolean inSystem;
     private boolean isTransformed; // NUEVO: indica si es resultado de transformación
 
@@ -34,6 +35,7 @@ public class Entity {
         this.totalValueAddedTime = 0;
         this.totalNonValueAddedTime = 0;
         this.totalWaitTime = 0;
+        this.totalBlockingTime = 0;
         this.inSystem = true;
         this.isTransformed = isTransformed;
         this.creationTime = creationTime;
@@ -97,6 +99,14 @@ public class Entity {
 
     public double getTotalWaitTime() {
         return totalWaitTime;
+    }
+
+    public void addBlockingTime(double time) {
+        this.totalBlockingTime += time;
+    }
+
+    public double getTotalBlockingTime() {
+        return totalBlockingTime;
     }
 
     public boolean isInSystem() {
