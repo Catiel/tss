@@ -60,6 +60,12 @@ public class SimulationEngine {
                 firstTime, occurrences, frequency);
     }
 
+    public void scheduleArrival(String entityTypeName, String locationName,
+            double firstTime, int occurrences, double frequency, boolean useExponential) {
+        arrivalGenerator.scheduleArrivals(entityTypeName, locationName,
+                firstTime, occurrences, frequency, useExponential);
+    }
+
     public void run(double endTime) {
         this.simulationEndTime = endTime;
 
