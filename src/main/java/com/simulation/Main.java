@@ -144,8 +144,8 @@ public class Main {
             }
         });
 
-        // 11. INSPECCION: 3.0 min (ProModel: WAIT E(3) min - promedio de exponencial)
-        engine.addProcessingRule(new ProcessingRule("INSPECCION", "PIEZA_AUTOMOTRIZ", 3.0) {
+        // 11. INSPECCION: E(3) min (ProModel: WAIT E(3) min - distribución exponencial)
+        engine.addProcessingRule(new ProcessingRule("INSPECCION", "PIEZA_AUTOMOTRIZ", 3.0, true) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
@@ -160,7 +160,8 @@ public class Main {
     }
 
     private static void setupArrivals(SimulationEngine engine) {
-        engine.scheduleArrival("PIEZA_AUTOMOTRIZ", "ALMACEN_MP", 0, 12000, 5.0);
+        // ProModel: Frecuencia E(5) min - Distribución exponencial con media 5
+        engine.scheduleArrival("PIEZA_AUTOMOTRIZ", "ALMACEN_MP", 0, 12000, 5.0, true);
     }
 
     private static void generateConsolidatedReport(List<StatisticsCollector> replicaStatistics) {

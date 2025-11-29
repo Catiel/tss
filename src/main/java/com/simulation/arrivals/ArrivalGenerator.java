@@ -5,10 +5,12 @@ import com.simulation.core.SimulationEngine;
 import com.simulation.entities.Entity;
 import com.simulation.entities.EntityType;
 import com.simulation.processing.OperationHandler;
+import java.util.Random;
 
 public class ArrivalGenerator { // Clase encargada de generar llegadas de entidades en la simulación
     private final SimulationEngine engine; // Referencia al motor de simulación
     private final OperationHandler operationHandler; // Manejador de operaciones para procesar las llegadas de entidades
+    private static final Random random = new Random(); // Generador de números aleatorios
 
     public ArrivalGenerator(SimulationEngine engine) { // Constructor que inicializa el generador de llegadas
         this.engine = engine; // Asigna el motor de simulación recibido como parámetro
@@ -18,6 +20,12 @@ public class ArrivalGenerator { // Clase encargada de generar llegadas de entida
     public void scheduleArrivals(String entityTypeName, String locationName, // Método que programa múltiples llegadas
                                                                              // de entidades
             double firstTime, int occurrences, double frequency) {
+        scheduleArrivals(entityTypeName, locationName, firstTime, occurrences, frequency, false);
+    }
+
+    public void scheduleArrivals(String entityTypeName, String locationName, // Método que programa múltiples llegadas
+                                                                             // de entidades con distribución
+            double firstTime, int occurrences, double frequency, boolean useExponential) {
         EntityType entityType = engine.getEntityType(entityTypeName); // Obtiene el tipo de entidad desde el motor
                                                                       // usando su nombre
 
@@ -27,9 +35,9 @@ public class ArrivalGenerator { // Clase encargada de generar llegadas de entida
             return; // Sale del método si no existe el tipo de entidad
         }
 
+        double currentArrivalTime = firstTime;
         for (int i = 0; i < occurrences; i++) { // Ciclo que genera cada una de las llegadas programadas
-            double arrivalTime = firstTime + (i * frequency); // Calcula el tiempo de llegada: tiempo inicial más
-                                                              // frecuencia multiplicada por índice
+            final double arrivalTime = currentArrivalTime; // Variable final para usar en clase anónima
 
             Event arrivalEvent = new Event(arrivalTime, 0, // Crea un nuevo evento de llegada con tiempo, prioridad y
                                                            // descripción
@@ -48,6 +56,16 @@ public class ArrivalGenerator { // Clase encargada de generar llegadas de entida
 
             engine.getScheduler().scheduleEvent(arrivalEvent); // Programa el evento de llegada en el planificador del
                                                                // motor
+
+            // Calcula el tiempo hasta el próximo arribo
+            if (useExponential) {
+                // Distribución exponencial: -mean * ln(1-U)
+                double interarrivalTime = -frequency * Math.log(1.0 - random.nextDouble());
+                currentArrivalTime += interarrivalTime;
+            } else {
+                // Frecuencia fija
+                currentArrivalTime += frequency;
+            }
         }
     }
 }

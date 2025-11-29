@@ -420,13 +420,17 @@ public class OperationHandler {
         Location destinationLoc = engine.getLocation(destination);
         double currentTime = engine.getClock().getCurrentTime();
 
-        // CRITICAL: Check if destination can accept BEFORE acquiring resource or moving
-        if (destinationLoc != null && !destinationLoc.canAccept()) {
-            // Destination is full - entity is BLOCKED at current location
-            blockedEntities.computeIfAbsent(destination, k -> new LinkedList<>()).add(entity);
-            blockStartTime.put(entity, currentTime); // Record when blocking started
-            // Entity stays at current location - blocking time will accumulate
-            return;
+        // CRITICAL: Try to RESERVE space in destination BEFORE moving
+        if (destinationLoc != null) {
+            if (!destinationLoc.reserve()) {
+                // Could not reserve - destination is full (considering current + reserved)
+                // Entity is BLOCKED at current location
+                blockedEntities.computeIfAbsent(destination, k -> new LinkedList<>()).add(entity);
+                blockStartTime.put(entity, currentTime); // Record when blocking started
+                // Entity stays at current location - blocking time will accumulate
+                return;
+            }
+            // Successfully reserved space - proceed with movement
         }
 
         if (resource != null && resource.isAvailable()) {
@@ -468,7 +472,11 @@ public class OperationHandler {
             entity.addNonValueAddedTime(emptyTravelTime);
 
         } else {
+            // Resource not available - release reservation and queue
             if (resource != null) {
+                if (destinationLoc != null) {
+                    destinationLoc.releaseReservation();
+                }
                 entity.setPendingDestination(destination);
                 resource.addToQueue(entity);
                 entity.addWaitTime(1.0);

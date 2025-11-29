@@ -11,6 +11,7 @@ public class Location { // Clase que representa una ubicación o estación en la
     private final Queue<Entity> contentQueue; // Cola de entidades que están actualmente siendo procesadas en la
                                               // ubicación
     private int currentOccupancy; // Número actual de entidades ocupando la ubicación
+    private int reservedSpaces; // Espacios reservados por entidades en tránsito hacia esta ubicación
     private double totalOccupancyTime; // Tiempo total acumulado ponderado por la ocupación (para promedio)
     private double lastUpdateTime; // Último tiempo en que se actualizaron las estadísticas de ocupación
     private double busyTime; // Tiempo acumulado con ocupación > 0 (utilización de la estación)
@@ -21,6 +22,7 @@ public class Location { // Clase que representa una ubicación o estación en la
         this.queue = new LinkedList<>(); // Crea la cola de espera vacía
         this.contentQueue = new LinkedList<>(); // Crea la cola de contenido vacía
         this.currentOccupancy = 0; // Inicializa la ocupación actual en cero
+        this.reservedSpaces = 0; // Inicializa espacios reservados en cero
         this.totalOccupancyTime = 0; // Inicializa el tiempo de ocupación acumulado en cero
         this.lastUpdateTime = 0; // Inicializa el tiempo de última actualización en cero
         this.busyTime = 0; // Inicializa el tiempo ocupado en cero
@@ -28,18 +30,39 @@ public class Location { // Clase que representa una ubicación o estación en la
     }
 
     public boolean canAccept() { // Método que verifica si la ubicación puede aceptar más entidades
-        return currentOccupancy < type.capacity(); // Retorna verdadero si la ocupación actual es menor que la capacidad
+        // Considera tanto la ocupación actual como los espacios reservados
+        return (currentOccupancy + reservedSpaces) < type.capacity();
+    }
+
+    public boolean reserve() { // Reserva un espacio si está disponible
+        if (canAccept()) {
+            reservedSpaces++;
+            return true;
+        }
+        return false;
+    }
+
+    public void releaseReservation() { // Libera una reservación cuando la entidad llega
+        if (reservedSpaces > 0) {
+            reservedSpaces--;
+        }
     }
 
     public boolean enter(Entity entity, double currentTime) { // Método para que una entidad entre a la ubicación
         updateOccupancyTime(currentTime); // Actualiza las estadísticas de ocupación antes del cambio
-        if (canAccept()) { // Verifica si hay espacio disponible
+
+        // Primero liberar la reservación si existía
+        releaseReservation();
+
+        // Ahora verificar si realmente hay espacio (debería haber porque teníamos
+        // reservación)
+        if (currentOccupancy < type.capacity()) { // Verifica capacidad física
             contentQueue.add(entity); // Agrega la entidad a la cola de procesamiento
             currentOccupancy++; // Incrementa el contador de ocupación
             entity.setCurrentLocation(this); // Establece esta ubicación como la actual para la entidad
             entity.setEntryTime(currentTime); // Set entry time for statistics
             return true;
-        } else { // Si no hay espacio disponible
+        } else { // Si no hay espacio disponible (no debería pasar con reservación)
             queue.add(entity); // Agrega la entidad a la cola de espera
             return false;
         }
