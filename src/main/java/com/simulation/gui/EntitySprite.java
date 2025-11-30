@@ -20,18 +20,8 @@ public class EntitySprite {
     private boolean isSpawning = true;
     private double pulsePhase = Math.random() * Math.PI * 2;
 
-    // Estado de progreso visual
-    private ProcessingState processingState = ProcessingState.RAW;
-
     // Sistema de estela (reducido para optimización)
     private final ParticleSystem trailSystem;
-
-    // Estados de procesamiento
-    public enum ProcessingState {
-        RAW, // Cubo gris - estado inicial
-        HEAT_TREATED, // Cubo rojo - después del HORNO
-        MACHINED // Engrane - después de mecanizado
-    }
 
     public EntitySprite(Entity entity, double x, double y) {
         this.entity = entity;
@@ -100,7 +90,13 @@ public class EntitySprite {
     private void drawStateShape(GraphicsContext gc, double size) {
         Color stateColor = getStateColor();
 
-        switch (processingState) {
+        // Leer estado directamente de la entidad
+        com.simulation.entities.EntityState state = entity.getState();
+        if (state == null) {
+            state = com.simulation.entities.EntityState.RAW; // Default
+        }
+
+        switch (state) {
             case RAW:
                 // Cubo gris simple
                 drawCube(gc, size, stateColor);
@@ -201,10 +197,15 @@ public class EntitySprite {
     }
 
     /**
-     * Obtiene el color según el estado
+     * Obtiene el color según el estado REAL de la entidad
      */
     private Color getStateColor() {
-        switch (processingState) {
+        com.simulation.entities.EntityState state = entity.getState();
+        if (state == null) {
+            return Color.GRAY; // Default gris
+        }
+
+        switch (state) {
             case RAW:
                 return Color.GRAY; // Gris
             case HEAT_TREATED:
@@ -214,21 +215,6 @@ public class EntitySprite {
             default:
                 return Color.GRAY;
         }
-    }
-
-    /**
-     * Actualiza el estado de procesamiento
-     */
-    public void setProcessingState(ProcessingState state) {
-        if (this.processingState != state) {
-            this.processingState = state;
-            // Pequeña explosión visual al cambiar de estado
-            trailSystem.emitExplosion(x, y, 8, getStateColor());
-        }
-    }
-
-    public ProcessingState getProcessingState() {
-        return processingState;
     }
 
     /**

@@ -401,4 +401,13 @@ public class AnimationController {
     public EntitySprite getEntitySprite(int entityId) {
         return entitySprites.get(entityId);
     }
+
+    /**
+     * Elimina el sprite de una entidad (para evitar entidades fantasma)
+     */
+    public void removeEntitySprite(int entityId) {
+        synchronized (entitySprites) {
+            entitySprites.remove(entityId);
+        }
+    }
 }

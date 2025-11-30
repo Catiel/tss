@@ -932,28 +932,21 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
 
     @Override
     public void onEntityArrival(Entity entity, Location location, double time) {
-        // Cambiar estado visual de la entidad según la locación
-        if (animationController != null) {
-            EntitySprite sprite = animationController.getEntitySprite(entity.getId());
-            if (sprite != null) {
-                String locationName = location.getName();
-
-                // RAW → HEAT_TREATED: Al salir del HORNO
-                if ("HORNO".equals(locationName)) {
-                    sprite.setProcessingState(EntitySprite.ProcessingState.HEAT_TREATED);
-                }
-                // HEAT_TREATED → MACHINED: Al llegar a la primera máquina (TORNEADO)
-                else if ("TORNEADO".equals(locationName)) {
-                    if (sprite.getProcessingState() == EntitySprite.ProcessingState.HEAT_TREATED) {
-                        sprite.setProcessingState(EntitySprite.ProcessingState.MACHINED);
-                    }
-                }
-            }
-        }
+        // El estado visual ya está sincronizado con entity.getState()
+        // No es necesario actualizar nada aquí
     }
 
     @Override
     public void onEntityMove(Entity entity, Location from, Location to, double time) {
+        // ACTUALIZAR ESTADOS AL SALIR DE PROCESAMIENTO
+        if ("HORNO".equals(from.getName())) {
+            // Al salir del horno → pieza tratada térmicamente
+            entity.setState(com.simulation.entities.EntityState.HEAT_TREATED);
+        } else if ("TORNEADO".equals(from.getName())) {
+            // Al salir del torneado → pieza maquinada (engrane)
+            entity.setState(com.simulation.entities.EntityState.MACHINED);
+        }
+
         // Iniciar animación de movimiento con AnimationController mejorado
         if (animationController != null) {
             // Determinar si usa recurso (GRUA_VIAJERA o ROBOT)
@@ -983,7 +976,10 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
 
     @Override
     public void onEntityExit(Entity entity, Location location, double time) {
-        // Entidad sale del sistema o de una locación
+        // Entidad sale del sistema - limpiar sprite para evitar fantasmas
+        if (animationController != null) {
+            animationController.removeEntitySprite(entity.getId());
+        }
     }
 
     @Override
@@ -1174,5 +1170,11 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
 
     private String formatEntityName(String name) {
         return name.replace("_", " ");
-    }
-}
+    }}
+
+    
+    
+    
+    
+    
+    

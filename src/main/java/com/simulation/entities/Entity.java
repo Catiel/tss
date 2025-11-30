@@ -16,6 +16,7 @@ public class Entity {
     private double totalBlockingTime;
     private boolean inSystem;
     private boolean isTransformed; // NUEVO: indica si es resultado de transformación
+    private EntityState state; // Estado de procesamiento visual
 
     private final double creationTime; // Time when entity was created
 
@@ -39,6 +40,7 @@ public class Entity {
         this.inSystem = true;
         this.isTransformed = isTransformed;
         this.creationTime = creationTime;
+        this.state = EntityState.RAW; // Todas las entidades comienzan como RAW
     }
 
     public int getId() {
@@ -133,5 +135,13 @@ public class Entity {
 
     public void setPendingDestination(String destination) {
         this.pendingDestination = destination;
+    }
+
+    public EntityState getState() {
+        return state;
+    }
+
+    public void setState(EntityState state) {
+        this.state = state;
     }
 }
