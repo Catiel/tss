@@ -336,7 +336,7 @@ public class AnimationController {
             if (resource != null) {
                 resource.setLoaded(true);
             }
-            animator = new PathAnimator(sprite, resource, from, to, 2.0, () -> {
+            animator = new PathAnimator(sprite, resource, from, to, 0.3, () -> {
                 if (resource != null) {
                     resource.setLoaded(false);
                 }
@@ -346,7 +346,7 @@ public class AnimationController {
             });
         } else {
             // Movimiento directo
-            animator = new PathAnimator(sprite, from, to, 1.0, onComplete);
+            animator = new PathAnimator(sprite, from, to, 0.2, onComplete);
         }
 
         activeAnimations.add(animator);
