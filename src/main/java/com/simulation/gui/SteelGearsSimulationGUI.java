@@ -57,6 +57,9 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
     // Sistema de visualización mejorado
     private AnimationController animationController;
 
+    // Sistema de configuración parametrizable
+    private com.simulation.config.SimulationConfig simulationConfig;
+
     public static void main(String[] args) {
         launch(args);
     }
@@ -65,6 +68,9 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
     public void start(Stage primaryStage) {
         this.primaryStage = primaryStage;
         primaryStage.setTitle("Simulador de Manufactura - Engranes de Acero SA");
+
+        // Inicializar configuración
+        this.simulationConfig = new com.simulation.config.SimulationConfig();
 
         // Crear motor de simulación
         setupSimulationEngine();
@@ -1068,11 +1074,21 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
     }
 
     private void openConfigurationDialog() {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Configuración");
-        alert.setHeaderText("Configuración de Simulación");
-        alert.setContentText("La configuración de parámetros se realiza en el código (Main.java) para este ejercicio.");
-        alert.showAndWait();
+        if (simulationConfig == null) {
+            simulationConfig = new com.simulation.config.SimulationConfig();
+        }
+
+        ConfigurationDialog dialog = new ConfigurationDialog(simulationConfig);
+        dialog.showAndWait();
+
+        if (dialog.wasAccepted()) {
+            // La configuración ya está actualizada en simulationConfig
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Configuración Actualizada");
+            alert.setHeaderText("¡Configuración guardada!");
+            alert.setContentText("Los nuevos parámetros se aplicarán en la próxima ejecución de la simulación.");
+            alert.showAndWait();
+        }
     }
 
     private TableView<LocationStatsRow> createLocationStatsTable() {
