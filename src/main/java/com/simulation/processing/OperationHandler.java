@@ -487,13 +487,11 @@ public class OperationHandler {
     private void performLoadedMove(Entity entity, String destination, String resourceName, Resource resource) {
         double currentTime = engine.getClock().getCurrentTime();
 
-        // Entity leaves the location now that resource has arrived and picked it up
+        // ⚠️ CRÍTICO: NO liberar la ubicación ahora - implementando Blk=1 de ProModel
+        // En ProModel, Blk=1 significa que la entidad bloquea la locación durante el
+        // movimiento
+        // Solo se libera después de "THEN FREE" (al completar el movimiento)
         Location from = entity.getCurrentLocation();
-        if (from != null) {
-            from.exit(currentTime);
-            checkAndPromoteFromQueue(from);
-            notifyLocationAvailable(from.getName()); // Notify that space is free
-        }
 
         String currentLocation = entity.getCurrentLocation() != null ? entity.getCurrentLocation().getName()
                 : "UNKNOWN";
@@ -509,12 +507,18 @@ public class OperationHandler {
                 "Move " + entity.getType().getName() + " to " + destination) {
             @Override
             public void execute() {
+                // ⚠️ AHORA SÍ - Liberar locación origen DESPUÉS del movimiento (THEN FREE)
+                if (from != null) {
+                    from.exit(engine.getClock().getCurrentTime());
+                    checkAndPromoteFromQueue(from);
+                    notifyLocationAvailable(from.getName());
+                }
+
                 engine.notifyResourceReleased(resource, entity);
 
                 // Record resource trip statistics
                 engine.getStatistics().recordResourceTrip(resourceName, moveTime);
 
-                Location from = entity.getCurrentLocation();
                 Location to = engine.getLocation(destination);
                 if (from != null && to != null) {
                     engine.notifyEntityMove(entity, from, to);
