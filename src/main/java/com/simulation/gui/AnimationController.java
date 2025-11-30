@@ -97,6 +97,29 @@ public class AnimationController {
         currentTime += deltaTime * 60; // Convertir a minutos de simulación
         animationTime += deltaTime;
 
+        // Actualizar datos de ocupación/capacidad/totalEntries de LocationNodes desde
+        // el engine
+        if (engine != null) {
+            var locationStats = engine.getStatistics().getLocationStats();
+
+            for (Map.Entry<String, LocationNode> entry : locationNodes.entrySet()) {
+                String locationName = entry.getKey();
+                LocationNode node = entry.getValue();
+
+                com.simulation.locations.Location location = engine.getLocation(locationName);
+                if (location != null) {
+                    node.setOccupancy(location.getCurrentOccupancy());
+                    node.setCapacity(location.getType().capacity());
+
+                    // Actualizar total de entradas desde las estadísticas
+                    var stats = locationStats.get(locationName);
+                    if (stats != null) {
+                        node.setTotalEntries(stats.getTotalEntries());
+                    }
+                }
+            }
+        }
+
         // Actualizar LocationNodes (animaciones, partículas, etc.)
         for (LocationNode node : locationNodes.values()) {
             node.update(deltaTime);
@@ -373,5 +396,9 @@ public class AnimationController {
 
     public Map<String, LocationNode> getLocationNodes() {
         return locationNodes;
+    }
+
+    public EntitySprite getEntitySprite(int entityId) {
+        return entitySprites.get(entityId);
     }
 }

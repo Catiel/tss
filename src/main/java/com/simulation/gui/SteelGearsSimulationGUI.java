@@ -55,12 +55,8 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
     private double simulationSpeed = 1.0;
     private double currentTime = 0;
     private long lastUIUpdate = 0; // Control de frecuencia de actualización UI
-    // Sistema de visualización
-    private VisualLocationManager locationManager;
-    private VisualEntityManager entityManager;
-    private VisualResourceManager resourceManager;
-    // Gestor de rutas
-    private PathNetworkManager pathManager;
+    // Sistema de visualización mejorado
+    private AnimationController animationController;
 
     public static void main(String[] args) {
         launch(args);
@@ -185,22 +181,45 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
     }
 
     private ScrollPane createAnimationCanvas() {
-        canvas = new Canvas(2000, 1200);
+        // Usar el nuevo AnimationController mejorado
+        animationController = new AnimationController(2000, 1200);
+        canvas = animationController.getCanvas();
         gc = canvas.getGraphicsContext2D();
-
-        // Inicializar managers visuales
-        setupLocationPositions();
-        pathManager = new PathNetworkManager(); // Inicializar gestor de rutas
-        locationManager = new VisualLocationManager(locationPositions);
-        entityManager = new VisualEntityManager();
-        // resourceManager se inicializa después de setupSimulationEngine()
 
         ScrollPane scrollPane = new ScrollPane(canvas);
         scrollPane.setStyle("-fx-background: #1A252F;");
         scrollPane.setFitToWidth(true);
         scrollPane.setFitToHeight(true);
 
+        // Habilitar zoom con scroll wheel
+        setupZoom(scrollPane);
+
         return scrollPane;
+    }
+
+    private void setupZoom(ScrollPane scrollPane) {
+        double minScale = 0.5;
+        double maxScale = 3.0;
+        double zoomFactor = 1.1;
+
+        canvas.setOnScroll(event -> {
+            event.consume();
+
+            double deltaY = event.getDeltaY();
+            if (deltaY == 0)
+                return;
+
+            double scaleFactor = (deltaY > 0) ? zoomFactor : 1 / zoomFactor;
+            double currentScale = canvas.getScaleX();
+            double newScale = currentScale * scaleFactor;
+
+            // Limitar el zoom
+            newScale = Math.max(minScale, Math.min(maxScale, newScale));
+
+            // Aplicar zoom
+            canvas.setScaleX(newScale);
+            canvas.setScaleY(newScale);
+        });
     }
 
     private TabPane createMainTabPane() {
@@ -390,8 +409,10 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
         // Registrar este GUI como listener de eventos de simulación
         engine.addListener(this);
 
-        // Inicializar resource manager después de crear recursos
-        resourceManager = new VisualResourceManager(engine);
+        // Configurar el engine en el AnimationController
+        if (animationController != null) {
+            animationController.setEngine(engine);
+        }
     }
 
     private void setupEntityTypes(SimulationEngine engine) {
@@ -526,34 +547,23 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
     }
 
     private void setupLocationPositions() {
-        // Diseño del flujo de producción (coordenadas x, y)
-        locationPositions.put("ALMACEN_MP", new Point2D(50, 300));
-        locationPositions.put("HORNO", new Point2D(250, 300));
-        locationPositions.put("BANDA_1", new Point2D(450, 300));
-        locationPositions.put("CARGA", new Point2D(650, 300));
-
-        // Celda de manufactura (Robot)
-        locationPositions.put("TORNEADO", new Point2D(850, 150));
-        locationPositions.put("FRESADO", new Point2D(1050, 150));
-        locationPositions.put("TALADRO", new Point2D(1050, 450));
-        locationPositions.put("RECTIFICADO", new Point2D(850, 450));
-
-        locationPositions.put("DESCARGA", new Point2D(650, 500));
-        locationPositions.put("BANDA_2", new Point2D(450, 500));
-        locationPositions.put("INSPECCION", new Point2D(250, 500));
-        locationPositions.put("SALIDA", new Point2D(50, 500));
+        // Ya no se necesita - AnimationController tiene sus propias posiciones
+        // Mantener por compatibilidad pero no se usa
     }
 
     private void startAnimationTimer() {
+        // Iniciar el AnimationController mejorado
+        if (animationController != null) {
+            animationController.start();
+        }
+
+        // Timer separado solo para estadísticas UI
         animationTimer = new AnimationTimer() {
             private int frameCount = 0;
 
             @Override
             public void handle(long now) {
-                renderScene();
-
                 // Actualizar estadísticas cada 30 frames (2 veces por segundo a 60fps)
-                // Esto reduce el parpadeo al actualizar menos frecuentemente
                 frameCount++;
                 if (frameCount >= 30) {
                     updateStatistics();
@@ -564,57 +574,7 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
         animationTimer.start();
     }
 
-    private void renderScene() {
-        // Limpiar canvas
-        gc.setFill(Color.web("#1A252F"));
-        gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
-
-        // Dibujar conexiones entre locaciones
-        drawConnections();
-
-        // Dibujar locaciones
-        locationManager.render(gc, engine);
-
-        // Dibujar entidades en movimiento
-        entityManager.render(gc);
-
-        // Dibujar recursos (solo si ya está inicializado)
-        if (resourceManager != null) {
-            resourceManager.render(gc, entityManager);
-        }
-    }
-
-    private void drawConnections() {
-        gc.setStroke(Color.web("#34495E"));
-        gc.setLineWidth(2);
-        gc.setLineDashes(5, 5);
-
-        // Dibujar líneas de flujo
-        drawLine("ALMACEN_MP", "HORNO");
-        drawLine("HORNO", "BANDA_1");
-        drawLine("BANDA_1", "CARGA");
-
-        // Flujo Robot
-        drawLine("CARGA", "TORNEADO");
-        drawLine("TORNEADO", "FRESADO");
-        drawLine("FRESADO", "TALADRO");
-        drawLine("TALADRO", "RECTIFICADO");
-        drawLine("RECTIFICADO", "DESCARGA");
-
-        drawLine("DESCARGA", "BANDA_2");
-        drawLine("BANDA_2", "INSPECCION");
-        drawLine("INSPECCION", "SALIDA");
-
-        gc.setLineDashes(null);
-    }
-
-    private void drawLine(String from, String to) {
-        Point2D p1 = locationPositions.get(from);
-        Point2D p2 = locationPositions.get(to);
-        if (p1 != null && p2 != null) {
-            gc.strokeLine(p1.getX() + 40, p1.getY() + 40, p2.getX() + 40, p2.getY() + 40);
-        }
-    }
+    // Ya no es necesario - AnimationController maneja el renderizado completo
 
     private List<com.simulation.statistics.StatisticsCollector> replicaStats = new ArrayList<>();
 
@@ -638,8 +598,7 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
                     final int currentReplica = replica;
                     Platform.runLater(() -> {
                         statusLabel.setText("Ejecutando Réplica " + currentReplica + " / 3");
-                        // Reset visual managers for new replica
-                        entityManager.clear();
+                        // AnimationController se reinicia automáticamente
                     });
 
                     // Reiniciar motor para cada réplica
@@ -798,6 +757,15 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
         paused.set(!paused.get());
         pauseButton.setText(paused.get() ? "▶ Reanudar" : "⏸ Pausar");
         statusLabel.setText(paused.get() ? "Pausado" : "Ejecutando...");
+
+        // Pausar/reanudar AnimationController
+        if (animationController != null) {
+            if (paused.get()) {
+                animationController.pause();
+            } else {
+                animationController.resume();
+            }
+        }
         statusLabel.setTextFill(paused.get() ? Color.web("#F39C12") : Color.web("#2ECC71"));
     }
 
@@ -817,7 +785,7 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
         stopSimulation();
         currentTime = 0;
         setupSimulationEngine();
-        entityManager.clear();
+        // AnimationController se reinicia con el engine
         updateUI();
         statusLabel.setText("Reiniciado");
     }
@@ -858,9 +826,12 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
                     String locName = location.getName();
                     com.simulation.locations.LocationStatistics stats = locStats.get(locName);
 
-                    // Actualizar contador visual en el nodo de la locación
-                    int totalEntries = (stats != null) ? stats.getTotalEntries() : 0;
-                    locationManager.setTotalEntries(locName, totalEntries);
+                    // Actualizar ocupación en LocationNode a través de AnimationController
+                    if (animationController != null) {
+                        animationController.updateLocationState(locName,
+                                location.getCurrentOccupancy() > 0,
+                                stats != null && stats.getTotalEntries() > 0);
+                    }
 
                     if (stats != null) {
                         row.scheduledTime.set(String.format("%.2f", stats.getScheduledTime() / 60.0));
@@ -957,56 +928,57 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
 
     @Override
     public void onEntityCreated(Entity entity, Location location, double time) {
-        // Delegar a AnimationController si tuviéramos acceso directo,
-        // pero aquí usamos VisualEntityManager
-        if (entityManager != null) {
-            Point2D pos = locationPositions.get(location.getName());
-            if (pos != null) {
-                // Crear sprite visual
-                // Nota: VisualEntityManager maneja la creación implícitamente al renderizar si
-                // se añade a una lista,
-                // pero para animación fluida podríamos necesitar notificarle.
-                // Por ahora, el render loop lo captará si consultamos el estado del engine.
+        // El AnimationController maneja esto automáticamente
+    }
+
+    @Override
+    public void onEntityArrival(Entity entity, Location location, double time) {
+        // Cambiar estado visual de la entidad según la locación
+        if (animationController != null) {
+            EntitySprite sprite = animationController.getEntitySprite(entity.getId());
+            if (sprite != null) {
+                String locationName = location.getName();
+
+                // RAW → HEAT_TREATED: Al salir del HORNO
+                if ("HORNO".equals(locationName)) {
+                    sprite.setProcessingState(EntitySprite.ProcessingState.HEAT_TREATED);
+                }
+                // HEAT_TREATED → MACHINED: Al llegar a la primera máquina (TORNEADO)
+                else if ("TORNEADO".equals(locationName)) {
+                    if (sprite.getProcessingState() == EntitySprite.ProcessingState.HEAT_TREATED) {
+                        sprite.setProcessingState(EntitySprite.ProcessingState.MACHINED);
+                    }
+                }
             }
         }
     }
 
     @Override
-    public void onEntityArrival(Entity entity, Location location, double time) {
-        // Actualizar estadísticas o efectos visuales
-    }
-
-    @Override
     public void onEntityMove(Entity entity, Location from, Location to, double time) {
-        // Iniciar animación de movimiento
-        if (entityManager != null) {
-            Point2D start = locationPositions.get(from.getName());
-            Point2D end = locationPositions.get(to.getName());
-            if (start != null && end != null) {
-                // Crear ruta simple de 2 puntos para animar
-                List<Point2D> path = Arrays.asList(start, end);
+        // Iniciar animación de movimiento con AnimationController mejorado
+        if (animationController != null) {
+            // Determinar si usa recurso (GRUA_VIAJERA o ROBOT)
+            String resourceName = null;
 
-                // Determinar si usa recurso (GRUA o ROBOT)
-                String resourceName = "";
-                if (("ALMACEN_MP".equals(from.getName()) && "HORNO".equals(to.getName())) ||
-                        ("HORNO".equals(from.getName()) && "BANDA_1".equals(to.getName()))) {
-                    resourceName = "GRUA_VIAJERA";
-                } else if (("CARGA".equals(from.getName()) && "TORNEADO".equals(to.getName())) ||
-                        ("TORNEADO".equals(from.getName()) && "FRESADO".equals(to.getName())) ||
-                        ("FRESADO".equals(from.getName()) && "TALADRO".equals(to.getName())) ||
-                        ("TALADRO".equals(from.getName()) && "RECTIFICADO".equals(to.getName())) ||
-                        ("RECTIFICADO".equals(from.getName()) && "DESCARGA".equals(to.getName()))) {
-                    resourceName = "ROBOT";
-                }
-
-                // Iniciar animación
-                if (!resourceName.isEmpty()) {
-                    entityManager.startResourceTransport(entity.getId(), entity.getType().getName(), resourceName,
-                            path);
-                } else {
-                    entityManager.startEntityTransport(entity.getId(), entity.getType().getName(), path);
-                }
+            if (("ALMACEN_MP".equals(from.getName()) && "HORNO".equals(to.getName())) ||
+                    ("HORNO".equals(from.getName()) && "BANDA_1".equals(to.getName()))) {
+                resourceName = "GRUA_VIAJERA";
+            } else if (("CARGA".equals(from.getName()) && "TORNEADO".equals(to.getName())) ||
+                    ("TORNEADO".equals(from.getName()) && "FRESADO".equals(to.getName())) ||
+                    ("FRESADO".equals(from.getName()) && "TALADRO".equals(to.getName())) ||
+                    ("TALADRO".equals(from.getName()) && "RECTIFICADO".equals(to.getName())) ||
+                    ("RECTIFICADO".equals(from.getName()) && "DESCARGA".equals(to.getName()))) {
+                resourceName = "ROBOT";
             }
+
+            // Animar el movimiento
+            animationController.animateEntityMovement(
+                    entity,
+                    from.getName(),
+                    to.getName(),
+                    resourceName,
+                    null // callback
+            );
         }
     }
 

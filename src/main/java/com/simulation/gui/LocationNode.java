@@ -22,6 +22,7 @@ public class LocationNode {
 
     private int currentOccupancy;
     private int capacity;
+    private int totalEntries = 0; // Total de entradas histórico
 
     // Estado de animación
     private double animationTime = 0;
@@ -61,7 +62,7 @@ public class LocationNode {
         // Actualizar partículas
         particleSystem.update(deltaTime);
 
-        // Emitir partículas según tipo de estación
+        // Emitir partículas SOLO si está trabajando (optimización y feedback)
         if (isWorking) {
             emitStationSpecificParticles();
         }
@@ -79,7 +80,10 @@ public class LocationNode {
         // Dibujar el cuerpo principal de la estación según su tipo
         drawStationBody(gc);
 
-        // Dibujar barra de capacidad
+        // Dibujar contador de ocupación/capacidad VISIBLE
+        drawOccupancyCounter(gc);
+
+        // Dibujar barra de capacidad circular
         drawCapacityBar(gc);
 
         // Dibujar nombre con estilo
@@ -88,7 +92,12 @@ public class LocationNode {
         // Dibujar indicador de estado
         drawStatusIndicator(gc);
 
-        // Renderizar partículas
+        // Dibujar badge de total de entradas
+        if (totalEntries > 0) {
+            drawTotalEntriesBadge(gc);
+        }
+
+        // Renderizar partículas (solo si hay activas)
         particleSystem.render(gc);
     }
 
@@ -455,6 +464,47 @@ public class LocationNode {
     }
 
     /**
+     * Dibuja contador de ocupación/capacidad GRANDE Y VISIBLE
+     */
+    private void drawOccupancyCounter(GraphicsContext gc) {
+        // Panel oscuro en la parte inferior
+        double panelX = x;
+        double panelY = y + height + 5;
+        double panelWidth = width;
+        double panelHeight = 22;
+
+        // Fondo semitransparente
+        gc.setFill(Color.color(0, 0, 0, 0.8));
+        gc.fillRoundRect(panelX, panelY, panelWidth, panelHeight, 4, 4);
+
+        // Texto de ocupación
+        String occupancyText = currentOccupancy + "/" +
+                (capacity == Integer.MAX_VALUE ? "∞" : String.valueOf(capacity));
+
+        gc.setFont(Font.font("Arial", FontWeight.BOLD, 14));
+        gc.setTextAlign(TextAlignment.CENTER);
+
+        // Color según ocupación
+        double occupancyRatio = capacity > 0 ? (double) currentOccupancy / capacity : 0;
+        Color textColor;
+        if (occupancyRatio < 0.5) {
+            textColor = ColorPalette.STATUS_WORKING; // Verde
+        } else if (occupancyRatio < 0.8) {
+            textColor = Color.YELLOW; // Amarillo
+        } else {
+            textColor = ColorPalette.ACCENT_RED; // Rojo
+        }
+
+        gc.setFill(textColor);
+        gc.fillText(occupancyText, panelX + panelWidth / 2, panelY + 16);
+
+        // Borde
+        gc.setStroke(ColorPalette.UI_GLASS_STROKE);
+        gc.setLineWidth(1);
+        gc.strokeRoundRect(panelX, panelY, panelWidth, panelHeight, 4, 4);
+    }
+
+    /**
      * Dibuja la barra de capacidad circular mejorada
      */
     private void drawCapacityBar(GraphicsContext gc) {
@@ -544,19 +594,20 @@ public class LocationNode {
 
     /**
      * Emite partículas específicas según el tipo de estación
+     * OPTIMIZADO: Reduce frecuencia de emisión
      */
     private void emitStationSpecificParticles() {
         double centerX = x + width / 2;
         double centerY = y + height / 2;
 
-        // Emitir con probabilidad para no saturar
-        if (Math.random() < 0.3) {
+        // Emitir con probabilidad reducida para optimizar rendimiento
+        if (Math.random() < 0.15) { // Reducido de 0.3 a 0.15
             switch (name.toUpperCase()) {
                 case "HORNO":
                     particleSystem.emitSmoke(centerX, y + height * 0.2, 1,
                             Color.color(0.5, 0.5, 0.5, 0.6));
-                    if (Math.random() < 0.1) {
-                        particleSystem.emitEmbers(centerX, y + height * 0.3, 2);
+                    if (Math.random() < 0.05) { // Reducido de 0.1
+                        particleSystem.emitEmbers(centerX, y + height * 0.3, 1); // Reducido a 1
                     }
                     break;
 
@@ -564,14 +615,16 @@ public class LocationNode {
                 case "FRESADO":
                 case "TALADRO":
                 case "RECTIFICADO":
-                    if (Math.random() < 0.2) {
-                        particleSystem.emitSparks(centerX, centerY, 3, ColorPalette.ACCENT_CYAN);
+                    // Solo cuando está procesando
+                    if (Math.random() < 0.1) { // Reducido de 0.2
+                        particleSystem.emitSparks(centerX, centerY, 2, ColorPalette.ACCENT_CYAN);
                     }
                     break;
 
                 case "INSPECCION":
-                    if (Math.random() < 0.1) {
-                        particleSystem.emitGlow(centerX, centerY, ColorPalette.ACCENT_CYAN, 0.8);
+                    // Resplandor muy ocasional
+                    if (Math.random() < 0.05) {
+                        particleSystem.emitGlow(centerX, centerY, ColorPalette.ACCENT_CYAN, 0.6);
                     }
                     break;
             }
@@ -581,6 +634,31 @@ public class LocationNode {
     /**
      * Formatea el nombre de la estación para mostrar
      */
+    /**
+     * Dibuja badge con el total de entradas en la esquina superior derecha
+     */
+    private void drawTotalEntriesBadge(GraphicsContext gc) {
+        double badgeSize = 20;
+        double badgeX = x + width - badgeSize / 2 - 3;
+        double badgeY = y - badgeSize / 2 + 3;
+
+        // Círculo de fondo
+        gc.setFill(ColorPalette.ACCENT_CYAN);
+        gc.fillOval(badgeX, badgeY, badgeSize, badgeSize);
+
+        // Borde blanco
+        gc.setStroke(Color.WHITE);
+        gc.setLineWidth(2);
+        gc.strokeOval(badgeX, badgeY, badgeSize, badgeSize);
+
+        // Número
+        gc.setFill(Color.WHITE);
+        gc.setFont(Font.font("Arial", FontWeight.BOLD, 9));
+        gc.setTextAlign(TextAlignment.CENTER);
+        String displayText = totalEntries > 999 ? "999+" : String.valueOf(totalEntries);
+        gc.fillText(displayText, badgeX + badgeSize / 2, badgeY + badgeSize / 2 + 3);
+    }
+
     private String formatStationName(String name) {
         return name.replace("_", " ");
     }
@@ -609,6 +687,14 @@ public class LocationNode {
 
     public void setWaiting(boolean waiting) {
         this.isWaiting = waiting;
+    }
+
+    public void setTotalEntries(int totalEntries) {
+        this.totalEntries = totalEntries;
+    }
+
+    public int getTotalEntries() {
+        return totalEntries;
     }
 
     public String getName() {
