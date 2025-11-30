@@ -655,7 +655,7 @@ public class LocationNode {
         gc.setFill(Color.WHITE);
         gc.setFont(Font.font("Arial", FontWeight.BOLD, 9));
         gc.setTextAlign(TextAlignment.CENTER);
-        String displayText = totalEntries > 999 ? "999+" : String.valueOf(totalEntries);
+        String displayText = String.valueOf(totalEntries); // Siempre mostrar número real
         gc.fillText(displayText, badgeX + badgeSize / 2, badgeY + badgeSize / 2 + 3);
     }
 
