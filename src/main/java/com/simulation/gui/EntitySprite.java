@@ -11,7 +11,7 @@ import javafx.scene.paint.RadialGradient;
 public class EntitySprite {
 
     private final Entity entity;
-    private final double baseSize = 10;
+    private final double baseSize = 25; // Aumentado de 10 a 25 para mejor visibilidad
     private double x, y;
 
     // Estado de animación
