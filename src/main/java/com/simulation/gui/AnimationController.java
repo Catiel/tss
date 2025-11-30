@@ -46,28 +46,39 @@ public class AnimationController {
     }
 
     private void initializeLayout() {
-        // Coordenadas de las locaciones en el canvas
-        // Flujo principal
-        locationNodes.put("ALMACEN_MP", new LocationNode("ALMACEN_MP", 50, 300, 80, 60, Color.SADDLEBROWN));
-        locationNodes.put("HORNO", new LocationNode("HORNO", 250, 300, 100, 80, Color.ORANGERED));
-        locationNodes.put("BANDA_1", new LocationNode("BANDA_1", 450, 300, 120, 40, Color.GRAY));
-        locationNodes.put("CARGA", new LocationNode("CARGA", 650, 300, 80, 60, Color.LIGHTGRAY));
+        // Coordenadas de las locaciones en el canvas CON CAPACIDADES CORRECTAS
+        // Flujo principal - capacidades infinitas
+        locationNodes.put("ALMACEN_MP",
+                createLocationNode("ALMACEN_MP", 50, 300, 80, 60, Color.SADDLEBROWN, Integer.MAX_VALUE));
+        locationNodes.put("HORNO", createLocationNode("HORNO", 250, 300, 100, 80, Color.ORANGERED, 10));
+        locationNodes.put("BANDA_1", createLocationNode("BANDA_1", 450, 300, 120, 40, Color.GRAY, Integer.MAX_VALUE));
+        locationNodes.put("CARGA", createLocationNode("CARGA", 650, 300, 80, 60, Color.LIGHTGRAY, Integer.MAX_VALUE));
 
-        // Celda de manufactura
-        locationNodes.put("TORNEADO", new LocationNode("TORNEADO", 850, 150, 80, 60, Color.BLUE));
-        locationNodes.put("FRESADO", new LocationNode("FRESADO", 1050, 150, 80, 60, Color.BLUEVIOLET));
-        locationNodes.put("TALADRO", new LocationNode("TALADRO", 1050, 450, 80, 60, Color.CADETBLUE));
-        locationNodes.put("RECTIFICADO", new LocationNode("RECTIFICADO", 850, 450, 80, 60, Color.CORNFLOWERBLUE));
+        // Celda de manufactura - capacidad 1
+        locationNodes.put("TORNEADO", createLocationNode("TORNEADO", 850, 150, 80, 60, Color.BLUE, 1));
+        locationNodes.put("FRESADO", createLocationNode("FRESADO", 1050, 150, 80, 60, Color.BLUEVIOLET, 1));
+        locationNodes.put("TALADRO", createLocationNode("TALADRO", 1050, 450, 80, 60, Color.CADETBLUE, 1));
+        locationNodes.put("RECTIFICADO", createLocationNode("RECTIFICADO", 850, 450, 80, 60, Color.CORNFLOWERBLUE, 1));
 
-        // Salida
-        locationNodes.put("DESCARGA", new LocationNode("DESCARGA", 650, 500, 80, 60, Color.LIGHTGRAY));
-        locationNodes.put("BANDA_2", new LocationNode("BANDA_2", 450, 500, 120, 40, Color.GRAY));
-        locationNodes.put("INSPECCION", new LocationNode("INSPECCION", 250, 500, 80, 60, Color.GREEN));
-        locationNodes.put("SALIDA", new LocationNode("SALIDA", 50, 500, 80, 60, Color.DARKGREEN));
+        // Salida - capacidades infinitas
+        locationNodes.put("DESCARGA",
+                createLocationNode("DESCARGA", 650, 500, 80, 60, Color.LIGHTGRAY, Integer.MAX_VALUE));
+        locationNodes.put("BANDA_2", createLocationNode("BANDA_2", 450, 500, 120, 40, Color.GRAY, Integer.MAX_VALUE));
+        locationNodes.put("INSPECCION",
+                createLocationNode("INSPECCION", 250, 500, 80, 60, Color.GREEN, Integer.MAX_VALUE));
+        locationNodes.put("SALIDA", createLocationNode("SALIDA", 50, 500, 80, 60, Color.DARKGREEN, Integer.MAX_VALUE));
 
         // Recursos
         resourceSprites.put("GRUA_VIAJERA", new ResourceSprite("GRUA_VIAJERA", 150, 100, Color.ORANGE));
         resourceSprites.put("ROBOT", new ResourceSprite("ROBOT", 850, 300, Color.RED));
+    }
+
+    // Método auxiliar para crear LocationNode con capacidad
+    private LocationNode createLocationNode(String name, double x, double y, double width, double height, Color color,
+            int capacity) {
+        LocationNode node = new LocationNode(name, x, y, width, height, color);
+        node.setCapacity(capacity);
+        return node;
     }
 
     private void setupAnimationTimer() {
