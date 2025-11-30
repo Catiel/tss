@@ -697,7 +697,7 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
                     com.simulation.locations.LocationStatistics ls = stats.getLocationStats().get(locName);
                     if (ls != null) {
                         totalEntriesSum += ls.getTotalEntries();
-                        utilizationSum += ls.getUtilizationPercent();
+                        utilizationSum += ls.getBusyUtilizationPercent();
                         avgContentsSum += ls.getAverageContents();
                         maxContentsSum += ls.getMaxContents();
                         currentContentsSum += ls.getCurrentContents();
@@ -840,7 +840,7 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
                         row.avgContents.set(String.format("%.2f", stats.getAverageContents()));
                         row.maxContents.set(String.format("%.2f", stats.getMaxContents()));
                         row.currentContents.set((int) stats.getCurrentContents());
-                        row.utilization.set(String.format("%.2f", stats.getUtilizationPercent()));
+                        row.utilization.set(String.format("%.2f", stats.getBusyUtilizationPercent()));
                     } else {
                         row.scheduledTime.set(String.format("%.2f", currentTime / 60.0));
                         row.capacity.set(location.getType().capacity());
@@ -1170,11 +1170,5 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
 
     private String formatEntityName(String name) {
         return name.replace("_", " ");
-    }}
-
-    
-    
-    
-    
-    
-    
+    }
+}

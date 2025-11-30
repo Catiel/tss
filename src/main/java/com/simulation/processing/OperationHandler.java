@@ -167,7 +167,7 @@ public class OperationHandler {
 
                             for (int i = 0; i < batchEntities.size(); i++) {
                                 Entity batchEntity = batchEntities.get(i);
-                                double exitDelay = i * 0.1;
+                                double exitDelay = i * 0.01; // Salidas casi simultáneas para maximizar bloqueo
 
                                 Event exitEvent = new Event(baseCompletionTime + exitDelay, 0,
                                         "Exit piece " + (i + 1) + " from HORNO") {
