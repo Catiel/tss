@@ -4,7 +4,6 @@ import com.simulation.core.SimulationEngine;
 import com.simulation.core.SimulationListener;
 import com.simulation.entities.Entity;
 import com.simulation.locations.Location;
-import com.simulation.processing.ProcessingRule;
 import com.simulation.resources.Resource;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
