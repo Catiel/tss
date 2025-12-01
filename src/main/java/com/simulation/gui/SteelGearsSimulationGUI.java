@@ -824,9 +824,13 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
                     com.simulation.locations.LocationStatistics ls = stats.getLocationStats().get(locName);
                     if (ls != null) {
                         totalEntriesSum += ls.getTotalEntries();
-                        // Para ALMACEN_MP, BANDA_1, BANDA_2 usar fórmula ProModel (avgContents/999999)
-                        if (locName.equals("ALMACEN_MP") || locName.equals("BANDA_1") || locName.equals("BANDA_2")) {
+                        // Fórmula ProModel para capacidades infinitas
+                        if (locName.equals("ALMACEN_MP")) {
                             utilizationSum += (ls.getAverageContents() / 999999.0) * 100.0;
+                        } else if (locName.equals("BANDA_1")) {
+                            utilizationSum += (ls.getAverageContents() / 17.0) * 100.0;
+                        } else if (locName.equals("BANDA_2")) {
+                            utilizationSum += (ls.getAverageContents() / 22.0) * 100.0;
                         } else {
                             utilizationSum += ls.getBusyUtilizationPercent();
                         }
@@ -972,9 +976,15 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
                         row.avgContents.set(String.format("%.2f", stats.getAverageContents()));
                         row.maxContents.set(String.format("%.2f", stats.getMaxContents()));
                         row.currentContents.set((int) stats.getCurrentContents());
-                        // Para ALMACEN_MP, BANDA_1, BANDA_2 usar fórmula ProModel (avgContents/999999)
-                        if (locName.equals("ALMACEN_MP") || locName.equals("BANDA_1") || locName.equals("BANDA_2")) {
+                        // Fórmula ProModel para capacidades infinitas
+                        if (locName.equals("ALMACEN_MP")) {
                             double promodelUtil = (stats.getAverageContents() / 999999.0) * 100.0;
+                            row.utilization.set(String.format("%.2f", promodelUtil));
+                        } else if (locName.equals("BANDA_1")) {
+                            double promodelUtil = (stats.getAverageContents() / 17.0) * 100.0;
+                            row.utilization.set(String.format("%.2f", promodelUtil));
+                        } else if (locName.equals("BANDA_2")) {
+                            double promodelUtil = (stats.getAverageContents() / 22.0) * 100.0;
                             row.utilization.set(String.format("%.2f", promodelUtil));
                         } else {
                             row.utilization.set(String.format("%.2f", stats.getBusyUtilizationPercent()));
