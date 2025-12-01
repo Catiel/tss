@@ -185,46 +185,148 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
         return controlPanel;
     }
 
-    private ScrollPane createAnimationCanvas() {
-        // Usar el nuevo AnimationController mejorado
-        animationController = new AnimationController(2000, 1200);
+    // ==================== SISTEMA DE ZOOM POR GESTOS ====================
+    private javafx.scene.Group zoomGroup;
+    private javafx.scene.layout.Pane canvasHolder;
+    private ScrollPane animationScrollPane;
+    private Label zoomPercentLabel;
+    private static final double MIN_ZOOM = 0.25;
+    private static final double MAX_ZOOM = 3.0;
+    private double currentScale = 1.0;
+
+    private BorderPane createAnimationCanvas() {
+        // Crear el AnimationController
+        animationController = new AnimationController(1400, 800);
         canvas = animationController.getCanvas();
         gc = canvas.getGraphicsContext2D();
 
-        ScrollPane scrollPane = new ScrollPane(canvas);
-        scrollPane.setStyle("-fx-background: #1A252F;");
-        scrollPane.setFitToWidth(true);
-        scrollPane.setFitToHeight(true);
-
-        // Habilitar zoom con scroll wheel
-        setupZoom(scrollPane);
-
-        return scrollPane;
-    }
-
-    private void setupZoom(ScrollPane scrollPane) {
-        double minScale = 0.5;
-        double maxScale = 3.0;
-        double zoomFactor = 1.1;
-
-        canvas.setOnScroll(event -> {
-            event.consume();
-
-            double deltaY = event.getDeltaY();
-            if (deltaY == 0)
-                return;
-
-            double scaleFactor = (deltaY > 0) ? zoomFactor : 1 / zoomFactor;
-            double currentScale = canvas.getScaleX();
-            double newScale = currentScale * scaleFactor;
-
-            // Limitar el zoom
-            newScale = Math.max(minScale, Math.min(maxScale, newScale));
-
-            // Aplicar zoom
-            canvas.setScaleX(newScale);
-            canvas.setScaleY(newScale);
+        // Group que contendrá el canvas - usamos Scale transform con pivot en (0,0)
+        zoomGroup = new javafx.scene.Group(canvas);
+        
+        // Pane que contiene el group y se redimensiona según el zoom
+        canvasHolder = new javafx.scene.layout.Pane(zoomGroup);
+        canvasHolder.setStyle("-fx-background-color: #1A252F;");
+        // Tamaño inicial igual al canvas
+        canvasHolder.setPrefSize(canvas.getWidth(), canvas.getHeight());
+        canvasHolder.setMinSize(canvas.getWidth(), canvas.getHeight());
+        
+        // ScrollPane para navegación
+        animationScrollPane = new ScrollPane(canvasHolder);
+        animationScrollPane.setStyle("-fx-background: #1A252F; -fx-background-color: #1A252F;");
+        animationScrollPane.setPannable(true);
+        animationScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
+        animationScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
+        animationScrollPane.setFitToWidth(false);
+        animationScrollPane.setFitToHeight(false);
+        
+        // Zoom con Ctrl + rueda del mouse hacia la posición del cursor
+        animationScrollPane.addEventFilter(javafx.scene.input.ScrollEvent.SCROLL, event -> {
+            if (event.isControlDown()) {
+                event.consume();
+                
+                double delta = event.getDeltaY();
+                if (delta == 0) return;
+                
+                double zoomFactor = (delta > 0) ? 1.15 : 0.85;
+                
+                // Posición del mouse en el viewport
+                double viewportX = event.getX();
+                double viewportY = event.getY();
+                
+                // Posición actual del scroll (0.0 a 1.0)
+                double hValue = animationScrollPane.getHvalue();
+                double vValue = animationScrollPane.getVvalue();
+                
+                // Calcular posición del mouse en el contenido
+                double viewportWidth = animationScrollPane.getViewportBounds().getWidth();
+                double viewportHeight = animationScrollPane.getViewportBounds().getHeight();
+                double contentWidth = canvasHolder.getPrefWidth();
+                double contentHeight = canvasHolder.getPrefHeight();
+                
+                // Posición del mouse en coordenadas del contenido
+                double scrollableWidth = Math.max(0, contentWidth - viewportWidth);
+                double scrollableHeight = Math.max(0, contentHeight - viewportHeight);
+                double contentX = hValue * scrollableWidth + viewportX;
+                double contentY = vValue * scrollableHeight + viewportY;
+                
+                // Aplicar zoom
+                double oldScale = currentScale;
+                double newScale = currentScale * zoomFactor;
+                newScale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newScale));
+                
+                if (newScale != oldScale) {
+                    currentScale = newScale;
+                    applyZoomTransform();
+                    
+                    // Recalcular scroll para mantener el punto bajo el cursor
+                    double newContentWidth = canvasHolder.getPrefWidth();
+                    double newContentHeight = canvasHolder.getPrefHeight();
+                    double scaleRatio = newScale / oldScale;
+                    
+                    double newContentX = contentX * scaleRatio;
+                    double newContentY = contentY * scaleRatio;
+                    
+                    double newScrollableWidth = Math.max(1, newContentWidth - viewportWidth);
+                    double newScrollableHeight = Math.max(1, newContentHeight - viewportHeight);
+                    
+                    double newHValue = (newContentX - viewportX) / newScrollableWidth;
+                    double newVValue = (newContentY - viewportY) / newScrollableHeight;
+                    
+                    animationScrollPane.setHvalue(Math.max(0, Math.min(1, newHValue)));
+                    animationScrollPane.setVvalue(Math.max(0, Math.min(1, newVValue)));
+                }
+            }
         });
+
+        // Layout principal - SIN barra de herramientas, solo gestos
+        BorderPane mainContainer = new BorderPane();
+        mainContainer.setCenter(animationScrollPane);
+        mainContainer.setStyle("-fx-background-color: #1A252F;");
+        
+        // Indicador de zoom discreto en esquina (solo texto, desaparece)
+        zoomPercentLabel = new Label("100%");
+        zoomPercentLabel.setTextFill(Color.web("#e94560"));
+        zoomPercentLabel.setFont(Font.font("Segoe UI", FontWeight.BOLD, 12));
+        zoomPercentLabel.setStyle("-fx-background-color: rgba(0,0,0,0.5); -fx-padding: 3 8; -fx-background-radius: 3;");
+        zoomPercentLabel.setOpacity(0);
+        
+        javafx.scene.layout.StackPane stackContainer = new javafx.scene.layout.StackPane(mainContainer, zoomPercentLabel);
+        javafx.scene.layout.StackPane.setAlignment(zoomPercentLabel, Pos.BOTTOM_RIGHT);
+        javafx.scene.layout.StackPane.setMargin(zoomPercentLabel, new Insets(0, 15, 15, 0));
+
+        BorderPane wrapper = new BorderPane(stackContainer);
+        wrapper.setStyle("-fx-background-color: #1A252F;");
+        
+        return wrapper;
+    }
+    
+    private void applyZoomTransform() {
+        // Aplicar escala usando Scale transform con pivot en (0,0)
+        zoomGroup.getTransforms().clear();
+        javafx.scene.transform.Scale scaleTransform = new javafx.scene.transform.Scale(currentScale, currentScale, 0, 0);
+        zoomGroup.getTransforms().add(scaleTransform);
+        
+        // Actualizar tamaño del contenedor para que el scroll funcione correctamente
+        double newWidth = canvas.getWidth() * currentScale;
+        double newHeight = canvas.getHeight() * currentScale;
+        canvasHolder.setPrefSize(newWidth, newHeight);
+        canvasHolder.setMinSize(newWidth, newHeight);
+        
+        // Mostrar indicador de zoom temporalmente
+        if (zoomPercentLabel != null) {
+            zoomPercentLabel.setText(String.format("%.0f%%", currentScale * 100));
+            zoomPercentLabel.setOpacity(1);
+            
+            // Fade out después de 1 segundo
+            javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.seconds(1));
+            pause.setOnFinished(e -> {
+                javafx.animation.FadeTransition fade = new javafx.animation.FadeTransition(javafx.util.Duration.millis(500), zoomPercentLabel);
+                fade.setFromValue(1);
+                fade.setToValue(0);
+                fade.play();
+            });
+            pause.play();
+        }
     }
 
     private TabPane createMainTabPane() {
@@ -251,9 +353,9 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
         BorderPane view = new BorderPane();
         view.setStyle("-fx-background-color: #1a1a2e;");
 
-        // Canvas de animación en el centro
-        ScrollPane canvasScroll = createAnimationCanvas();
-        view.setCenter(canvasScroll);
+        // Canvas de animación en el centro (ahora incluye controles de zoom)
+        BorderPane animationPane = createAnimationCanvas();
+        view.setCenter(animationPane);
 
         // Tablas de estadísticas en el lado derecho con menor ancho
         VBox statsBox = new VBox(10);
