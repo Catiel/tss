@@ -44,18 +44,28 @@ public class EntitySprite {
             }
         }
 
-        // Actualizar sistema de estela
-        trailSystem.update(deltaTime);
+        // Actualizar sistema de estela y mantener ALMACEN_MP libre de partículas
+        if (isInAlmacenMp()) {
+            trailSystem.clear();
+        } else {
+            trailSystem.update(deltaTime);
+        }
     }
 
     public void draw(GraphicsContext gc) {
+        boolean suppressTrail = isInAlmacenMp();
+
         // Trail reducido para optimización
-        if (!isSpawning && spawnProgress >= 1.0 && Math.random() < 0.3) {
+        if (!suppressTrail && !isSpawning && spawnProgress >= 1.0 && Math.random() < 0.3) {
             trailSystem.emitTrail(x, y, 0, 0, getStateColor().deriveColor(0, 1, 1, 0.4));
         }
 
-        // Renderizar estela primero
-        trailSystem.render(gc);
+        if (!suppressTrail) {
+            // Renderizar estela primero
+            trailSystem.render(gc);
+        } else {
+            trailSystem.clear();
+        }
 
         // Calcular tamaño con efecto de spawn
         double currentSize = baseSize * AnimationEasing.easeOutBack(spawnProgress);
@@ -225,14 +235,20 @@ public class EntitySprite {
         spawnProgress = 0;
 
         // Efecto de explosión al aparecer (reducido)
-        trailSystem.emitExplosion(x, y, 8, getStateColor());
+        if (!isInAlmacenMp()) {
+            trailSystem.emitExplosion(x, y, 8, getStateColor());
+        }
     }
 
     /**
      * Efecto de despawn (desaparición)
      */
     public void despawn() {
-        trailSystem.emitExplosion(x, y, 15, getStateColor());
+        if (!isInAlmacenMp()) {
+            trailSystem.emitExplosion(x, y, 15, getStateColor());
+        } else {
+            trailSystem.clear();
+        }
     }
 
     public void setPosition(double x, double y) {
@@ -254,5 +270,10 @@ public class EntitySprite {
 
     public ParticleSystem getTrailSystem() {
         return trailSystem;
+    }
+
+    private boolean isInAlmacenMp() {
+        com.simulation.locations.Location location = entity.getCurrentLocation();
+        return location != null && "ALMACEN_MP".equalsIgnoreCase(location.getName());
     }
 }

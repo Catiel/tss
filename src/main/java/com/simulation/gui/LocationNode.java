@@ -59,6 +59,11 @@ public class LocationNode {
             glowIntensity = Math.max(0.0, glowIntensity - deltaTime * 1.5);
         }
 
+        if (isAlmacenMp()) {
+            particleSystem.clear();
+            return;
+        }
+
         // Actualizar partículas
         particleSystem.update(deltaTime);
 
@@ -97,8 +102,12 @@ public class LocationNode {
             drawTotalEntriesBadge(gc);
         }
 
-        // Renderizar partículas (solo si hay activas)
-        particleSystem.render(gc);
+        if (!isAlmacenMp()) {
+            // Renderizar partículas (solo si hay activas)
+            particleSystem.render(gc);
+        } else {
+            particleSystem.clear();
+        }
     }
 
     /**
@@ -661,6 +670,10 @@ public class LocationNode {
 
     private String formatStationName(String name) {
         return name.replace("_", " ");
+    }
+
+    private boolean isAlmacenMp() {
+        return "ALMACEN_MP".equalsIgnoreCase(name);
     }
 
     // ===== GETTERS Y SETTERS =====
