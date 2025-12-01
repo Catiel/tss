@@ -46,7 +46,7 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
     private ProgressBar progressBar;
     private TableView<LocationStatsRow> locationStatsTable;
     private TableView<EntityStatsRow> entityStatsTable;
-    private BarChart<String, Number> locationExitsChart;
+    private BarChart<String, Number> locationUtilizationChart;
     private Stage primaryStage;
     // Animación
     private AnimationTimer animationTimer;
@@ -427,62 +427,100 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
         view.setStyle("-fx-background-color: linear-gradient(to bottom, #0f3460 0%, #16213e 100%);");
 
         // Título
-        Label title = new Label("📊 Análisis de Flujo por Locación");
+        Label title = new Label("📊 Análisis de Utilización por Locación");
         title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 28));
         title.setTextFill(Color.web("#e94560"));
 
         // Descripción
         Label description = new Label(
-                "Gráfica de barras mostrando la cantidad total de entidades que pasaron por cada locación");
+                "Gráfica de barras mostrando el porcentaje de utilización de cada locación");
         description.setFont(Font.font("Segoe UI", 14));
         description.setTextFill(Color.web("#a8dadc"));
         description.setWrapText(true);
 
         // Crear gráfica de barras
-        locationExitsChart = createLocationExitsChart();
-        VBox.setVgrow(locationExitsChart, Priority.ALWAYS);
+        locationUtilizationChart = createLocationUtilizationChart();
+        VBox.setVgrow(locationUtilizationChart, Priority.ALWAYS);
 
-        view.getChildren().addAll(title, description, locationExitsChart);
+        view.getChildren().addAll(title, description, locationUtilizationChart);
         return view;
     }
 
-    private BarChart<String, Number> createLocationExitsChart() {
+    private BarChart<String, Number> createLocationUtilizationChart() {
         CategoryAxis xAxis = new CategoryAxis();
-        xAxis.setLabel("Locaciones de Producción");
-        xAxis.setStyle("-fx-tick-label-fill: #f1faee; -fx-font-size: 11px; -fx-font-weight: bold;");
+        xAxis.setLabel("");
+        xAxis.setStyle("-fx-tick-label-fill: #f1faee; -fx-font-size: 9px;");
         xAxis.setTickLabelRotation(45);
-        xAxis.setTickLabelGap(5);
+        xAxis.setTickLabelGap(2);
 
-        NumberAxis yAxis = new NumberAxis();
-        yAxis.setLabel("Total de Entradas");
-        yAxis.setStyle("-fx-tick-label-fill: #f1faee; -fx-font-size: 12px; -fx-font-weight: bold;");
-        yAxis.setAutoRanging(true);
-        yAxis.setForceZeroInRange(true);
+        NumberAxis yAxis = new NumberAxis(0, 100, 10);
+        yAxis.setLabel("Utilización %");
+        yAxis.setStyle("-fx-tick-label-fill: #f1faee; -fx-font-size: 10px;");
+        yAxis.setAutoRanging(false);
+        yAxis.setMinorTickVisible(true);
+        yAxis.setMinorTickCount(5);
         yAxis.setTickLabelFormatter(new NumberAxis.DefaultFormatter(yAxis) {
             @Override
             public String toString(Number value) {
-                return String.format("%d", value.intValue());
+                return String.format("%.0f%%", value.doubleValue());
             }
         });
 
         BarChart<String, Number> barChart = new BarChart<>(xAxis, yAxis);
-        barChart.setTitle("Flujo de Entidades: Total de Entradas por Locación");
+        barChart.setTitle("Utilización de Locaciones");
+        barChart.setTitleSide(javafx.geometry.Side.TOP);
         barChart.setLegendVisible(false);
-        barChart.setAnimated(false); // Deshabilitar animación para evitar parpadeos
-        barChart.setCategoryGap(10);
-        barChart.setBarGap(3);
+        barChart.setAnimated(false);
+        barChart.setCategoryGap(20);
+        barChart.setBarGap(1);
+        barChart.setMinHeight(400);
+        barChart.setPrefWidth(900);
+        barChart.setHorizontalGridLinesVisible(true);
+        barChart.setVerticalGridLinesVisible(false);
         barChart.setStyle(
-                "-fx-background-color: #0f3460;" +
+                "-fx-background-color: #1a1a2e;" +
                         "-fx-border-color: #e94560;" +
-                        "-fx-border-width: 3;" +
-                        "-fx-border-radius: 10;" +
-                        "-fx-background-radius: 10;" +
-                        "-fx-padding: 15;");
+                        "-fx-border-width: 2;" +
+                        "-fx-border-radius: 8;" +
+                        "-fx-background-radius: 8;" +
+                        "-fx-padding: 10;");
 
-        // Serie de datos (se actualizará en updateStatistics)
+        // Inicializar serie con todas las locaciones en orden fijo
         XYChart.Series<String, Number> series = new XYChart.Series<>();
-        series.setName("Total Entradas");
+        series.setName("Utilización %");
+        
+        // Agregar locaciones en orden lógico del proceso
+        String[] locationOrder = {"HORNO", "FRESADO", "TORNEADO", "CARGA", "RECTIFICADO", 
+                                  "TALADRO", "INSPECCION", "DESCARGA", "BANDA 1", "BANDA 2", 
+                                  "ALMACEN MP", "SALIDA"};
+        for (String loc : locationOrder) {
+            XYChart.Data<String, Number> data = new XYChart.Data<>(loc, 0);
+            series.getData().add(data);
+        }
         barChart.getData().add(series);
+
+        // Agregar tooltips a cada barra
+        for (XYChart.Data<String, Number> data : series.getData()) {
+            Tooltip tooltip = new Tooltip();
+            tooltip.setStyle("-fx-font-size: 12px; -fx-font-weight: bold;");
+            
+            // Actualizar tooltip cuando cambie el valor
+            data.YValueProperty().addListener((obs, oldVal, newVal) -> {
+                tooltip.setText(String.format("%s: %.2f%%", data.getXValue(), newVal.doubleValue()));
+            });
+            
+            // Asociar tooltip al nodo cuando esté disponible
+            data.nodeProperty().addListener((obs, oldNode, newNode) -> {
+                if (newNode != null) {
+                    Tooltip.install(newNode, tooltip);
+                    newNode.setStyle("-fx-bar-fill: #e94560;");
+                    
+                    // Efecto hover
+                    newNode.setOnMouseEntered(e -> newNode.setStyle("-fx-bar-fill: #ff6b6b;"));
+                    newNode.setOnMouseExited(e -> newNode.setStyle("-fx-bar-fill: #e94560;"));
+                }
+            });
+        }
 
         return barChart;
     }
@@ -1044,28 +1082,39 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
                 }
             }
 
-            // Actualizar gráfica de barras con entradas de locaciones (solo si existe)
-            if (locationExitsChart != null && !locationExitsChart.getData().isEmpty()) {
-                XYChart.Series<String, Number> series = locationExitsChart.getData().get(0);
+            // Actualizar gráfica de barras con utilización de locaciones (sin parpadeo)
+            if (locationUtilizationChart != null && !locationUtilizationChart.getData().isEmpty()) {
+                XYChart.Series<String, Number> series = locationUtilizationChart.getData().get(0);
 
-                // Crear lista ordenada de TODAS las locaciones con sus entradas
-                List<Map.Entry<String, Integer>> locationEntries = new ArrayList<>();
+                // Mapear nombres formateados a utilización
+                Map<String, Double> utilizationMap = new HashMap<>();
                 for (com.simulation.locations.Location location : engine.getAllLocations().values()) {
                     String locName = location.getName();
                     com.simulation.locations.LocationStatistics stats = locStats.get(locName);
-                    int entries = (stats != null) ? stats.getTotalEntries() : 0;
+                    double utilization = 0.0;
+                    if (stats != null) {
+                        // Usar la misma fórmula que en la tabla
+                        if (locName.equals("ALMACEN_MP")) {
+                            utilization = (stats.getAverageContents() / 999999.0) * 100.0;
+                        } else if (locName.equals("BANDA_1")) {
+                            utilization = (stats.getAverageContents() / 17.0) * 100.0;
+                        } else if (locName.equals("BANDA_2")) {
+                            utilization = (stats.getAverageContents() / 22.0) * 100.0;
+                        } else {
+                            utilization = stats.getBusyUtilizationPercent();
+                        }
+                    }
                     String formattedName = formatLocationName(locName);
-                    locationEntries.add(new AbstractMap.SimpleEntry<>(formattedName, entries));
+                    utilizationMap.put(formattedName, utilization);
                 }
 
-                // Ordenar por cantidad de entradas (descendente)
-                locationEntries.sort((a, b) -> b.getValue().compareTo(a.getValue()));
-
-                // Actualizar datos directamente (sin animación ya está deshabilitada)
-                series.getData().clear();
-                for (Map.Entry<String, Integer> entry : locationEntries) {
-                    XYChart.Data<String, Number> dataPoint = new XYChart.Data<>(entry.getKey(), entry.getValue());
-                    series.getData().add(dataPoint);
+                // Actualizar valores existentes sin recrear (evita parpadeo)
+                for (XYChart.Data<String, Number> data : series.getData()) {
+                    String locName = data.getXValue();
+                    Double util = utilizationMap.get(locName);
+                    if (util != null) {
+                        data.setYValue(util);
+                    }
                 }
             }
         });
