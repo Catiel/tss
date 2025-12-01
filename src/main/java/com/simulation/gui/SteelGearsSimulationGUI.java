@@ -33,7 +33,7 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
 
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final AtomicBoolean paused = new AtomicBoolean(false);
-    private final double endTime = 60000.0; // 1000 horas = 60000 min
+    // endTime ahora se obtiene de simulationConfig.getSimulationTimeInMinutes()
     // Mapa de posiciones de locaciones
     private final Map<String, Point2D> locationPositions = new HashMap<>();
     private SimulationEngine engine;
@@ -408,8 +408,8 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
         setupProcessingRules(engine);
         setupArrivals(engine);
 
-        // Configurar tiempo final de simulación
-        engine.setEndTime(endTime);
+        // Configurar tiempo final de simulación desde la configuración
+        engine.setEndTime(simulationConfig.getSimulationTimeInMinutes());
 
         // Registrar este GUI como listener de eventos de simulación
         engine.addListener(this);
@@ -425,23 +425,26 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
     }
 
     private void setupLocations(SimulationEngine engine) {
+        // Usar capacidades desde la configuración
         engine.addLocation("ALMACEN_MP", Integer.MAX_VALUE, 1);
-        engine.addLocation("HORNO", 10, 1);
+        // HORNO: capacidad independiente del tamaño del lote
+        engine.addLocation("HORNO", simulationConfig.getLocationCapacity("HORNO"), 1);
         engine.addLocation("BANDA_1", Integer.MAX_VALUE, 1);
         engine.addLocation("CARGA", Integer.MAX_VALUE, 1);
-        engine.addLocation("TORNEADO", 1, 1);
-        engine.addLocation("FRESADO", 1, 1);
-        engine.addLocation("TALADRO", 1, 1);
-        engine.addLocation("RECTIFICADO", 1, 1);
+        engine.addLocation("TORNEADO", simulationConfig.getLocationCapacity("TORNEADO"), 1);
+        engine.addLocation("FRESADO", simulationConfig.getLocationCapacity("FRESADO"), 1);
+        engine.addLocation("TALADRO", simulationConfig.getLocationCapacity("TALADRO"), 1);
+        engine.addLocation("RECTIFICADO", simulationConfig.getLocationCapacity("RECTIFICADO"), 1);
         engine.addLocation("DESCARGA", Integer.MAX_VALUE, 1);
         engine.addLocation("BANDA_2", Integer.MAX_VALUE, 1);
-        engine.addLocation("INSPECCION", 1, 1);
+        engine.addLocation("INSPECCION", simulationConfig.getLocationCapacity("INSPECCION"), 1);
         engine.addLocation("SALIDA", Integer.MAX_VALUE, 1);
     }
 
     private void setupResources(SimulationEngine engine) {
-        engine.addResource("GRUA_VIAJERA", 1, 25.0);
-        engine.addResource("ROBOT", 1, 45.0);
+        // Usar configuración para recursos
+        engine.addResource("GRUA_VIAJERA", simulationConfig.getGruaQuantity(), simulationConfig.getGruaEmptySpeed());
+        engine.addResource("ROBOT", simulationConfig.getRobotQuantity(), simulationConfig.getRobotEmptySpeed());
     }
 
     private void setupRoutes(SimulationEngine engine) {
@@ -464,7 +467,7 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
     }
 
     private void setupProcessingRules(SimulationEngine engine) {
-        // Flujo de proceso para PIEZA_AUTOMOTRIZ
+        // Flujo de proceso para PIEZA_AUTOMOTRIZ - usando tiempos de configuración
 
         // 1. ALMACEN_MP: Sin procesamiento, solo recepción
         engine.addProcessingRule(new com.simulation.processing.ProcessingRule("ALMACEN_MP", "PIEZA_AUTOMOTRIZ", 0) {
@@ -473,67 +476,77 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
             }
         });
 
-        // 2. HORNO: Procesamiento por lotes (ACCUM 10), 100.0 minutos (ProModel)
-        engine.addProcessingRule(new BatchProcessingRule("HORNO", "PIEZA_AUTOMOTRIZ", 100.0, 10));
+        // 2. HORNO: Procesamiento por lotes desde configuración
+        engine.addProcessingRule(new BatchProcessingRule("HORNO", "PIEZA_AUTOMOTRIZ", 
+                simulationConfig.getHornoProcessingTime(), simulationConfig.getHornoBatchSize()));
 
-        // 3. BANDA_1: Transporte 0.94 minutos (ProModel)
-        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("BANDA_1", "PIEZA_AUTOMOTRIZ", 0.94) {
+        // 3. BANDA_1: Transporte desde configuración
+        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("BANDA_1", "PIEZA_AUTOMOTRIZ", 
+                simulationConfig.getProcessingTime("BANDA_1")) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 4. CARGA: 0.5 minutos
-        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("CARGA", "PIEZA_AUTOMOTRIZ", 0.5) {
+        // 4. CARGA: desde configuración
+        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("CARGA", "PIEZA_AUTOMOTRIZ", 
+                simulationConfig.getProcessingTime("CARGA")) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 5. TORNEADO: 5.2 minutos (ProModel)
-        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("TORNEADO", "PIEZA_AUTOMOTRIZ", 5.2) {
+        // 5. TORNEADO: desde configuración
+        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("TORNEADO", "PIEZA_AUTOMOTRIZ", 
+                simulationConfig.getProcessingTime("TORNEADO")) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 6. FRESADO: 9.17 minutos
-        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("FRESADO", "PIEZA_AUTOMOTRIZ", 9.17) {
+        // 6. FRESADO: desde configuración
+        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("FRESADO", "PIEZA_AUTOMOTRIZ", 
+                simulationConfig.getProcessingTime("FRESADO")) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 7. TALADRO: 1.6 minutos (ProModel)
-        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("TALADRO", "PIEZA_AUTOMOTRIZ", 1.6) {
+        // 7. TALADRO: desde configuración
+        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("TALADRO", "PIEZA_AUTOMOTRIZ", 
+                simulationConfig.getProcessingTime("TALADRO")) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 8. RECTIFICADO: 2.85 minutos (ProModel)
-        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("RECTIFICADO", "PIEZA_AUTOMOTRIZ", 2.85) {
+        // 8. RECTIFICADO: desde configuración
+        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("RECTIFICADO", "PIEZA_AUTOMOTRIZ", 
+                simulationConfig.getProcessingTime("RECTIFICADO")) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 9. DESCARGA: 0.5 minutos
-        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("DESCARGA", "PIEZA_AUTOMOTRIZ", 0.5) {
+        // 9. DESCARGA: desde configuración
+        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("DESCARGA", "PIEZA_AUTOMOTRIZ", 
+                simulationConfig.getProcessingTime("DESCARGA")) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 10. BANDA_2: 1.02 minutos (ProModel)
-        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("BANDA_2", "PIEZA_AUTOMOTRIZ", 1.02) {
+        // 10. BANDA_2: desde configuración
+        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("BANDA_2", "PIEZA_AUTOMOTRIZ", 
+                simulationConfig.getProcessingTime("BANDA_2")) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
         });
 
-        // 11. INSPECCION: Exponencial(3) minutos
-        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("INSPECCION", "PIEZA_AUTOMOTRIZ", 3.0) {
+        // 11. INSPECCION: desde configuración (puede ser exponencial o fija)
+        engine.addProcessingRule(new com.simulation.processing.ProcessingRule("INSPECCION", "PIEZA_AUTOMOTRIZ", 
+                simulationConfig.getProcessingTime("INSPECCION")) {
             @Override
             public void process(Entity e, SimulationEngine en) {
             }
@@ -548,7 +561,11 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
     }
 
     private void setupArrivals(SimulationEngine engine) {
-        engine.scheduleArrival("PIEZA_AUTOMOTRIZ", "ALMACEN_MP", 0, 12000, 5.0);
+        // Usar parámetros de llegada desde la configuración
+        engine.scheduleArrival("PIEZA_AUTOMOTRIZ", "ALMACEN_MP", 
+                simulationConfig.getArrivalFirstTime(), 
+                simulationConfig.getArrivalMaxEntities(), 
+                simulationConfig.getArrivalMeanTime());
     }
 
     private void setupLocationPositions() {
@@ -599,18 +616,20 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
         // Iniciar hilo de simulación
         simulationThread = new Thread(() -> {
             try {
-                for (int replica = 1; replica <= 3; replica++) {
+                int numReplicas = simulationConfig.getNumberOfReplicas();
+                for (int replica = 1; replica <= numReplicas; replica++) {
                     final int currentReplica = replica;
                     Platform.runLater(() -> {
-                        statusLabel.setText("Ejecutando Réplica " + currentReplica + " / 3");
+                        statusLabel.setText("Ejecutando Réplica " + currentReplica + " / " + simulationConfig.getNumberOfReplicas());
                         // AnimationController se reinicia automáticamente
                     });
 
                     // Reiniciar motor para cada réplica
                     setupSimulationEngine();
                     currentTime = 0;
+                    double simEndTime = simulationConfig.getSimulationTimeInMinutes();
 
-                    while (running.get() && currentTime < endTime) {
+                    while (running.get() && currentTime < simEndTime) {
                         // Esperar si está pausado
                         while (paused.get() && running.get()) {
                             Thread.sleep(100);
@@ -798,7 +817,7 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
     private void updateUI() {
         Platform.runLater(() -> {
             timeLabel.setText(String.format("Tiempo: %.2f min (%.2f hrs)", currentTime, currentTime / 60.0));
-            progressBar.setProgress(currentTime / endTime);
+            progressBar.setProgress(currentTime / simulationConfig.getSimulationTimeInMinutes());
         });
     }
 
@@ -1083,10 +1102,19 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
 
         if (dialog.wasAccepted()) {
             // La configuración ya está actualizada en simulationConfig
+            // Reconstruir el motor de simulación con los nuevos parámetros
+            resetSimulation();
+            
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Configuración Actualizada");
-            alert.setHeaderText("¡Configuración guardada!");
-            alert.setContentText("Los nuevos parámetros se aplicarán en la próxima ejecución de la simulación.");
+            alert.setTitle("✅ Configuración Actualizada");
+            alert.setHeaderText("¡Configuración aplicada exitosamente!");
+            alert.setContentText("El motor de simulación ha sido reconfigurado con los nuevos parámetros.\n\n" +
+                "Resumen:\n" +
+                "• Tiempo de simulación: " + String.format("%.2f", simulationConfig.getSimulationTime()) + " hrs\n" +
+                "• Réplicas: " + simulationConfig.getNumberOfReplicas() + "\n" +
+                "• Llegadas (media): " + simulationConfig.getArrivalMeanTime() + " min\n" +
+                "• Lote del Horno: " + simulationConfig.getHornoBatchSize() + " piezas\n\n" +
+                "Presione 'Iniciar' para comenzar la simulación.");
             alert.showAndWait();
         }
     }

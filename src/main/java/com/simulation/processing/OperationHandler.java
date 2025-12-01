@@ -37,7 +37,20 @@ public class OperationHandler {
 
     private void initializeJoinRequirements() {
         joinQueues.put("HORNO_ACCUM", new LinkedList<>());
-        joinRequirements.put("HORNO_ACCUM", 10);
+        // El tamaño del lote se obtiene dinámicamente del BatchProcessingRule
+        // joinRequirements ya no se usa - ver getBatchSizeForLocation()
+    }
+
+    /**
+     * Obtiene el tamaño del lote configurado para una locación.
+     * Si no hay BatchProcessingRule, retorna 1 (sin acumulación).
+     */
+    private int getBatchSizeForLocation(String locationName) {
+        ProcessingRule rule = engine.getProcessingRule(locationName);
+        if (rule instanceof BatchProcessingRule) {
+            return ((BatchProcessingRule) rule).getBatchSize();
+        }
+        return 1; // Default: no batch
     }
 
     private void notifyLocationAvailable(String locationName) {
@@ -137,13 +150,18 @@ public class OperationHandler {
         if (locationName.equals("HORNO")) {
             String accumKey = "HORNO_ACCUM";
             Queue<Entity> accumQueue = joinQueues.get(accumKey);
+            
+            // Obtener tamaño de lote dinámico desde la configuración
+            int batchSize = getBatchSizeForLocation("HORNO");
 
             if (accumQueue != null) {
                 accumQueue.add(entity);
+                
+                System.out.println("[HORNO] Piezas acumuladas: " + accumQueue.size() + " / " + batchSize);
 
-                if (accumQueue.size() >= 10) {
+                if (accumQueue.size() >= batchSize) {
                     List<Entity> batchEntities = new ArrayList<>();
-                    for (int i = 0; i < 10; i++) {
+                    for (int i = 0; i < batchSize; i++) {
                         Entity batchEntity = accumQueue.poll();
                         if (batchEntity != null) {
                             batchEntities.add(batchEntity);
@@ -158,8 +176,11 @@ public class OperationHandler {
                         batchEntity.addValueAddedTime(processingTime);
                     }
                     engine.getStatistics().recordLocationProcessingTime(locationName, processingTime);
+                    
+                    System.out.println("[HORNO] Procesando lote de " + batchEntities.size() + " piezas por " + processingTime + " min");
 
-                    Event processingEvent = new Event(currentTime + processingTime, 0, "Process batch of 10 in HORNO") {
+                    final int finalBatchSize = batchEntities.size();
+                    Event processingEvent = new Event(currentTime + processingTime, 0, "Process batch of " + finalBatchSize + " in HORNO") {
                         @Override
                         public void execute() {
                             Location hornoLocation = engine.getLocation("HORNO");
