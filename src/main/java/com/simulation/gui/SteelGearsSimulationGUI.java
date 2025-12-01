@@ -863,7 +863,8 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
                     if (ls != null) {
                         totalEntriesSum += ls.getTotalEntries();
                         // Fórmula ProModel para capacidades infinitas
-                        if (locName.equals("ALMACEN_MP")) {
+                        if (locName.equals("ALMACEN_MP") || locName.equals("CARGA") || 
+                            locName.equals("DESCARGA") || locName.equals("SALIDA")) {
                             utilizationSum += (ls.getAverageContents() / 999999.0) * 100.0;
                         } else if (locName.equals("BANDA_1")) {
                             utilizationSum += (ls.getAverageContents() / 17.0) * 100.0;
@@ -1015,7 +1016,8 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
                         row.maxContents.set(String.format("%.2f", stats.getMaxContents()));
                         row.currentContents.set((int) stats.getCurrentContents());
                         // Fórmula ProModel para capacidades infinitas
-                        if (locName.equals("ALMACEN_MP")) {
+                        if (locName.equals("ALMACEN_MP") || locName.equals("CARGA") || 
+                            locName.equals("DESCARGA") || locName.equals("SALIDA")) {
                             double promodelUtil = (stats.getAverageContents() / 999999.0) * 100.0;
                             row.utilization.set(String.format("%.2f", promodelUtil));
                         } else if (locName.equals("BANDA_1")) {
@@ -1094,7 +1096,8 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
                     double utilization = 0.0;
                     if (stats != null) {
                         // Usar la misma fórmula que en la tabla
-                        if (locName.equals("ALMACEN_MP")) {
+                        if (locName.equals("ALMACEN_MP") || locName.equals("CARGA") || 
+                            locName.equals("DESCARGA") || locName.equals("SALIDA")) {
                             utilization = (stats.getAverageContents() / 999999.0) * 100.0;
                         } else if (locName.equals("BANDA_1")) {
                             utilization = (stats.getAverageContents() / 17.0) * 100.0;
