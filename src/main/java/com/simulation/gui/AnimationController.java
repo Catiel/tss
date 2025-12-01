@@ -186,9 +186,6 @@ public class AnimationController {
 
         // ===== CAPA 6: ENTIDADES =====
         renderEntities();
-
-        // ===== CAPA 7: EFECTOS UI OVERLAY =====
-        renderUIOverlay();
     }
 
     /**
@@ -292,32 +289,6 @@ public class AnimationController {
                 sprite.draw(gc);
             }
         }
-    }
-
-    /**
-     * CAPA 7: Renderiza UI overlay (tiempo, stats, etc.)
-     */
-    private void renderUIOverlay() {
-        // Panel semitransparente para información
-        double panelX = 10;
-        double panelY = canvas.getHeight() - 50;
-        double panelWidth = 350;
-        double panelHeight = 40;
-
-        VisualEffects.drawGlassPanel(gc, panelX, panelY, panelWidth, panelHeight, 10);
-
-        // Texto de información
-        gc.setFont(Font.font("Arial", FontWeight.BOLD, 14));
-        gc.setFill(ColorPalette.UI_TEXT_PRIMARY);
-        gc.fillText(String.format("⏱ Tiempo: %.2f min", currentTime), panelX + 15, panelY + 25);
-
-        // Contador de entidades
-        gc.fillText(String.format("📦 Entidades: %d", entitySprites.size()), panelX + 170, panelY + 25);
-
-        // Indicador de velocidad
-        gc.setFont(Font.font("Arial", FontWeight.NORMAL, 11));
-        gc.setFill(ColorPalette.UI_TEXT_SECONDARY);
-        gc.fillText(String.format("🚀 %.1fx", simulationSpeed), panelX + 290, panelY + 25);
     }
 
     /**
