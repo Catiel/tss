@@ -1,125 +1,108 @@
-package com.simulation.output; // Declaración del paquete donde se encuentra esta clase
+package com.simulation.output; // Declaración del paquete de salida y reportes de la simulación
 
-import com.simulation.entities.EntityStatistics;
-import com.simulation.locations.LocationStatistics;
-import com.simulation.statistics.StatisticsCollector;
+import com.simulation.entities.EntityStatistics; // Importa la clase de estadísticas de entidades
+import com.simulation.locations.LocationStatistics; // Importa la clase de estadísticas de ubicaciones
+import com.simulation.statistics.StatisticsCollector; // Importa el recolector principal de estadísticas
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.Map;
+import java.io.FileWriter; // Importa la clase para escribir archivos de texto
+import java.io.IOException; // Importa la clase de excepciones de entrada/salida
+import java.io.PrintWriter; // Importa la clase para escribir texto formateado en archivos
+import java.util.Map; // Importa la interfaz Map para manejo de mapas clave-valor
 
-public class ReportGenerator { // Clase que genera reportes de simulación en diferentes formatos
-    private final StatisticsCollector statistics; // Recolector de estadísticas que contiene los datos a reportar
+public class ReportGenerator { // Define la clase generadora de reportes de simulación
+    private final StatisticsCollector statistics; // Recolector de estadísticas que provee los datos para los reportes
 
-    public ReportGenerator(StatisticsCollector statistics) { // Constructor que inicializa el generador con un
-                                                             // recolector de estadísticas
-        this.statistics = statistics; // Asigna el recolector de estadísticas recibido
+    public ReportGenerator(StatisticsCollector statistics) { // Constructor que recibe el recolector de estadísticas
+        this.statistics = statistics; // Asigna el recolector recibido a la variable de instancia
     }
 
-    public void generateConsoleReport() { // Método para generar y mostrar el reporte en la consola
-        System.out.println("\n" + "=".repeat(100)); // Imprime una línea separadora de 100 signos igual con salto de
-                                                    // línea inicial
-        System.out.println("REPORTE DE SIMULACION - MODELO DE PRODUCCION DE CERVEZA"); // Imprime el título del reporte
-        System.out.println("=".repeat(100)); // Imprime otra línea separadora
+    public void generateConsoleReport() { // Método que genera y muestra el reporte completo en consola
+        System.out.println("\n" + "=".repeat(100)); // Imprime salto de línea seguido de separador de 100 caracteres
+        System.out.println("REPORTE DE SIMULACION - MODELO DE PRODUCCION DE CERVEZA"); // Imprime el título principal del reporte
+        System.out.println("=".repeat(100)); // Imprime separador inferior del título
 
-        Map<String, EntityStatistics> entityStats = statistics.getEntityStats(); // Obtiene el mapa de estadísticas de
-                                                                                 // entidades
-        System.out.println(TableFormatter.formatEntityTable(entityStats)); // Formatea e imprime la tabla de
-                                                                           // estadísticas de entidades
+        Map<String, EntityStatistics> entityStats = statistics.getEntityStats(); // Obtiene el mapa de estadísticas de entidades del recolector
+        System.out.println(TableFormatter.formatEntityTable(entityStats)); // Formatea e imprime la tabla de estadísticas de entidades
 
-        Map<String, LocationStatistics> locationStats = statistics.getLocationStats();
-        System.out.println(TableFormatter.formatLocationTable(locationStats));
+        Map<String, LocationStatistics> locationStats = statistics.getLocationStats(); // Obtiene el mapa de estadísticas de ubicaciones del recolector
+        System.out.println(TableFormatter.formatLocationTable(locationStats)); // Formatea e imprime la tabla de estadísticas de ubicaciones
 
-        Map<String, com.simulation.resources.ResourceStatistics> resourceStats = statistics.getResourceStats();
-        System.out.println(TableFormatter.formatResourceTable(resourceStats));
+        Map<String, com.simulation.resources.ResourceStatistics> resourceStats = statistics.getResourceStats(); // Obtiene el mapa de estadísticas de recursos del recolector
+        System.out.println(TableFormatter.formatResourceTable(resourceStats)); // Formatea e imprime la tabla de estadísticas de recursos
     }
 
-    public void generateFileReport(String filename) {
-        try (PrintWriter writer = new PrintWriter(new FileWriter(filename))) {
-            writer.println("REPORTE DE SIMULACIÓN - MODELO DE PRODUCCIÓN DE CERVEZA");
-            writer.println("=".repeat(100));
+    public void generateFileReport(String filename) { // Método que genera el reporte completo en un archivo de texto
+        try (PrintWriter writer = new PrintWriter(new FileWriter(filename))) { // Crea PrintWriter con try-with-resources para cerrar automáticamente
+            writer.println("REPORTE DE SIMULACIÓN - MODELO DE PRODUCCIÓN DE CERVEZA"); // Escribe el título del reporte en el archivo
+            writer.println("=".repeat(100)); // Escribe línea separadora en el archivo
 
-            Map<String, EntityStatistics> entityStats = statistics.getEntityStats();
-            writer.println(TableFormatter.formatEntityTable(entityStats));
+            Map<String, EntityStatistics> entityStats = statistics.getEntityStats(); // Obtiene el mapa de estadísticas de entidades
+            writer.println(TableFormatter.formatEntityTable(entityStats)); // Escribe la tabla formateada de entidades en el archivo
 
-            Map<String, LocationStatistics> locationStats = statistics.getLocationStats();
-            writer.println(TableFormatter.formatLocationTable(locationStats));
+            Map<String, LocationStatistics> locationStats = statistics.getLocationStats(); // Obtiene el mapa de estadísticas de ubicaciones
+            writer.println(TableFormatter.formatLocationTable(locationStats)); // Escribe la tabla formateada de ubicaciones en el archivo
 
-            Map<String, com.simulation.resources.ResourceStatistics> resourceStats = statistics.getResourceStats();
-            writer.println(TableFormatter.formatResourceTable(resourceStats));
+            Map<String, com.simulation.resources.ResourceStatistics> resourceStats = statistics.getResourceStats(); // Obtiene el mapa de estadísticas de recursos
+            writer.println(TableFormatter.formatResourceTable(resourceStats)); // Escribe la tabla formateada de recursos en el archivo
 
-            System.out.println("Reporte generado: " + filename); // Imprime mensaje de confirmación con el nombre del
-                                                                 // archivo
-        } catch (IOException e) { // Captura excepciones de entrada/salida
-            System.err.println("Error al generar reporte: " + e.getMessage()); // Imprime mensaje de error con la
-                                                                               // descripción de la excepción
+            System.out.println("Reporte generado: " + filename); // Imprime mensaje de confirmación con el nombre del archivo creado
+        } catch (IOException e) { // Captura excepciones de entrada/salida durante la escritura del archivo
+            System.err.println("Error al generar reporte: " + e.getMessage()); // Imprime mensaje de error en la salida de errores estándar
         }
     }
 
-    public void generateCSVReport(String entityFile, String locationFile) { // Método para generar reportes en formato
-                                                                            // CSV (dos archivos separados)
-        generateEntityCSV(entityFile); // Genera el archivo CSV de entidades
-        generateLocationCSV(locationFile); // Genera el archivo CSV de ubicaciones
+    public void generateCSVReport(String entityFile, String locationFile) { // Método público para generar dos archivos CSV separados
+        generateEntityCSV(entityFile); // Llama al método que genera el CSV de entidades
+        generateLocationCSV(locationFile); // Llama al método que genera el CSV de ubicaciones
     }
 
-    private void generateEntityCSV(String filename) { // Método privado para generar el CSV de estadísticas de entidades
-        try (PrintWriter writer = new PrintWriter(new FileWriter(filename))) { // Crea un PrintWriter con
-                                                                               // try-with-resources
-            writer.println("Nombre,Total Salida,Tiempo En Sistema Promedio (Min)," + // Escribe la línea de encabezado
-                                                                                     // del CSV con los nombres de las
-                                                                                     // columnas
-                    "Tiempo En lógica de movimiento Promedio (Min)," +
-                    "Tiempo Espera Promedio (Min)," +
-                    "Tiempo En Operación Promedio (Min)");
+    private void generateEntityCSV(String filename) { // Método privado que genera archivo CSV con estadísticas de entidades
+        try (PrintWriter writer = new PrintWriter(new FileWriter(filename))) { // Crea PrintWriter con try-with-resources para el archivo CSV
+            writer.println("Nombre,Total Salida,Tiempo En Sistema Promedio (Min)," + // Escribe la primera parte del encabezado CSV
+                    "Tiempo En lógica de movimiento Promedio (Min)," + // Escribe la segunda parte del encabezado
+                    "Tiempo Espera Promedio (Min)," + // Escribe la tercera parte del encabezado
+                    "Tiempo En Operación Promedio (Min)"); // Escribe la última parte del encabezado
 
-            for (EntityStatistics stat : statistics.getEntityStats().values()) { // Itera sobre todas las estadísticas
-                                                                                 // de entidades
-                writer.printf("%s,%d,%.2f,%.2f,%.2f,%.2f\n", // Escribe una línea con los datos de cada entidad en
-                                                             // formato CSV
-                        stat.getEntityName(), // Nombre de la entidad
-                        stat.getTotalExits(), // Total de salidas
-                        stat.getAverageSystemTime(), // Tiempo promedio en sistema
-                        stat.getAverageNonValueAddedTime(), // Tiempo promedio sin valor agregado (movimiento)
-                        stat.getAverageWaitTime(), // Tiempo promedio de espera
-                        stat.getAverageValueAddedTime() // Tiempo promedio con valor agregado (operación)
+            for (EntityStatistics stat : statistics.getEntityStats().values()) { // Itera sobre cada estadística de entidad en la colección
+                writer.printf("%s,%d,%.2f,%.2f,%.2f,%.2f\n", // Escribe una línea CSV con formato de 6 columnas
+                        stat.getEntityName(), // Columna 1: Nombre de la entidad
+                        stat.getTotalExits(), // Columna 2: Total de salidas del sistema
+                        stat.getAverageSystemTime(), // Columna 3: Tiempo promedio total en sistema
+                        stat.getAverageNonValueAddedTime(), // Columna 4: Tiempo promedio en movimiento sin valor
+                        stat.getAverageWaitTime(), // Columna 5: Tiempo promedio esperando
+                        stat.getAverageValueAddedTime() // Columna 6: Tiempo promedio en operaciones productivas
                 );
             }
 
-            System.out.println("CSV de entidades generado: " + filename); // Imprime mensaje de confirmación
-        } catch (IOException e) { // Captura excepciones de entrada/salida
-            System.err.println("Error al generar CSV: " + e.getMessage()); // Imprime mensaje de error
+            System.out.println("CSV de entidades generado: " + filename); // Imprime confirmación con nombre del archivo CSV creado
+        } catch (IOException e) { // Captura excepciones de entrada/salida durante escritura CSV
+            System.err.println("Error al generar CSV: " + e.getMessage()); // Imprime mensaje de error con descripción de la excepción
         }
     }
 
-    private void generateLocationCSV(String filename) { // Método privado para generar el CSV de estadísticas de
-                                                        // ubicaciones
-        try (PrintWriter writer = new PrintWriter(new FileWriter(filename))) { // Crea un PrintWriter con
-                                                                               // try-with-resources
-            writer.println("Nombre,Tiempo Programado (Hr),Capacidad,Total Entradas," + // Escribe la línea de encabezado
-                                                                                       // del CSV
-                    "Tiempo Por entrada Promedio (Min),Contenido Promedio," +
-                    "Contenido Máximo,Contenido Actual,% Utilización");
+    private void generateLocationCSV(String filename) { // Método privado que genera archivo CSV con estadísticas de ubicaciones
+        try (PrintWriter writer = new PrintWriter(new FileWriter(filename))) { // Crea PrintWriter con try-with-resources para el archivo CSV
+            writer.println("Nombre,Tiempo Programado (Hr),Capacidad,Total Entradas," + // Escribe la primera parte del encabezado CSV
+                    "Tiempo Por entrada Promedio (Min),Contenido Promedio," + // Escribe la segunda parte del encabezado
+                    "Contenido Máximo,Contenido Actual,% Utilización"); // Escribe la última parte del encabezado
 
-            for (LocationStatistics stat : statistics.getLocationStats().values()) { // Itera sobre todas las
-                                                                                     // estadísticas de ubicaciones
-                writer.printf("%s,%.2f,%d,%d,%.2f,%.2f,%.2f,%.2f,%.2f\n", // Escribe una línea con los datos de cada
-                                                                          // ubicación
-                        stat.getLocationName(), // Nombre de la ubicación
-                        stat.getScheduledTime() / 60.0, // Tiempo programado convertido de minutos a horas
-                        stat.getCapacity(), // Capacidad de la ubicación
-                        stat.getTotalEntries(), // Total de entradas
-                        stat.getAverageTimePerEntry(), // Tiempo promedio por entrada
-                        stat.getAverageContents(), // Contenido promedio
-                        stat.getMaxContents(), // Contenido máximo
-                        stat.getCurrentContents(), // Contenido actual
-                        stat.getUtilizationPercent() // Porcentaje de utilización
+            for (LocationStatistics stat : statistics.getLocationStats().values()) { // Itera sobre cada estadística de ubicación en la colección
+                writer.printf("%s,%.2f,%d,%d,%.2f,%.2f,%.2f,%.2f,%.2f\n", // Escribe una línea CSV con formato de 9 columnas
+                        stat.getLocationName(), // Columna 1: Nombre de la ubicación
+                        stat.getScheduledTime() / 60.0, // Columna 2: Tiempo programado convertido a horas
+                        stat.getCapacity(), // Columna 3: Capacidad máxima de la ubicación
+                        stat.getTotalEntries(), // Columna 4: Número total de entradas registradas
+                        stat.getAverageTimePerEntry(), // Columna 5: Tiempo promedio de permanencia por entrada
+                        stat.getAverageContents(), // Columna 6: Contenido promedio de entidades
+                        stat.getMaxContents(), // Columna 7: Contenido máximo permitido
+                        stat.getCurrentContents(), // Columna 8: Contenido actual al final de la simulación
+                        stat.getUtilizationPercent() // Columna 9: Porcentaje de utilización de la capacidad
                 );
             }
 
-            System.out.println("CSV de locaciones generado: " + filename); // Imprime mensaje de confirmación
-        } catch (IOException e) { // Captura excepciones de entrada/salida
-            System.err.println("Error al generar CSV: " + e.getMessage()); // Imprime mensaje de error
+            System.out.println("CSV de locaciones generado: " + filename); // Imprime confirmación con nombre del archivo CSV de ubicaciones
+        } catch (IOException e) { // Captura excepciones de entrada/salida durante escritura CSV
+            System.err.println("Error al generar CSV: " + e.getMessage()); // Imprime mensaje de error con descripción de la excepción
         }
     }
 }
