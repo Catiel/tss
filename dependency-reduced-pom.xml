@@ -51,7 +51,7 @@
               <shadedClassifierName>shaded</shadedClassifierName>
               <transformers>
                 <transformer>
-                  <mainClass>com.simulation.Main</mainClass>
+                  <mainClass>com.simulation.gui.SteelGearsSimulationGUI</mainClass>
                 </transformer>
               </transformers>
             </configuration>
