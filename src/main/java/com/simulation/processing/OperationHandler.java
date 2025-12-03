@@ -47,8 +47,8 @@ public class OperationHandler { // Define la clase manejadora de operaciones de 
      */
     private int getBatchSizeForLocation(String locationName) { // Método que obtiene el tamaño de lote dinámicamente
         ProcessingRule rule = engine.getProcessingRule(locationName); // Obtiene la regla de procesamiento de la ubicación
-        if (rule instanceof BatchProcessingRule) { // Verifica si la regla es de tipo procesamiento por lotes
-            return ((BatchProcessingRule) rule).getBatchSize(); // Retorna el tamaño de lote configurado
+        if (rule instanceof BatchProcessingRule processingRule) { // Verifica si la regla es de tipo procesamiento por lotes
+            return processingRule.getBatchSize(); // Retorna el tamaño de lote configurado
         }
         return 1; // Retorna 1 por defecto si no hay procesamiento por lotes
     }

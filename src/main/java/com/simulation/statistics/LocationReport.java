@@ -44,7 +44,7 @@ public record LocationReport(Map<String, LocationStatistics> locationStats,
         }
 
         // Encabezados
-        sb.append(String.format("%-25s | %18s | %12s | %15s | %25s | %20s | %18s | %18s | %15s\n",
+        sb.append("%-25s | %18s | %12s | %15s | %25s | %20s | %18s | %18s | %15s\n".formatted(
                 "Nombre",
                 "T. Programado (Hr)",
                 "Capacidad",
@@ -58,7 +58,7 @@ public record LocationReport(Map<String, LocationStatistics> locationStats,
 
         // Datos fila por fila
         for (LocationReportRow row : rows) {
-            sb.append(String.format("%-25s | %18.2f | %12d | %15d | %25.2f | %20.2f | %18.2f | %18.2f | %15.2f\n",
+            sb.append("%-25s | %18.2f | %12d | %15d | %25.2f | %20.2f | %18.2f | %18.2f | %15.2f\n".formatted(
                     row.locationName,
                     row.scheduledTimeHours,
                     row.capacity,

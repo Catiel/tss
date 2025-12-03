@@ -5,6 +5,8 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.RadialGradient;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 /**
  * Sprite mejorado de entidad con efectos visuales profesionales
  */
@@ -18,7 +20,7 @@ public class EntitySprite {
     private double animationTime = 0;
     private double spawnProgress = 0; // 0 a 1
     private boolean isSpawning = true;
-    private double pulsePhase = Math.random() * Math.PI * 2;
+    private double pulsePhase = ThreadLocalRandom.current().nextDouble() * Math.PI * 2;
 
     // Sistema de estela (reducido para optimización)
     private final ParticleSystem trailSystem;
@@ -56,7 +58,7 @@ public class EntitySprite {
         boolean suppressTrail = isInAlmacenMp();
 
         // Trail reducido para optimización
-        if (!suppressTrail && !isSpawning && spawnProgress >= 1.0 && Math.random() < 0.3) {
+        if (!suppressTrail && !isSpawning && spawnProgress >= 1.0 && ThreadLocalRandom.current().nextDouble() < 0.3) {
             trailSystem.emitTrail(x, y, 0, 0, getStateColor().deriveColor(0, 1, 1, 0.4));
         }
 

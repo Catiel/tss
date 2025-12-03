@@ -1,5 +1,7 @@
 package com.simulation.gui;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 /**
  * Animador de trayectorias mejorado con curvas Bezier y easing functions
  */
@@ -132,7 +134,7 @@ public class PathAnimator {
         // Emitir trail particles durante el movimiento
         if (easedProgress > 0.1 && easedProgress < 0.9) {
             // Solo trail en la parte media del movimiento
-            if (Math.random() < 0.7) {
+            if (ThreadLocalRandom.current().nextDouble() < 0.7) {
                 entity.getTrailSystem().emitTrail(
                         currentX, currentY,
                         0, 0,

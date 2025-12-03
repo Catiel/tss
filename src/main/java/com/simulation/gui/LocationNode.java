@@ -7,6 +7,8 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 /**
  * Representa una estación/locación con visualización profesional mejorada
  */
@@ -610,12 +612,12 @@ public class LocationNode {
         double centerY = y + height / 2;
 
         // Emitir con probabilidad reducida para optimizar rendimiento
-        if (Math.random() < 0.15) { // Reducido de 0.3 a 0.15
+        if (ThreadLocalRandom.current().nextDouble() < 0.15) { // Reducido de 0.3 a 0.15
             switch (name.toUpperCase()) {
                 case "HORNO":
                     particleSystem.emitSmoke(centerX, y + height * 0.2, 1,
                             Color.color(0.5, 0.5, 0.5, 0.6));
-                    if (Math.random() < 0.05) { // Reducido de 0.1
+                    if (ThreadLocalRandom.current().nextDouble() < 0.05) { // Reducido de 0.1
                         particleSystem.emitEmbers(centerX, y + height * 0.3, 1); // Reducido a 1
                     }
                     break;
@@ -625,14 +627,14 @@ public class LocationNode {
                 case "TALADRO":
                 case "RECTIFICADO":
                     // Solo cuando está procesando
-                    if (Math.random() < 0.1) { // Reducido de 0.2
+                    if (ThreadLocalRandom.current().nextDouble() < 0.1) { // Reducido de 0.2
                         particleSystem.emitSparks(centerX, centerY, 2, ColorPalette.ACCENT_CYAN);
                     }
                     break;
 
                 case "INSPECCION":
                     // Resplandor muy ocasional
-                    if (Math.random() < 0.05) {
+                    if (ThreadLocalRandom.current().nextDouble() < 0.05) {
                         particleSystem.emitGlow(centerX, centerY, ColorPalette.ACCENT_CYAN, 0.6);
                     }
                     break;
