@@ -102,11 +102,11 @@ public class PathNetwork { // Clase que representa una red de caminos/conexiones
         PathNode current = end; // Comienza por el destino
 
         while (current != null) { // Mientras haya predecesores
-            path.add(0, current); // Inserta al principio del camino
+            path.addFirst(current); // Inserta al principio del camino
             current = previous.get(current); // Mueve al anterior
         }
 
-        return path.isEmpty() || !path.get(0).equals(start) ? new ArrayList<>() : path; // Si no llega al inicio, retorna vacío
+        return path.isEmpty() || !path.getFirst().equals(start) ? new ArrayList<>() : path; // Si no llega al inicio, retorna vacío
     }
 
     public double calculatePathDistance(List<PathNode> path) { // Suma las distancias de una secuencia de nodos (camino)

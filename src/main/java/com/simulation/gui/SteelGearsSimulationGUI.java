@@ -314,7 +314,7 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
         
         // Mostrar indicador de zoom temporalmente
         if (zoomPercentLabel != null) {
-            zoomPercentLabel.setText(String.format("%.0f%%", currentScale * 100));
+            zoomPercentLabel.setText("%.0f%%".formatted(currentScale * 100));
             zoomPercentLabel.setOpacity(1);
             
             // Fade out después de 1 segundo
@@ -462,7 +462,7 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
         yAxis.setTickLabelFormatter(new NumberAxis.DefaultFormatter(yAxis) {
             @Override
             public String toString(Number value) {
-                return String.format("%.0f%%", value.doubleValue());
+                return "%.0f%%".formatted(value.doubleValue());
             }
         });
 
@@ -506,7 +506,7 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
             
             // Actualizar tooltip cuando cambie el valor
             data.YValueProperty().addListener((obs, oldVal, newVal) -> {
-                tooltip.setText(String.format("%s: %.2f%%", data.getXValue(), newVal.doubleValue()));
+                tooltip.setText("%s: %.2f%%".formatted(data.getXValue(), newVal.doubleValue()));
             });
             
             // Asociar tooltip al nodo cuando esté disponible
@@ -883,11 +883,11 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
 
                 if (count > 0) {
                     row.totalEntries.set((int) (totalEntriesSum / count));
-                    row.utilization.set(String.format("%.2f", utilizationSum / count));
-                    row.avgContents.set(String.format("%.2f", avgContentsSum / count));
-                    row.maxContents.set(String.format("%.2f", maxContentsSum / count));
+                    row.utilization.set("%.2f".formatted(utilizationSum / count));
+                    row.avgContents.set("%.2f".formatted(avgContentsSum / count));
+                    row.maxContents.set("%.2f".formatted(maxContentsSum / count));
                     row.currentContents.set((int) (currentContentsSum / count));
-                    row.avgTimePerEntry.set(String.format("%.2f", avgTimePerEntrySum / count));
+                    row.avgTimePerEntry.set("%.2f".formatted(avgTimePerEntrySum / count));
                 }
             }
 
@@ -917,10 +917,10 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
 
                 if (count > 0) {
                     row.exits.set((int) (totalExitsSum / count));
-                    row.avgSystemTime.set(String.format("%.2f", avgSysTimeSum / count));
-                    row.avgWaitTime.set(String.format("%.2f", avgWaitTimeSum / count));
-                    row.avgValueTime.set(String.format("%.2f", avgValueTimeSum / count));
-                    row.avgNonValueTime.set(String.format("%.2f", avgNonValueTimeSum / count));
+                    row.avgSystemTime.set("%.2f".formatted(avgSysTimeSum / count));
+                    row.avgWaitTime.set("%.2f".formatted(avgWaitTimeSum / count));
+                    row.avgValueTime.set("%.2f".formatted(avgValueTimeSum / count));
+                    row.avgNonValueTime.set("%.2f".formatted(avgNonValueTimeSum / count));
                     row.inSystem.set((int) (inSystemSum / count));
                 }
             }
@@ -966,7 +966,7 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
 
     private void updateUI() {
         Platform.runLater(() -> {
-            timeLabel.setText(String.format("Tiempo: %.2f min (%.2f hrs)", currentTime, currentTime / 60.0));
+            timeLabel.setText("Tiempo: %.2f min (%.2f hrs)".formatted(currentTime, currentTime / 60.0));
             progressBar.setProgress(currentTime / simulationConfig.getSimulationTimeInMinutes());
         });
     }
@@ -977,7 +977,7 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
 
         Platform.runLater(() -> {
             // Actualizar tiempo
-            timeLabel.setText(String.format("Tiempo: %.2f min", engine.getClock().getCurrentTime()));
+            timeLabel.setText("Tiempo: %.2f min".formatted(engine.getClock().getCurrentTime()));
 
             // Actualizar estadísticas de locaciones con TODAS las columnas
             Map<String, com.simulation.locations.LocationStatistics> locStats = engine.getStatistics()
@@ -1008,29 +1008,29 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
                     }
 
                     if (stats != null) {
-                        row.scheduledTime.set(String.format("%.2f", stats.getScheduledTime() / 60.0));
+                        row.scheduledTime.set("%.2f".formatted(stats.getScheduledTime() / 60.0));
                         row.capacity.set(stats.getCapacity());
                         row.totalEntries.set(stats.getTotalEntries());
-                        row.avgTimePerEntry.set(String.format("%.2f", stats.getAverageTimePerEntry()));
-                        row.avgContents.set(String.format("%.2f", stats.getAverageContents()));
-                        row.maxContents.set(String.format("%.2f", stats.getMaxContents()));
+                        row.avgTimePerEntry.set("%.2f".formatted(stats.getAverageTimePerEntry()));
+                        row.avgContents.set("%.2f".formatted(stats.getAverageContents()));
+                        row.maxContents.set("%.2f".formatted(stats.getMaxContents()));
                         row.currentContents.set((int) stats.getCurrentContents());
                         // Fórmula ProModel para capacidades infinitas
                         if (locName.equals("ALMACEN_MP") || locName.equals("CARGA") || 
                             locName.equals("DESCARGA") || locName.equals("SALIDA")) {
                             double promodelUtil = (stats.getAverageContents() / 999999.0) * 100.0;
-                            row.utilization.set(String.format("%.2f", promodelUtil));
+                            row.utilization.set("%.2f".formatted(promodelUtil));
                         } else if (locName.equals("BANDA_1")) {
                             double promodelUtil = (stats.getAverageContents() / 17.0) * 100.0;
-                            row.utilization.set(String.format("%.2f", promodelUtil));
+                            row.utilization.set("%.2f".formatted(promodelUtil));
                         } else if (locName.equals("BANDA_2")) {
                             double promodelUtil = (stats.getAverageContents() / 22.0) * 100.0;
-                            row.utilization.set(String.format("%.2f", promodelUtil));
+                            row.utilization.set("%.2f".formatted(promodelUtil));
                         } else {
-                            row.utilization.set(String.format("%.2f", stats.getBusyUtilizationPercent()));
+                            row.utilization.set("%.2f".formatted(stats.getBusyUtilizationPercent()));
                         }
                     } else {
-                        row.scheduledTime.set(String.format("%.2f", currentTime / 60.0));
+                        row.scheduledTime.set("%.2f".formatted(currentTime / 60.0));
                         row.capacity.set(location.getType().capacity());
                         row.totalEntries.set(0);
                         row.avgTimePerEntry.set("0.00");
@@ -1069,10 +1069,10 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
                 if (stats != null) {
                     row.exits.set(stats.getTotalExits());
                     row.inSystem.set(stats.getCurrentInSystem());
-                    row.avgSystemTime.set(String.format("%.2f", stats.getAverageSystemTime()));
-                    row.avgNonValueTime.set(String.format("%.2f", stats.getAverageNonValueAddedTime()));
-                    row.avgWaitTime.set(String.format("%.2f", stats.getAverageWaitTime()));
-                    row.avgValueTime.set(String.format("%.2f", stats.getAverageValueAddedTime()));
+                    row.avgSystemTime.set("%.2f".formatted(stats.getAverageSystemTime()));
+                    row.avgNonValueTime.set("%.2f".formatted(stats.getAverageNonValueAddedTime()));
+                    row.avgWaitTime.set("%.2f".formatted(stats.getAverageWaitTime()));
+                    row.avgValueTime.set("%.2f".formatted(stats.getAverageValueAddedTime()));
                 } else {
                     // Si no hay estadísticas aún, mostrar ceros
                     row.exits.set(0);
@@ -1086,7 +1086,7 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
 
             // Actualizar gráfica de barras con utilización de locaciones (sin parpadeo)
             if (locationUtilizationChart != null && !locationUtilizationChart.getData().isEmpty()) {
-                XYChart.Series<String, Number> series = locationUtilizationChart.getData().get(0);
+                XYChart.Series<String, Number> series = locationUtilizationChart.getData().getFirst();
 
                 // Mapear nombres formateados a utilización
                 Map<String, Double> utilizationMap = new HashMap<>();
@@ -1285,7 +1285,7 @@ public class SteelGearsSimulationGUI extends Application implements SimulationLi
             alert.setHeaderText("¡Configuración aplicada exitosamente!");
             alert.setContentText("El motor de simulación ha sido reconfigurado con los nuevos parámetros.\n\n" +
                 "Resumen:\n" +
-                "• Tiempo de simulación: " + String.format("%.2f", simulationConfig.getSimulationTime()) + " hrs\n" +
+                "• Tiempo de simulación: " + "%.2f".formatted(simulationConfig.getSimulationTime()) + " hrs\n" +
                 "• Réplicas: " + simulationConfig.getNumberOfReplicas() + "\n" +
                 "• Llegadas (media): " + simulationConfig.getArrivalMeanTime() + " min\n" +
                 "• Lote del Horno: " + simulationConfig.getHornoBatchSize() + " piezas\n\n" +

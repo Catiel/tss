@@ -5,6 +5,7 @@ import javafx.scene.paint.Color;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Representa una partícula individual del sistema
@@ -32,8 +33,8 @@ class Particle {
         this.size = size;
         this.color = color;
         this.alpha = 1.0;
-        this.rotation = Math.random() * 360;
-        this.rotationSpeed = (Math.random() - 0.5) * 180;
+        this.rotation = ThreadLocalRandom.current().nextDouble() * 360;
+        this.rotationSpeed = (ThreadLocalRandom.current().nextDouble() - 0.5) * 180;
         this.type = type;
     }
 
@@ -175,12 +176,12 @@ public class ParticleSystem {
      */
     public void emitSmoke(double x, double y, int count, Color smokeColor) {
         for (int i = 0; i < count && particles.size() < maxParticles; i++) {
-            double angle = Math.random() * Math.PI * 2;
-            double speed = 10 + Math.random() * 20;
+            double angle = ThreadLocalRandom.current().nextDouble() * Math.PI * 2;
+            double speed = 10 + ThreadLocalRandom.current().nextDouble() * 20;
             double vx = Math.cos(angle) * speed;
-            double vy = -30 - Math.random() * 20; // Sube
-            double life = 2.0 + Math.random() * 2.0;
-            double size = 8 + Math.random() * 12;
+            double vy = -30 - ThreadLocalRandom.current().nextDouble() * 20; // Sube
+            double life = 2.0 + ThreadLocalRandom.current().nextDouble() * 2.0;
+            double size = 8 + ThreadLocalRandom.current().nextDouble() * 12;
 
             particles.add(new Particle(x, y, vx, vy, life, size, smokeColor, ParticleType.SMOKE));
         }
@@ -191,12 +192,12 @@ public class ParticleSystem {
      */
     public void emitSparks(double x, double y, int count, Color sparkColor) {
         for (int i = 0; i < count && particles.size() < maxParticles; i++) {
-            double angle = Math.random() * Math.PI * 2;
-            double speed = 50 + Math.random() * 100;
+            double angle = ThreadLocalRandom.current().nextDouble() * Math.PI * 2;
+            double speed = 50 + ThreadLocalRandom.current().nextDouble() * 100;
             double vx = Math.cos(angle) * speed;
             double vy = Math.sin(angle) * speed - 20; // Ligero sesgo hacia arriba
-            double life = 0.3 + Math.random() * 0.5;
-            double size = 4 + Math.random() * 6;
+            double life = 0.3 + ThreadLocalRandom.current().nextDouble() * 0.5;
+            double size = 4 + ThreadLocalRandom.current().nextDouble() * 6;
 
             particles.add(new Particle(x, y, vx, vy, life, size, sparkColor, ParticleType.SPARK));
         }
@@ -231,14 +232,14 @@ public class ParticleSystem {
      */
     public void emitEmbers(double x, double y, int count) {
         for (int i = 0; i < count && particles.size() < maxParticles; i++) {
-            double angle = Math.random() * Math.PI * 2;
-            double speed = 5 + Math.random() * 15;
+            double angle = ThreadLocalRandom.current().nextDouble() * Math.PI * 2;
+            double speed = 5 + ThreadLocalRandom.current().nextDouble() * 15;
             double vx = Math.cos(angle) * speed;
-            double vy = -20 - Math.random() * 30; // Sube
-            double life = 1.5 + Math.random() * 2.0;
-            double size = 3 + Math.random() * 4;
+            double vy = -20 - ThreadLocalRandom.current().nextDouble() * 30; // Sube
+            double life = 1.5 + ThreadLocalRandom.current().nextDouble() * 2.0;
+            double size = 3 + ThreadLocalRandom.current().nextDouble() * 4;
 
-            Color emberColor = Color.color(1.0, 0.3 + Math.random() * 0.3, 0);
+            Color emberColor = Color.color(1.0, 0.3 + ThreadLocalRandom.current().nextDouble() * 0.3, 0);
 
             particles.add(new Particle(x, y, vx, vy, life, size, emberColor, ParticleType.EMBER));
         }
@@ -249,14 +250,14 @@ public class ParticleSystem {
      */
     public void emitExplosion(double x, double y, int count, Color color) {
         for (int i = 0; i < count && particles.size() < maxParticles; i++) {
-            double angle = Math.random() * Math.PI * 2;
-            double speed = 80 + Math.random() * 120;
+            double angle = ThreadLocalRandom.current().nextDouble() * Math.PI * 2;
+            double speed = 80 + ThreadLocalRandom.current().nextDouble() * 120;
             double vx = Math.cos(angle) * speed;
             double vy = Math.sin(angle) * speed;
-            double life = 0.5 + Math.random() * 1.0;
-            double size = 5 + Math.random() * 10;
+            double life = 0.5 + ThreadLocalRandom.current().nextDouble() * 1.0;
+            double size = 5 + ThreadLocalRandom.current().nextDouble() * 10;
 
-            ParticleType type = Math.random() < 0.7 ? ParticleType.SPARK : ParticleType.GLOW;
+            ParticleType type = ThreadLocalRandom.current().nextDouble() < 0.7 ? ParticleType.SPARK : ParticleType.GLOW;
 
             particles.add(new Particle(x, y, vx, vy, life, size, color, type));
         }

@@ -52,14 +52,14 @@ public record EntityReport(Map<String, EntityStatistics> entityStats,
         }
 
         // Encabezados de las columnas
-        sb.append(String.format("%-25s | %12s | %15s | %20s | %25s | %20s | %25s | %20s\n", "Nombre", "Total Salida",
+        sb.append("%-25s | %12s | %15s | %20s | %25s | %20s | %25s | %20s\n".formatted("Nombre", "Total Salida",
                 "Cant. Actual", "T. Sistema (Min)", "T. Movimiento (Min)", "T. Espera (Min)", "T. Operación (Min)",
                 "T. Bloqueo (Min)"));
         sb.append("-".repeat(200)).append("\n"); // Línea divisoria
 
         // Datos fila por fila
         for (EntityReportRow row : rows) {
-            sb.append(String.format("%-25s | %12d | %15d | %20.2f | %25.2f | %20.2f | %25.2f | %20.2f\n",
+            sb.append("%-25s | %12d | %15d | %20.2f | %25.2f | %20.2f | %25.2f | %20.2f\n".formatted(
                     row.entityName, row.totalExits, row.currentInSystem, row.avgSystemTime, row.avgMoveTime,
                     row.avgWaitTime, row.avgOperationTime, row.avgBlockTime));
         }
